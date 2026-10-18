@@ -1,0 +1,12 @@
+# AgentShield-X ML Pinned Dependencies (CPU-First, Windows/Linux/macOS)
+scikit-learn==1.9.1
+lightgbm==4.7.0
+sentence-transformers==6.1.0
+torch==2.13.0+cpu
+faiss-cpu==1.15.1
+qdrant-client==1.19.1
+pydantic==2.13.4
+pandas==3.0.6
+pyyaml==6.0.3
+onnxruntime==1.20.1
+pytest==8.4.1

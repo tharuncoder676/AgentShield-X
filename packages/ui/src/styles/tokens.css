@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: dark light;
+
+  /* Default Dark Mode (Security Operations Room) */
+  --bg: #060a12;
+  --panel: #0e1624;
+  --line: #1d2a3f;
+  --fg: #e8eef7;
+  --mut: #93a4bd;
+  --ok: #4fd1e8;
+  --bad: #ff5a4f;
+  --warn: #f5b84a;
+}
+
+/* Explicit Light Theme */
+:root.light,
+[data-theme="light"] {
+  --bg: #f3f6fa;
+  --panel: #ffffff;
+  --line: #cfd9e6;
+  --fg: #0a1424;
+  --mut: #4c5c74;
+  --ok: #0b7a96;
+  --bad: #c3281d;
+  --warn: #a86a00;
+}
+
+/* OS Light Theme Fallback */
+@media (prefers-color-scheme: light) {
+  :root:not(.dark):not([data-theme="dark"]) {
+    --bg: #f3f6fa;
+    --panel: #ffffff;
+    --line: #cfd9e6;
+    --fg: #0a1424;
+    --mut: #4c5c74;
+    --ok: #0b7a96;
+    --bad: #c3281d;
+    --warn: #a86a00;
+  }
+}
+
+:root.dark,
+[data-theme="dark"] {
+  --bg: #060a12;
+  --panel: #0e1624;
+  --line: #1d2a3f;
+  --fg: #e8eef7;
+  --mut: #93a4bd;
+  --ok: #4fd1e8;
+  --bad: #ff5a4f;
+  --warn: #f5b84a;
+}

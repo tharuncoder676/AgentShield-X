@@ -1,0 +1,12 @@
+{
+  "taint_blocks_sinks": true,
+  "default": {"name": "default", "allow_tools": ["read_webpage"]},
+  "tasks": [
+    {"name": "email-summary", "match": ["email", "send", "forward"],
+     "allow_tools": ["read_webpage", "send_email"],
+     "allowed_recipients": ["*@company.example.test"]},
+    {"name": "notes", "match": ["notes", "meeting"], "allow_tools": ["read_notes"]},
+    {"name": "read-summarize", "match": ["summarize", "summary", "research", "read"],
+     "allow_tools": ["read_webpage"]}
+  ]
+}

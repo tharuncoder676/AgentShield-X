@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decision"
+version = "0.1.0"
+description = "AgentShield-X Stateless Decision Service"
+requires-python = ">=3.11"
+dependencies = [
+    "shield-core",
+    "detectors-rules",
+    "detectors-pii",
+    "detectors-honey",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

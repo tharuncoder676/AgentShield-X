@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentshield-control-api"
+version = "1.0.0"
+description = "AgentShield-X SaaS Control Plane API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "pyjwt>=2.8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

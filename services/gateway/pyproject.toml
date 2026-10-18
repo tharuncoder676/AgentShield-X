@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gateway"
+version = "0.1.0"
+description = "AgentShield-X API Gateway"
+requires-python = ">=3.11"
+dependencies = [
+    "shield-core",
+    "eventbus",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "httpx>=0.24.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

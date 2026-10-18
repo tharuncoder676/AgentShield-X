@@ -1,0 +1,51 @@
+# AgentShield-X ML Pipeline Configuration
+project_name: "AgentShield-X"
+random_seed: 42
+
+data:
+  text:
+    min_attack_families: 10
+    held_out_families:
+      - "base64_obfuscated"
+      - "multilingual"
+      - "payload_split"
+    benign_ratio: 3.0
+    near_miss_ratio: 0.25
+  traces:
+    benign_sessions_count: 5000
+    attack_sessions_per_family: 100
+    held_out_trace_families:
+      - "slow_and_low"
+      - "rare_transition"
+  split_ratios:
+    partition_A_train: 0.60
+    partition_B_stacker: 0.20
+    partition_V_val: 0.20
+
+models:
+  similarity:
+    model_name: "all-MiniLM-L6-v2"
+    fpr_budget: 0.02
+    max_features: 2048
+  anomaly:
+    fpr_budget: 0.01
+    contamination: 0.05
+    n_estimators: 100
+  intent:
+    min_auc_target: 0.95
+  stacker:
+    fpr_budget: 0.02
+    calibration: "isotonic"
+    tiered_thresholds:
+      allow_max: 0.30
+      sanitize_max: 0.50
+      escalate_max: 0.70
+      block_min: 0.70
+      kill_session_min: 0.95
+
+slo_targets:
+  max_p95_cpu_latency_ms: 40.0
+  similarity_recall_target: 0.85
+  anomaly_recall_target: 0.80
+  stacked_recall_target: 0.90
+  max_ece: 0.05

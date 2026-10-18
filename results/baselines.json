@@ -1,0 +1,137 @@
+{
+  "generated_at": "2026-10-18T19:33:10Z",
+  "baselines": [
+    {
+      "baseline_name": "Unshielded Naive",
+      "backend": "lite",
+      "mode": "off",
+      "model_compliance": 0.9,
+      "utility": {
+        "tasks_total": 10,
+        "tasks_successful": 10,
+        "success_rate": 1.0,
+        "false_positive_rate": 0.0,
+        "p50_latency_ms": 0.42,
+        "p95_latency_ms": 0.54
+      },
+      "attacks": {
+        "trials_total": 60,
+        "blocked_count": 0,
+        "block_rate": 0.0,
+        "block_rate_ci_95": [
+          0.0,
+          0.0602
+        ],
+        "leaked_count": 48,
+        "leak_rate": 0.8,
+        "leak_rate_ci_95": [
+          0.6822,
+          0.8817
+        ]
+      },
+      "audit_integrity": {
+        "cryptographic_hash_chained": false,
+        "chain_verified": false
+      }
+    },
+    {
+      "baseline_name": "Prompt-Hardened Alone",
+      "backend": "lite",
+      "mode": "off",
+      "model_compliance": 0.2,
+      "utility": {
+        "tasks_total": 10,
+        "tasks_successful": 10,
+        "success_rate": 1.0,
+        "false_positive_rate": 0.0,
+        "p50_latency_ms": 0.39,
+        "p95_latency_ms": 0.45
+      },
+      "attacks": {
+        "trials_total": 60,
+        "blocked_count": 0,
+        "block_rate": 0.0,
+        "block_rate_ci_95": [
+          0.0,
+          0.0602
+        ],
+        "leaked_count": 18,
+        "leak_rate": 0.3,
+        "leak_rate_ci_95": [
+          0.199,
+          0.4251
+        ]
+      },
+      "audit_integrity": {
+        "cryptographic_hash_chained": false,
+        "chain_verified": false
+      }
+    },
+    {
+      "baseline_name": "AgentShield-lite",
+      "backend": "lite",
+      "mode": "enforce",
+      "model_compliance": 0.9,
+      "utility": {
+        "tasks_total": 10,
+        "tasks_successful": 10,
+        "success_rate": 1.0,
+        "false_positive_rate": 0.0,
+        "p50_latency_ms": 0.95,
+        "p95_latency_ms": 1.14
+      },
+      "attacks": {
+        "trials_total": 60,
+        "blocked_count": 48,
+        "block_rate": 0.8,
+        "block_rate_ci_95": [
+          0.6822,
+          0.8817
+        ],
+        "leaked_count": 0,
+        "leak_rate": 0.0,
+        "leak_rate_ci_95": [
+          0.0,
+          0.0602
+        ]
+      },
+      "audit_integrity": {
+        "cryptographic_hash_chained": false,
+        "chain_verified": false
+      }
+    },
+    {
+      "baseline_name": "AgentShield-X",
+      "backend": "agentshield",
+      "mode": "enforce",
+      "model_compliance": 0.9,
+      "utility": {
+        "tasks_total": 10,
+        "tasks_successful": 10,
+        "success_rate": 1.0,
+        "false_positive_rate": 0.0,
+        "p50_latency_ms": 3.31,
+        "p95_latency_ms": 5.91
+      },
+      "attacks": {
+        "trials_total": 60,
+        "blocked_count": 48,
+        "block_rate": 0.8,
+        "block_rate_ci_95": [
+          0.6822,
+          0.8817
+        ],
+        "leaked_count": 0,
+        "leak_rate": 0.0,
+        "leak_rate_ci_95": [
+          0.0,
+          0.0602
+        ]
+      },
+      "audit_integrity": {
+        "cryptographic_hash_chained": true,
+        "chain_verified": true
+      }
+    }
+  ]
+}

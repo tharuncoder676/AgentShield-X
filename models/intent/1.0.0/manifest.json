@@ -1,0 +1,7 @@
+{
+  "model_name": "intent_consistency_scorer",
+  "version": "1.0.0",
+  "chosen_model": "logistic_regression",
+  "threshold": 0.2478700263261795,
+  "auc_held_out": 0.987978920381712
+}

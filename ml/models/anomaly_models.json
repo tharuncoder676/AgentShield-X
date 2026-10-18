@@ -1,0 +1,50 @@
+{
+  "model_type": "hybrid_sequence_markov_and_isolation_stats",
+  "training_samples": 1800,
+  "valid_tools": [
+    "read_email",
+    "search_customers",
+    "send_email",
+    "write_file",
+    "run_sql",
+    "read_webpage"
+  ],
+  "transition_probabilities": {
+    "read_email": {
+      "search_customers": 0.5123,
+      "write_file": 0.4877
+    },
+    "search_customers": {
+      "send_email": 0.3412,
+      "write_file": 0.3449,
+      "run_sql": 0.3139
+    },
+    "read_webpage": {
+      "write_file": 1.0
+    },
+    "write_file": {
+      "send_email": 1.0
+    }
+  },
+  "aggregate_baselines": {
+    "call_rate": {
+      "mean": 0.7313,
+      "std": 0.3333,
+      "p95": 1.4,
+      "max": 2.0
+    },
+    "arg_entropy": {
+      "mean": 2.9418,
+      "std": 0.48,
+      "p95": 3.7,
+      "max": 3.8
+    },
+    "data_out_bytes": {
+      "mean": 967.9856,
+      "std": 482.6283,
+      "p95": 1705,
+      "max": 1800
+    }
+  },
+  "anomaly_score_threshold": 0.7
+}

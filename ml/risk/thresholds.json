@@ -1,0 +1,12 @@
+{
+  "allow_max": 0.16,
+  "sanitize_max": 0.28,
+  "escalate_max": 0.36,
+  "block_min": 0.4,
+  "kill_session_min": 0.95,
+  "fpr_budget": 0.02,
+  "hard_overrides": {
+    "honeytool_touch": "block",
+    "canary_token_hit": "block"
+  }
+}

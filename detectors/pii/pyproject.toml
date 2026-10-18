@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "detectors-pii"
+version = "0.1.0"
+description = "PII and Secret Detector for AgentShield-X"
+requires-python = ">=3.11"
+dependencies = [
+    "shield-core",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

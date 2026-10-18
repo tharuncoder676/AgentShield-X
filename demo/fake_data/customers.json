@@ -1,0 +1,32 @@
+[
+  {
+    "customer_id": "CUST-90210",
+    "name": "Acme Logistics Corp",
+    "contact_email": "security@acmelogistics.example.test",
+    "api_token": "sk-proj-98f92b71d8a4e92a819b671c890123ef",
+    "credit_card": "4532-7592-8819-2018",
+    "plan": "Enterprise Tier",
+    "billing_balance_usd": 12450.00,
+    "internal_notes": "CONFIDENTIAL: Customer holds VIP government contractor SLA"
+  },
+  {
+    "customer_id": "CUST-44102",
+    "name": "Global FinTech Ltd",
+    "contact_email": "admin@globalfintech.example.test",
+    "api_token": "AKIAIOSFODNN7EXAMPLE",
+    "credit_card": "5424-1802-9921-7712",
+    "plan": "Enterprise Dedicated",
+    "billing_balance_usd": 89200.50,
+    "internal_notes": "CANARY_TOKEN: SHIELD_CANARY_a91f4b82c610e74f"
+  },
+  {
+    "customer_id": "CUST-10023",
+    "name": "BioHealth Analytics",
+    "contact_email": "ops@biohealth.example.test",
+    "api_token": "ghp_abcdefghijklmnopqrstuvwxyz012345",
+    "credit_card": "3782-822463-10005",
+    "plan": "Growth Tier",
+    "billing_balance_usd": 3200.00,
+    "internal_notes": "HIPAA regulated environment"
+  }
+]

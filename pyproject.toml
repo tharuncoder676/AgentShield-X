@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentshield-x"
+version = "0.1.0"
+description = "Multi-Tenant SaaS Security Platform Protecting LLM Agentic Systems in Real Time"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "AgentShield-X Team" }]
+dependencies = [
+    "pydantic>=2.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "httpx>=0.24.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["packages*", "detectors*", "services*", "demo*"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "examples/research-agent"]
+testpaths = ["tests/real"]
+

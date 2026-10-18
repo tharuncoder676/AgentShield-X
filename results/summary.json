@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "system": "AgentShield-X Real Evaluation Harness",
+    "version": "1.0.0",
+    "generated_at": "2026-10-18T23:05:00Z",
+    "test_framework": "pytest",
+    "total_real_tests": 48,
+    "passed_real_tests": 48,
+    "failed_real_tests": 0,
+    "pass_rate": 1.0
+  },
+  "baselines": [
+    {
+      "name": "Unshielded Naive",
+      "mode": "off",
+      "model": "Standard Prompt / Gullible Model",
+      "benign_success_rate": 1.0,
+      "false_positive_rate": 0.0,
+      "attack_block_rate": 0.0,
+      "attack_leakage_rate": 0.80,
+      "leakage_ci_95": [0.6822, 0.8817],
+      "audit_verification": "none"
+    },
+    {
+      "name": "Prompt-Hardened Alone",
+      "mode": "off",
+      "model": "Hardened Prompt Directives Alone",
+      "benign_success_rate": 1.0,
+      "false_positive_rate": 0.0,
+      "attack_block_rate": 0.0,
+      "attack_leakage_rate": 0.30,
+      "leakage_ci_95": [0.1990, 0.4251],
+      "audit_verification": "none"
+    },
+    {
+      "name": "AgentShield-lite",
+      "mode": "enforce",
+      "model": "Standard Prompt + 200-Line Stand-In",
+      "benign_success_rate": 1.0,
+      "false_positive_rate": 0.0,
+      "attack_block_rate": 0.80,
+      "attack_leakage_rate": 0.0,
+      "leakage_ci_95": [0.0, 0.0602],
+      "audit_verification": "none"
+    },
+    {
+      "name": "AgentShield-X",
+      "mode": "enforce",
+      "model": "Standard Prompt + Real DecisionService & Audit DB",
+      "benign_success_rate": 1.0,
+      "false_positive_rate": 0.0,
+      "attack_block_rate": 0.80,
+      "attack_leakage_rate": 0.0,
+      "leakage_ci_95": [0.0, 0.0602],
+      "audit_verification": "verified"
+    }
+  ],
+  "overhead_benchmarks": {
+    "iterations": 50,
+    "shield_off_baseline_ms": {
+      "p50": 0.67,
+      "p95": 1.00
+    },
+    "agentshield_enforce_ms": {
+      "p50": 4.89,
+      "p95": 5.74,
+      "max": 8.09
+    },
+    "added_shield_overhead_ms": {
+      "p50": 4.22,
+      "p95": 4.74
+    },
+    "target_sla_ms": 50.0,
+    "sla_met": true
+  },
+  "stability_and_concurrency": {
+    "sequential_runs": {
+      "total": 20,
+      "passed": 20,
+      "failures": 0
+    },
+    "concurrent_workers": {
+      "workers": 5,
+      "total_tasks": 20,
+      "passed": 20,
+      "db_lock_errors": 0
+    },
+    "audit_chain": {
+      "algorithm": "SHA-256 Hash Chaining",
+      "integrity_verified": true,
+      "broken_sequences": 0
+    }
+  },
+  "developer_features": {
+    "scan": {
+      "status": "built",
+      "detail": "Identifies dangerous tool triples and verifies mitigation in enforce mode"
+    },
+    "poison": {
+      "status": "built",
+      "detail": "Runs differential canary injection testing with Wilson 95% intervals"
+    },
+    "recorder": {
+      "status": "built",
+      "detail": "Captures complete multi-turn trace in Control API SQLite WAL database"
+    },
+    "replay": {
+      "status": "built",
+      "detail": "Replays recorded sessions under counterfactual policies with step-level diffs"
+    },
+    "influence_tracing": {
+      "status": "partial",
+      "detail": "Context segment SHA-256 taint lineage exists in core events; standalone CLI graph tracer missing"
+    },
+    "autopolicy": {
+      "status": "partial",
+      "detail": "Policy synthesis and Rego drafting exists in Shieldwing; standalone CLI auto-learner missing"
+    },
+    "secret_broker": {
+      "status": "partial",
+      "detail": "Real-time PII & high-entropy secret detection exists; active vault token substitution broker missing"
+    },
+    "tool_lockfile": {
+      "status": "missing",
+      "detail": "No cryptographic tool hash signature lockfile verification currently built"
+    }
+  }
+}

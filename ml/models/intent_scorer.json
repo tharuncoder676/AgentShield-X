@@ -1,0 +1,29 @@
+{
+  "model_type": "semantic_intent_affinity_scorer",
+  "affinity_map": {
+    "email": [
+      "read_email",
+      "send_email",
+      "inbox"
+    ],
+    "customer": [
+      "search_customers",
+      "save_customer"
+    ],
+    "report": [
+      "run_sql",
+      "write_file",
+      "search_customers"
+    ],
+    "meeting": [
+      "read_email",
+      "send_email"
+    ],
+    "billing": [
+      "search_customers",
+      "run_sql"
+    ]
+  },
+  "min_alignment_threshold": 0.4,
+  "sample_count": 8
+}

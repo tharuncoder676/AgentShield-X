@@ -1,0 +1,87 @@
+{
+  "smoothing": 0.01,
+  "vocab": [
+    "read_email",
+    "read_pdf",
+    "read_webpage",
+    "run_sql",
+    "search_customers",
+    "send_email",
+    "write_file"
+  ],
+  "start_counts": {
+    "read_email": 0.31925181084605136,
+    "read_pdf": 0.34198889131211513,
+    "read_webpage": 0.16566051218753913,
+    "run_sql": 0.0872407856821356,
+    "search_customers": 0.08584871953115211,
+    "send_email": 4.640220503278315e-06,
+    "write_file": 4.640220503278315e-06
+  },
+  "transitions": {
+    "read_email": {
+      "read_email": 1.4533405031464822e-05,
+      "read_pdf": 1.4533405031464822e-05,
+      "read_webpage": 1.4533405031464822e-05,
+      "run_sql": 1.4533405031464822e-05,
+      "search_customers": 0.4825235804496635,
+      "send_email": 1.4533405031464822e-05,
+      "write_file": 0.5174037525251791
+    },
+    "read_pdf": {
+      "read_email": 1.3243805210112969e-05,
+      "read_pdf": 0.27416001165454856,
+      "read_webpage": 1.3243805210112969e-05,
+      "run_sql": 0.0026620048472327062,
+      "search_customers": 0.23045545446117577,
+      "send_email": 0.2529699233183678,
+      "write_file": 0.23972611810825484
+    },
+    "read_webpage": {
+      "read_email": 2.537620219757911e-05,
+      "read_pdf": 2.537620219757911e-05,
+      "read_webpage": 0.49993655949450605,
+      "run_sql": 0.49993655949450605,
+      "search_customers": 2.537620219757911e-05,
+      "send_email": 2.537620219757911e-05,
+      "write_file": 2.537620219757911e-05
+    },
+    "run_sql": {
+      "read_email": 0.03525787460675917,
+      "read_pdf": 0.04961687574242562,
+      "read_webpage": 0.09138851540981895,
+      "run_sql": 0.22453561684963513,
+      "search_customers": 0.08877778793060687,
+      "send_email": 0.24150534546451366,
+      "write_file": 0.2689179839962405
+    },
+    "search_customers": {
+      "read_email": 1.4083118565775205e-05,
+      "read_pdf": 0.008463954258030898,
+      "read_webpage": 1.4083118565775205e-05,
+      "run_sql": 0.7492359908178067,
+      "search_customers": 0.011280577971185939,
+      "send_email": 0.23097722759727912,
+      "write_file": 1.4083118565775205e-05
+    },
+    "send_email": {
+      "read_email": 0.10757955948540249,
+      "read_pdf": 0.17927271278926196,
+      "read_webpage": 3.982952961325527e-05,
+      "run_sql": 0.11156251244672802,
+      "search_customers": 0.21511928944119169,
+      "send_email": 0.3863862667781894,
+      "write_file": 3.982952961325527e-05
+    },
+    "write_file": {
+      "read_email": 0.1700637087083683,
+      "read_pdf": 0.10884893554311106,
+      "read_webpage": 2.2672138209354527e-05,
+      "run_sql": 0.19046863309678738,
+      "search_customers": 2.2672138209354527e-05,
+      "send_email": 2.2672138209354527e-05,
+      "write_file": 0.5305507062371052
+    }
+  },
+  "threshold": 0.5
+}

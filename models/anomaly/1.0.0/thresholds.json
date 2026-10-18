@@ -1,0 +1,7 @@
+{
+  "markov_threshold": Infinity,
+  "isolation_forest_threshold": 0.5011,
+  "autoencoder_threshold": Infinity,
+  "combined_threshold": 0.7846,
+  "fpr_budget": 0.01
+}

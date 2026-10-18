@@ -1,0 +1,55 @@
+name: AgentShield-X Real Test Harness
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  real-test:
+    name: Production Shield & Adapter Verification
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio
+          pip install -e packages/shield_core
+          pip install -e packages/shield_sdk_py
+          pip install -e packages/eventbus
+          pip install -e detectors/rules
+          pip install -e detectors/pii
+          pip install -e detectors/honey
+          pip install -e services/decision
+          pip install -e services/gateway
+
+      - name: Run Real Test Suites (Utility, Attacks, Overhead, Stability, Scanner)
+        env:
+          PYTHONPATH: .:examples/research-agent
+        run: |
+          python -m pytest tests/real/ -v
+
+      - name: Run Repo Scanner in Enforce Mode (Gate High/Critical)
+        env:
+          PYTHONPATH: .:examples/research-agent
+        run: |
+          python scripts/scan_repo.py --repo examples/research-agent --mode enforce --fail-on high
+
+      - name: Run Baseline Comparison Verification
+        env:
+          PYTHONPATH: .:examples/research-agent
+        run: |
+          python -m pytest tests/real/test_baselines.py -v

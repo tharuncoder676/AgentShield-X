@@ -1,0 +1,68 @@
+"""
+AgentShield-X Control Plane API Service Entrypoint
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from control_api.routes.auth import router as auth_router
+from control_api.routes.orgs import router as orgs_router
+from control_api.routes.analytics import router as analytics_router
+from control_api.routes.onboarding import router as onboarding_router
+from control_api.routes.incidents import router as incidents_router
+from control_api.routes.agents import router as agents_router
+from control_api.routes.sessions import router as sessions_router
+from control_api.routes.policies import router as policies_router
+from control_api.routes.approvals import router as approvals_router
+from control_api.routes.models import router as models_router
+from control_api.routes.honeytools import router as honeytools_router
+from control_api.routes.audit import router as audit_router
+from control_api.routes.billing import router as billing_router
+from control_api.routes.architecture import router as architecture_router
+from control_api.routes.shieldwing import router as shieldwing_router
+from control_api.routes.scanner import router as scanner_router
+
+app = FastAPI(
+    title="AgentShield-X Control API",
+    version="1.0.0",
+    description="Multi-tenant SaaS Control Plane for AgentShield-X",
+)
+
+# Enable CORS for frontend applications
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router)
+app.include_router(orgs_router)
+app.include_router(analytics_router)
+app.include_router(onboarding_router)
+app.include_router(incidents_router)
+app.include_router(agents_router)
+app.include_router(sessions_router)
+app.include_router(policies_router)
+app.include_router(approvals_router)
+app.include_router(models_router)
+app.include_router(honeytools_router)
+app.include_router(audit_router)
+app.include_router(billing_router)
+app.include_router(architecture_router)
+app.include_router(shieldwing_router)
+app.include_router(scanner_router)
+
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "control-api", "version": "1.0.0"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8002)

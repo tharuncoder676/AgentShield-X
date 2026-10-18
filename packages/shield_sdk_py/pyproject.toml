@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shield-sdk-py"
+version = "0.1.0"
+description = "AgentShield-X Python Client SDK"
+requires-python = ">=3.11"
+dependencies = [
+    "shield-core",
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

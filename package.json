@@ -1,0 +1,18 @@
+{
+  "name": "agentshield-x-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "storybook": "npm --workspace=packages/ui run storybook",
+    "build:ui": "npm --workspace=packages/ui run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

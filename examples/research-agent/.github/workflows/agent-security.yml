@@ -1,0 +1,15 @@
+name: agent-security
+on: [push, pull_request]
+jobs:
+  agent-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+      # Fail the build if a high-severity dangerous combination is open with the shield enforcing
+      - run: python -m shield scan --mode enforce --fail-on high
+      # Fail the build if any poisoned run reaches a sensitive sink
+      - run: python -m shield poison --shield enforce --ci --max-executed 0

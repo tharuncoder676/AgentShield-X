@@ -1,0 +1,10 @@
+{
+  "model_name": "similarity_minilm_faiss",
+  "version": "1.0.0",
+  "created_at": "2026-10-16T05:51:53Z",
+  "embedder": "sentence-transformers/all-MiniLM-L6-v2",
+  "threshold": 0.7015,
+  "latency_p95_ms": 10.832635051338002,
+  "seen_family_recall": 0.9850746268656716,
+  "held_out_family_recall": 0.3761904761904762
+}

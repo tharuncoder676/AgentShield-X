@@ -1,0 +1,6 @@
+{
+  "threshold": 0.7015,
+  "fpr_budget": 0.02,
+  "measured_val_fpr": 0.02,
+  "measured_val_recall": 1.0
+}

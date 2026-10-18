@@ -1,0 +1,54 @@
+graph TD
+    classDef client fill:#0e1624,stroke:#4fd1e8,stroke-width:1px,color:#e8eef7;
+    classDef gateway fill:#0e1624,stroke:#1d2a3f,stroke-width:1px,color:#e8eef7;
+    classDef detector fill:#0e1624,stroke:#f5b84a,stroke-width:1px,color:#e8eef7;
+    classDef risk fill:#0e1624,stroke:#ff5a4f,stroke-width:1px,color:#e8eef7;
+    classDef bus fill:#060a12,stroke:#1d2a3f,stroke-width:1px,color:#93a4bd;
+
+    subgraph ClientAgent["Agent Execution Environment"]
+        SDK["AgentShield SDK<br/>@shield.tool Interceptor"]:::client
+    end
+
+    subgraph DataPlane["Data Plane (p95 < 100ms)"]
+        GW["API Gateway<br/>Auth & Rate Limiter"]:::gateway
+        DEC["Decision Engine<br/>Parallel Orchestrator"]:::gateway
+    end
+
+    subgraph DetectionPlane["Detection Subsystems"]
+        RULES["Rules & Honeytools<br/>Deterministic Guard"]:::detector
+        PII["PII & Secret Scanner<br/>Entropy H(X)"]:::detector
+        DEBERTA["DeBERTa Injection Model<br/>Quantized ONNX"]:::detector
+        SIM["FAISS Attack Similarity<br/>all-MiniLM-L6-v2"]:::detector
+        ANOMALY["Anomaly Ensemble<br/>Markov + IsoForest + Autoencoder"]:::detector
+        INTENT["Intent Scorer<br/>Cross-Encoder"]:::detector
+    end
+
+    subgraph RiskPlane["Calibrated Risk Fusion"]
+        STACKER["LightGBM Risk Stacker<br/>Platt Calibrated Sigmoid"]:::risk
+        OPA["OPA Policy Engine<br/>Tenant Rego Guardrails"]:::risk
+    end
+
+    subgraph AsyncPlane["Async & Control Plane"]
+        BUS["EventBus & WebSocket<br/>Streaming Telemetry"]:::bus
+        AUDIT["Cryptographic Audit<br/>SHA-256 Merkle Chain"]:::bus
+        CONSOLE["SaaS Operations Console<br/>React + Tailwind"]:::client
+        SHIELDWING["Shieldwing Copilot<br/>AI Security Agent"]:::client
+    end
+
+    SDK -->|ToolCallEvent| GW
+    GW -->|Validate & Route| DEC
+    DEC --> RULES
+    DEC --> PII
+    DEC --> DEBERTA
+    DEC --> SIM
+    DEC --> ANOMALY
+    DEC --> INTENT
+    RULES & PII & DEBERTA & SIM & ANOMALY & INTENT --> STACKER
+    STACKER --> OPA
+    OPA -->|Enforced Decision| GW
+    GW -->|Verdict: ALLOW / BLOCK / SANITIZE| SDK
+    GW -.->|Publish Event| BUS
+    BUS -.-> AUDIT
+    BUS -.-> CONSOLE
+    CONSOLE -.-> SHIELDWING
+    SHIELDWING -.->|Dogfood Interception| GW

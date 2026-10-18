@@ -1,0 +1,45 @@
+{
+  "model_name": "anomaly_ensemble",
+  "version": "1.0.0",
+  "models": [
+    "MarkovTransitionModel",
+    "IsolationForest",
+    "SequenceAutoencoder"
+  ],
+  "metrics": {
+    "markov": {
+      "roc_auc": 0.7647,
+      "pr_auc": 0.4481,
+      "recall_at_1pct_fpr": 0.0,
+      "threshold": Infinity
+    },
+    "isolation_forest": {
+      "roc_auc": 0.9977,
+      "pr_auc": 0.9887,
+      "recall_at_1pct_fpr": 0.9077,
+      "threshold": 0.5011
+    },
+    "autoencoder": {
+      "roc_auc": 0.9226,
+      "pr_auc": 0.8039,
+      "recall_at_1pct_fpr": 0.0,
+      "threshold": Infinity
+    },
+    "combined": {
+      "roc_auc": 0.9909,
+      "pr_auc": 0.9635,
+      "recall_at_1pct_fpr": 0.8654,
+      "threshold": 0.7846
+    }
+  },
+  "per_family_recall": {
+    "bulk_data_pull": 0.0,
+    "goal_hijack_exfil": 1.0,
+    "honeytool_touch": 1.0,
+    "injected_midsession": 0.0,
+    "privilege_escalation": 0.0,
+    "rare_transition": 1.0,
+    "runaway_loop": 1.0,
+    "slow_and_low": 1.0
+  }
+}

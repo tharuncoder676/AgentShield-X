@@ -1,0 +1,8 @@
+{
+  "model_name": "injection_baseline",
+  "version": "1.0.0",
+  "type": "TfidfVectorizer + LogisticRegression",
+  "stand_in": true,
+  "threshold": 0.1,
+  "description": "Baseline linear model for prompt injection detection (stand-in for DeBERTa)"
+}

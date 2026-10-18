@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY packages/shield_core /app/packages/shield_core
+COPY packages/shield_sdk_py /app/packages/shield_sdk_py
+COPY packages/eventbus /app/packages/eventbus
+COPY detectors/rules /app/detectors/rules
+COPY detectors/pii /app/detectors/pii
+COPY detectors/honey /app/detectors/honey
+COPY services/decision /app/services/decision
+COPY services/gateway /app/services/gateway
+COPY demo /app/demo
+COPY tests /app/tests
+
+RUN pip install --no-cache-dir \
+    /app/packages/shield_core \
+    /app/packages/shield_sdk_py \
+    /app/packages/eventbus \
+    /app/detectors/rules \
+    /app/detectors/pii \
+    /app/detectors/honey \
+    /app/services/decision \
+    /app/services/gateway
+
+ENV PYTHONPATH=/app
+CMD ["python", "demo/attack_library/runner.py"]

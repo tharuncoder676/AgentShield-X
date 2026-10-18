@@ -1,0 +1,29 @@
+{
+  "model_name": "risk_stacker_lightgbm",
+  "version": "1.0.0",
+  "calibrator": "platt",
+  "brier_score": 0.0036170418230885,
+  "expected_calibration_error": 0.04646285348736675,
+  "tiered_thresholds": {
+    "allow_max": 0.16,
+    "sanitize_max": 0.28,
+    "escalate_max": 0.36,
+    "block_min": 0.4,
+    "kill_session_min": 0.95,
+    "fpr_budget": 0.02,
+    "hard_overrides": {
+      "honeytool_touch": "block",
+      "canary_token_hit": "block"
+    }
+  },
+  "feature_importances": {
+    "injection_score": 130,
+    "similarity_score": 87,
+    "anomaly_score": 95,
+    "intent_score": 71,
+    "pii_secret_hit": 0,
+    "taint_to_sensitive_sink": 0,
+    "honeytool_touch": 0,
+    "canary_token_hit": 0
+  }
+}
