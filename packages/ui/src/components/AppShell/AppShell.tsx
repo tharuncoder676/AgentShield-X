@@ -65,7 +65,15 @@ export const AppShell: React.FC<AppShellProps> = ({
     { id: "sessions", label: "Sessions & Replay", icon: <History size={16} /> },
     { id: "agents", label: "Agents", icon: <Users size={16} /> },
     { id: "policies", label: "Policies", icon: <FileCode size={16} /> },
+    { id: "approvals", label: "Approvals", icon: <CheckSquare size={16} /> },
+    { id: "models", label: "Detectors & Models", icon: <Cpu size={16} /> },
+    { id: "honeytools", label: "Honeytools", icon: <Eye size={16} /> },
+    { id: "audit", label: "Audit Log", icon: <CheckCircle size={16} /> },
+    { id: "architecture", label: "Architecture", icon: <MapPin size={16} /> },
+    { id: "settings", label: "Settings", icon: <Settings size={16} /> },
+  ];
 
+  const handleNav = (id: string) => {
     if (onNavigate) onNavigate(id);
     setMobileMenuOpen(false);
   };
