@@ -1,10 +1,11 @@
 # AgentShield-X: Enterprise LLM Agent Security Platform
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Real Test Harness](https://img.shields.io/badge/Real%20Test%20Harness-51%2F51%20Passing-success)](tests/real/)
 [![Overhead](https://img.shields.io/badge/p95%20Overhead-4.74ms-blue)](results/summary.json)
 [![Audit](https://img.shields.io/badge/Audit%20Log-SHA--256%20Chained-informational)](packages/shield_core/src/shield_core/audit.py)
 
-AgentShield-X is a multi-tenant SaaS security platform that protects LLM-based agentic systems in real time against prompt injection (direct and indirect), jailbreaks, tool misuse, data exfiltration, goal hijacking, and behavioral anomalies.
+AgentShield-X is a universal security runtime and static blast-radius analyzer that protects autonomous LLM agents against prompt injection (direct and indirect), jailbreaks, tool misuse, data exfiltration, goal hijacking, and behavioral anomalies with deterministic sub-5ms policy enforcement.
 
 
 ---
@@ -71,6 +72,78 @@ Phase 1 establishes the foundational data plane, core security contracts, parall
    - `vulnerable_agent`: Susceptible to indirect prompt injection via poisoned emails.
    - `protected_agent`: Intercepts tool calls via AgentShield-X and blocks exfiltration.
    - `attack_library/runner.py`: Reproducible demo verifying that attacks succeed with Shield OFF and are blocked with Shield ON.
+
+---
+
+## 🚀 How Users Can Use AgentShield-X
+
+AgentShield-X can be used in **3 distinct workflows** depending on your operational needs:
+
+### 1. Static AST Security Scanner (Zero-Install / CLI)
+Scan any AI agent repository or directory to discover tools, calculate prompt-injection blast radiuses, and detect dangerous tool combinations without running any backend servers or databases.
+
+#### Standalone Zero-Install Scanner (Fastest):
+```bash
+# Scan any repo with zero pip dependencies (uses Python built-in standard library):
+python agentshield_scan.py /path/to/any/agent-repo
+
+# Strict verification & JSON output for CI/CD pipelines:
+python agentshield_scan.py /path/to/any/agent-repo --mode enforce --fail-on high
+python agentshield_scan.py /path/to/any/agent-repo --json
+```
+
+#### Via Universal CLI (`agentshield`):
+```bash
+# 1. Install core package
+pip install -e packages/shield_core
+
+# 2. Run anywhere
+agentshield scan /path/to/agent/repo
+```
+
+---
+
+### 2. Python Agent Security SDK (`@shield.tool`)
+Protect any agent framework (LangChain, LangGraph, CrewAI, AutoGen, or custom Python code) by decorating your tools:
+
+```python
+from shield_sdk import shield
+
+# 1. Protect dangerous tools with sensitivity and sink designations
+@shield.tool(name="send_email", sensitivity="high", sink="external")
+def send_email(to: str, subject: str, body: str):
+    ... # Outbound emails are blocked if untrusted input is tainted
+
+# 2. Protect sensitive data sources
+@shield.tool(name="read_internal_db", sensitivity="high", reads="private")
+def read_internal_db(query: str):
+    ...
+
+# 3. Add zero-false-positive Honeytool Tripwires
+@shield.tool(name="export_all_customers", honeytool=True)
+def export_all_customers():
+    ... # Immediate containment & incident alert if an injected agent calls this
+```
+
+---
+
+### 3. Full-Stack Security Console & Real-Time Gateway
+
+To run the complete interactive platform with live telemetry, cryptographic audit logs, and the **Shieldwing AI Copilot**:
+
+```bash
+# Terminal 1: Start Backend API & Decision Services (Ports 8000 & 8001)
+python scripts/run_dev_backend.py
+
+# Terminal 2: Start Interactive Security Console UI (Port 3000)
+npm run dev --prefix apps/console
+```
+
+Now open **`http://localhost:3000`** in your browser:
+- **Live Feed:** Real-time SSE streaming of agent tool interceptions.
+- **Incident Explorer:** Taint graph, causal root-cause analysis, and blast radius.
+- **Audit Log:** Merkle-chained SHA-256 tamper-evident verification.
+- **Shieldwing AI Copilot:** Click the floating Shieldwing button in the bottom right to chat with your autonomous security assistant, inspect account telemetry, and auto-draft OPA Rego policies.
 
 ---
 
@@ -176,4 +249,11 @@ python scripts/demo_replay.py   # Historical trace policy simulator
 ```bash
 pytest tests/real/test_baselines.py -v
 ```
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 
