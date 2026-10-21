@@ -23,6 +23,17 @@ from control_api.routes.billing import router as billing_router
 from control_api.routes.architecture import router as architecture_router
 from control_api.routes.shieldwing import router as shieldwing_router
 from control_api.routes.scanner import router as scanner_router
+from control_api.routes.mcp import router as mcp_router
+from control_api.routes.swarm import router as swarm_router
+from control_api.routes.judge import router as judge_router
+from control_api.routes.redteam import router as redteam_router
+from control_api.routes.autopolicy import router as autopolicy_router
+from control_api.routes.attestation import router as attestation_router
+from control_api.routes.honeytokens import router as honeytokens_router
+from control_api.routes.sandbox import router as sandbox_router
+from control_api.routes.rag import router as rag_router
+from control_api.routes.gitops import router as gitops_router
+from control_api.routes.immunity import router as immunity_router
 
 app = FastAPI(
     title="AgentShield-X Control API",
@@ -55,6 +66,17 @@ app.include_router(billing_router)
 app.include_router(architecture_router)
 app.include_router(shieldwing_router)
 app.include_router(scanner_router)
+app.include_router(mcp_router)
+app.include_router(swarm_router)
+app.include_router(judge_router)
+app.include_router(redteam_router)
+app.include_router(autopolicy_router)
+app.include_router(attestation_router)
+app.include_router(honeytokens_router)
+app.include_router(sandbox_router)
+app.include_router(rag_router)
+app.include_router(gitops_router)
+app.include_router(immunity_router)
 
 
 

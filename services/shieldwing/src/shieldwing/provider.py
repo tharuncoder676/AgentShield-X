@@ -19,7 +19,8 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    _repo_env = Path(__file__).resolve().parents[4] / ".env"
+    load_dotenv(dotenv_path=_repo_env, override=True)
 except Exception:
     pass
 
@@ -94,7 +95,11 @@ class DeterministicSecurityProvider(BaseLLMProvider):
 
     def _extract_user_query(self, prompt: Union[str, List[Dict[str, Any]]]) -> str:
         text = prompt if isinstance(prompt, str) else json.dumps(prompt)
-        if "<<<UNTRUSTED_TELEMETRY_DATA" in text:
+        if "<<<OPERATOR_SECURITY_REQUEST>>>" in text:
+            parts = text.split("<<<OPERATOR_SECURITY_REQUEST>>>")
+            if len(parts) > 1 and "<<<END_OPERATOR_SECURITY_REQUEST>>>" in parts[1]:
+                text = parts[1].split("<<<END_OPERATOR_SECURITY_REQUEST>>>")[0]
+        elif "<<<UNTRUSTED_TELEMETRY_DATA" in text:
             parts = text.split("<<<UNTRUSTED_TELEMETRY_DATA")
             if len(parts) > 1 and "<<<END_UNTRUSTED_TELEMETRY_DATA>>>" in parts[1]:
                 inner = parts[1].split("<<<END_UNTRUSTED_TELEMETRY_DATA>>>")[0]
@@ -1013,14 +1018,14 @@ class NvidiaLLMProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.7,
         top_p: float = 0.95,
-        max_tokens: int = 8192,
+        max_tokens: int = 2048,
         seed: int = 42,
         enable_thinking: bool = False,
     ):
         raw_key = api_key or os.getenv("NVIDIA_API_KEY", "")
         self.api_key = raw_key
         self.base_url = base_url or os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
-        self.model = model or os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")
+        self.model = model or os.getenv("NVIDIA_MODEL", "meta/llama-3.2-11b-vision-instruct")
         self.temperature = temperature
         self.top_p = top_p
         self.max_tokens = max_tokens
@@ -1028,6 +1033,12 @@ class NvidiaLLMProvider(BaseLLMProvider):
         self.enable_thinking = enable_thinking
         self.fallback = DeterministicSecurityProvider()
         self._async_client: Any = None
+        self.backup_models = [
+            "meta/llama-3.2-11b-vision-instruct",
+            "meta/llama-3.2-90b-vision-instruct",
+            "deepseek-ai/deepseek-v4.1-flash",
+            "openai/gpt-oss-20b",
+        ]
 
     def get_client(self) -> Any:
         if not self.api_key or self.api_key.startswith("nvapi-test-dummy"):
@@ -1038,7 +1049,7 @@ class NvidiaLLMProvider(BaseLLMProvider):
                 self._async_client = AsyncOpenAI(
                     base_url=self.base_url,
                     api_key=self.api_key,
-                    timeout=30.0,
+                    timeout=60.0,
                 )
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client for NVIDIA NIM: {e}")
@@ -1073,27 +1084,30 @@ class NvidiaLLMProvider(BaseLLMProvider):
             return await self.fallback.generate_response(prompt, system_prompt, temperature, context=context)
 
         messages = self._prepare_messages(prompt, system_prompt)
-        try:
-            completion = await client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=temperature if temperature is not None else self.temperature,
-                top_p=self.top_p,
-                max_tokens=self.max_tokens,
-                seed=self.seed,
-                stream=False,
-            )
-            if completion.choices and completion.choices[0].message:
-                msg = completion.choices[0].message
-                reasoning = getattr(msg, "reasoning_content", None)
-                content = msg.content or ""
-                if reasoning:
-                    return f"<thinking>\n{reasoning}\n</thinking>\n\n{content}"
-                return content
-            return ""
-        except Exception as e:
-            logger.warning(f"NVIDIA NIM completion error ({e}). Falling back to general intelligence engine.")
-            return await self.fallback.generate_response(prompt, system_prompt, temperature, context=context)
+        candidate_models = [self.model] + [m for m in self.backup_models if m != self.model]
+
+        for mod in candidate_models:
+            try:
+                completion = await client.chat.completions.create(
+                    model=mod,
+                    messages=messages,
+                    temperature=temperature if temperature is not None else self.temperature,
+                    top_p=self.top_p,
+                    max_tokens=self.max_tokens,
+                    stream=False,
+                )
+                if completion.choices and completion.choices[0].message:
+                    msg = completion.choices[0].message
+                    reasoning = getattr(msg, "reasoning", None) or getattr(msg, "reasoning_content", None)
+                    content = msg.content or ""
+                    if reasoning:
+                        return f"<thinking>\n{reasoning}\n</thinking>\n\n{content}"
+                    return content
+            except Exception as e:
+                logger.warning(f"NVIDIA NIM model {mod} error ({e}). Trying next candidate...")
+
+        logger.warning("All NVIDIA NIM models failed. Falling back to general intelligence engine.")
+        return await self.fallback.generate_response(prompt, system_prompt, temperature, context=context)
 
     async def stream_response_events(
         self,
@@ -1109,28 +1123,35 @@ class NvidiaLLMProvider(BaseLLMProvider):
             return
 
         messages = self._prepare_messages(prompt, system_prompt)
-        try:
-            stream = await client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=temperature if temperature is not None else self.temperature,
-                top_p=self.top_p,
-                max_tokens=self.max_tokens,
-                seed=self.seed,
-                stream=True,
-            )
-            async for chunk in stream:
-                if not chunk.choices:
-                    continue
-                delta = chunk.choices[0].delta
-                reasoning = getattr(delta, "reasoning_content", None)
-                if reasoning:
-                    yield {"type": "reasoning", "token": reasoning}
-                if delta.content is not None:
-                    yield {"type": "token", "token": delta.content}
-            return
-        except Exception as e:
-            logger.warning(f"NVIDIA NIM stream error: {e}. Falling back to general intelligence stream.")
+        candidate_models = [self.model] + [m for m in self.backup_models if m != self.model]
+
+        stream_succeeded = False
+        for mod in candidate_models:
+            try:
+                stream = await client.chat.completions.create(
+                    model=mod,
+                    messages=messages,
+                    temperature=temperature if temperature is not None else self.temperature,
+                    top_p=self.top_p,
+                    max_tokens=self.max_tokens,
+                    stream=True,
+                )
+                async for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    delta = chunk.choices[0].delta
+                    reasoning = getattr(delta, "reasoning", None) or getattr(delta, "reasoning_content", None)
+                    if reasoning:
+                        yield {"type": "reasoning", "token": reasoning}
+                    if delta.content is not None:
+                        yield {"type": "token", "token": delta.content}
+                stream_succeeded = True
+                break
+            except Exception as e:
+                logger.warning(f"NVIDIA NIM stream error on {mod}: {e}. Trying next candidate...")
+
+        if not stream_succeeded:
+            logger.warning("All NVIDIA NIM streams failed. Falling back to general intelligence stream.")
             async for tok in self.fallback.stream_response(prompt, system_prompt, temperature, context=context):
                 yield {"type": "token", "token": tok}
 
@@ -1153,7 +1174,7 @@ def get_llm_provider(
     """Returns the configured LLM provider according to environment settings or runtime overrides."""
     try:
         from dotenv import load_dotenv
-        load_dotenv()
+        load_dotenv(dotenv_path=_repo_env, override=True)
     except Exception:
         pass
 
@@ -1167,7 +1188,7 @@ def get_llm_provider(
     if selected == "nvidia" or (nvidia_key and (selected == "nvidia" or not selected)):
         return NvidiaLLMProvider(
             api_key=nvidia_key,
-            model=model or os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+            model=model or os.getenv("NVIDIA_MODEL", "meta/llama-3.2-11b-vision-instruct"),
         )
 
     if openai_key and (selected == "openai" or not selected):
@@ -1177,3 +1198,4 @@ def get_llm_provider(
         )
 
     return DeterministicSecurityProvider()
+    

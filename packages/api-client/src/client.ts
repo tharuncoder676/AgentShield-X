@@ -86,6 +86,14 @@ import {
   UpdateShieldwingConfigRequest,
   TestConnectionResponse,
   TestConnectionResponseSchema,
+  MCPServer,
+  MCPServerSchema,
+  CreateMCPServerRequest,
+  MCPPin,
+  MCPPinSchema,
+  CreateMCPPinRequest,
+  MCPAlert,
+  MCPAlertSchema,
 } from "./types";
 
 import { z } from "zod";
@@ -882,7 +890,86 @@ export class AgentShieldClient {
     );
   }
 
+  // ==========================================
+  // MCP Security Proxy & Rug-Pull Guard
+  // ==========================================
 
+  public async listMCPServers(projectId?: string): Promise<MCPServer[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<MCPServer[]>(
+      `/v1/mcp/servers${qs}`,
+      { method: "GET" },
+      z.array(MCPServerSchema)
+    );
+  }
+
+  public async createMCPServer(
+    data: CreateMCPServerRequest,
+    projectId?: string
+  ): Promise<MCPServer> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<MCPServer>(
+      `/v1/mcp/servers${qs}`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      MCPServerSchema
+    );
+  }
+
+  public async listMCPPins(
+    projectId?: string,
+    serverId?: string
+  ): Promise<MCPPin[]> {
+    const params = new URLSearchParams();
+    if (projectId) params.append("project_id", projectId);
+    if (serverId) params.append("server_id", serverId);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request<MCPPin[]>(
+      `/v1/mcp/pins${qs}`,
+      { method: "GET" },
+      z.array(MCPPinSchema)
+    );
+  }
+
+  public async saveMCPPin(
+    data: CreateMCPPinRequest,
+    projectId?: string
+  ): Promise<MCPPin> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<MCPPin>(
+      `/v1/mcp/pins${qs}`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      MCPPinSchema
+    );
+  }
+
+  public async deleteMCPPin(
+    toolName: string,
+    serverId: string,
+    projectId?: string
+  ): Promise<{ status: string; tool_name: string }> {
+    const params = new URLSearchParams();
+    params.append("server_id", serverId);
+    if (projectId) params.append("project_id", projectId);
+    return this.request<{ status: string; tool_name: string }>(
+      `/v1/mcp/pins/${encodeURIComponent(toolName)}?${params.toString()}`,
+      { method: "DELETE" }
+    );
+  }
+
+  public async listMCPAlerts(projectId?: string): Promise<MCPAlert[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<MCPAlert[]>(
+      `/v1/mcp/alerts${qs}`,
+      { method: "GET" },
+      z.array(MCPAlertSchema)
+    );
+  }
 
   // ==========================================
   // Gateway Tool Call Interception
@@ -906,5 +993,328 @@ export class AgentShieldClient {
       },
       DecisionSchema
     );
+  }
+
+  // ==========================================
+  // Agentic Infrastructure & Synchronized Scans
+  // ==========================================
+
+  public async listScans(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/scanner/scans${qs}`, { method: "GET" });
+  }
+
+  public async scanRepo(repoPath?: string, mode: string = "enforce", projectId?: string): Promise<any> {
+    return this.request<any>("/v1/scanner/scan", {
+      method: "POST",
+      body: JSON.stringify({ repo_path: repoPath, mode, project_id: projectId }),
+    });
+  }
+
+  public async getScan(scanId: string): Promise<any> {
+    return this.request<any>(`/v1/scanner/scans/${encodeURIComponent(scanId)}`, { method: "GET" });
+  }
+
+  public async simulateSwarm(swarmName?: string, steps?: any[], projectId?: string): Promise<any> {
+    return this.request<any>("/v1/swarm/simulate", {
+      method: "POST",
+      body: JSON.stringify({ swarm_name: swarmName, steps, project_id: projectId }),
+    });
+  }
+
+  public async listSwarmTraces(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/swarm/traces${qs}`, { method: "GET" });
+  }
+
+  public async runDebate(
+    toolName: string,
+    args: Record<string, any> = {},
+    taintSources: string[] = [],
+    contextPreview: string = "",
+    projectId?: string
+  ): Promise<any> {
+    return this.request<any>("/v1/judge/debate", {
+      method: "POST",
+      body: JSON.stringify({
+        tool_name: toolName,
+        arguments: args,
+        taint_sources: taintSources,
+        context_preview: contextPreview,
+        project_id: projectId,
+      }),
+    });
+  }
+
+  public async listDebates(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/judge/history${qs}`, { method: "GET" });
+  }
+
+  public async runRedteam(
+    targetName: string = "Research-Assistant-v1",
+    rounds: number = 5,
+    targetTools?: string[],
+    projectId?: string
+  ): Promise<any> {
+    return this.request<any>("/v1/redteam/run", {
+      method: "POST",
+      body: JSON.stringify({
+        target_name: targetName,
+        rounds,
+        target_tools: targetTools,
+        project_id: projectId,
+      }),
+    });
+  }
+
+  public async listRedteamRuns(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/redteam/runs${qs}`, { method: "GET" });
+  }
+
+  public async synthesizeAutoPolicy(scanId?: string, scanReport?: any, projectId?: string): Promise<any> {
+    return this.request<any>("/v1/autopolicy/synthesize/scan", {
+      method: "POST",
+      body: JSON.stringify({ scan_id: scanId, scan_report: scanReport, project_id: projectId }),
+    });
+  }
+
+  public async listPolicyProposals(projectId?: string, status?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (projectId) params.append("project_id", projectId);
+    if (status) params.append("status", status);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request<any[]>(`/v1/autopolicy/proposals${qs}`, { method: "GET" });
+  }
+
+  public async applyPolicyProposal(proposalId: string, projectId?: string): Promise<any> {
+    return this.request<any>("/v1/autopolicy/apply", {
+      method: "POST",
+      body: JSON.stringify({ proposal_id: proposalId, project_id: projectId }),
+    });
+  }
+
+  // ==========================================
+  // 1. Ephemeral A2A Attestation & Tokens
+  // ==========================================
+
+  public async issueA2AToken(data: {
+    issuer_agent: string;
+    target_agent: string;
+    delegation_intent: string;
+    allowed_tools: string[];
+    ttl_seconds?: number;
+    max_invocations?: number;
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/attestation/tokens", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async verifyA2AToken(data: {
+    token_id: string;
+    tool_name: string;
+    calling_agent: string;
+    params?: any;
+  }): Promise<any> {
+    return this.request<any>("/v1/attestation/verify", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async listA2ATokens(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/attestation/tokens${qs}`, { method: "GET" });
+  }
+
+  // ==========================================
+  // 2. Dynamic Domain Honeytools & Canaries
+  // ==========================================
+
+  public async generateHoneytokenDecoys(data: {
+    domain?: string;
+    existing_tools?: string[];
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/honeytokens/generate", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async inspectOutboundSink(data: {
+    sink_name: string;
+    payload_text: string;
+    agent_id?: string;
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/honeytokens/inspect", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async listHoneytokenCanaries(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/honeytokens/canaries${qs}`, { method: "GET" });
+  }
+
+  // ==========================================
+  // 3. Ephemeral Sandbox Tool Isolation
+  // ==========================================
+
+  public async executeInSandbox(data: {
+    tool_name: string;
+    command_or_code: string;
+    params?: any;
+  }): Promise<any> {
+    return this.request<any>("/v1/sandbox/execute", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ==========================================
+  // 4. Semantic Memory Poisoning & RAG Firewall
+  // ==========================================
+
+  public async inspectRAGChunks(data: {
+    chunks: string[];
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/rag/inspect", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async listRAGHistory(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/rag/history${qs}`, { method: "GET" });
+  }
+
+  public async listRAGDocuments(): Promise<any[]> {
+    return this.request<any[]>("/v1/rag/documents", { method: "GET" });
+  }
+
+  public async addRAGDocument(data: {
+    title: string;
+    content: string;
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/rag/documents", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async queryRAG(data: {
+    query: string;
+    protect_with_shield?: boolean;
+    top_k?: number;
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/rag/query", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async simulateRAGAttack(query?: string): Promise<any> {
+    const qs = query ? `?query=${encodeURIComponent(query)}` : "";
+    return this.request<any>(`/v1/rag/simulate-attack${qs}`, {
+      method: "POST",
+    });
+  }
+
+  public async normalizeRAGText(text: string): Promise<any> {
+    return this.request<any>("/v1/rag/normalize", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  public async maskRAGContext(text: string): Promise<any> {
+    return this.request<any>("/v1/rag/mask", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+  }
+
+  public async attestRAGCitation(data: {
+    claim_text: string;
+    chunk_id: string;
+    chunk_text: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/rag/attest-citation", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async simulateMultiHopRAG(data?: {
+    initial_query?: string;
+    secondary_query?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/rag/multihop", {
+      method: "POST",
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  // ==========================================
+  // 5. GitOps Hot-Reload & Automated PRs
+  // ==========================================
+
+  public async generateGitOpsPR(data: {
+    rule_name: string;
+    rego_code: string;
+    test_code: string;
+    target_tool: string;
+    mitigated_cve?: string;
+    author?: string;
+    project_id?: string;
+  }): Promise<any> {
+    return this.request<any>("/v1/gitops/proposals", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async applyGitOpsHotfix(proposalId: string): Promise<any> {
+    return this.request<any>(`/v1/gitops/proposals/${encodeURIComponent(proposalId)}/apply`, {
+      method: "POST",
+      body: JSON.stringify({ proposal_id: proposalId }),
+    });
+  }
+
+  public async listGitOpsProposals(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/gitops/proposals${qs}`, { method: "GET" });
+  }
+
+  // ==========================================
+  // 6. Live Immunity Score & Drift Monitor
+  // ==========================================
+
+  public async getImmunityScore(projectId?: string): Promise<any> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any>(`/v1/immunity/score${qs}`, { method: "GET" });
+  }
+
+  public async getImmunityDrift(projectId?: string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${encodeURIComponent(projectId)}` : "";
+    return this.request<any[]>(`/v1/immunity/drift${qs}`, { method: "GET" });
+  }
+
+  public async runChaosProbe(agentName?: string): Promise<any> {
+    return this.request<any>("/v1/immunity/chaos-probe", {
+      method: "POST",
+      body: JSON.stringify({ agent_name: agentName || "Customer-Support-Agent" }),
+    });
   }
 }

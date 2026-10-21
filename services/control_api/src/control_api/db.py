@@ -289,11 +289,203 @@ class Database:
                 created_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS mcp_servers (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                transport TEXT NOT NULL DEFAULT 'stdio',
+                command_or_url TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'active',
+                pinned_tools_count INTEGER NOT NULL DEFAULT 0,
+                last_inspected_at TEXT,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS mcp_tool_pins (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                server_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                canonical_hash TEXT NOT NULL,
+                description_hash TEXT NOT NULL,
+                schema_hash TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                input_schema_json TEXT NOT NULL DEFAULT '{}',
+                status TEXT NOT NULL DEFAULT 'pinned',
+                pinned_at TEXT NOT NULL,
+                UNIQUE (project_id, server_id, tool_name)
+            );
+
+            CREATE TABLE IF NOT EXISTS mcp_alerts (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                server_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                pinned_hash TEXT NOT NULL,
+                observed_hash TEXT NOT NULL,
+                diff_summary TEXT NOT NULL,
+                severity TEXT NOT NULL DEFAULT 'critical',
+                action_taken TEXT NOT NULL DEFAULT 'blocked',
+                created_at TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_policies_project ON policies (project_id);
             CREATE INDEX IF NOT EXISTS idx_approvals_project_status ON approvals (project_id, status);
             CREATE INDEX IF NOT EXISTS idx_honeytools_project ON honeytools (project_id);
             CREATE INDEX IF NOT EXISTS idx_audit_records_project ON audit_records (project_id, sequence);
             CREATE INDEX IF NOT EXISTS idx_invoices_project ON invoices (project_id);
+            CREATE INDEX IF NOT EXISTS idx_mcp_servers_project ON mcp_servers (project_id);
+            CREATE INDEX IF NOT EXISTS idx_mcp_pins_project ON mcp_tool_pins (project_id);
+            CREATE INDEX IF NOT EXISTS idx_mcp_alerts_project ON mcp_alerts (project_id);
+
+            CREATE TABLE IF NOT EXISTS scans (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                target_dir TEXT NOT NULL,
+                mode TEXT NOT NULL DEFAULT 'enforce',
+                findings_count INTEGER NOT NULL DEFAULT 0,
+                open_findings_count INTEGER NOT NULL DEFAULT 0,
+                high_findings_count INTEGER NOT NULL DEFAULT 0,
+                blast_radius_json TEXT NOT NULL DEFAULT '{}',
+                findings_json TEXT NOT NULL DEFAULT '[]',
+                report_json TEXT NOT NULL DEFAULT '{}',
+                source TEXT NOT NULL DEFAULT 'cli',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_scans_project ON scans (project_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS redteam_runs (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                target_name TEXT NOT NULL,
+                rounds_executed INTEGER NOT NULL DEFAULT 5,
+                total_probes INTEGER NOT NULL DEFAULT 0,
+                blocked_count INTEGER NOT NULL DEFAULT 0,
+                bypassed_count INTEGER NOT NULL DEFAULT 0,
+                catch_rate REAL NOT NULL DEFAULT 100.0,
+                ci_low REAL NOT NULL DEFAULT 0.0,
+                ci_high REAL NOT NULL DEFAULT 100.0,
+                probes_json TEXT NOT NULL DEFAULT '[]',
+                vulnerabilities_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_redteam_project ON redteam_runs (project_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS debate_logs (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                arguments_json TEXT NOT NULL DEFAULT '{}',
+                final_action TEXT NOT NULL,
+                consensus_score REAL NOT NULL DEFAULT 0.0,
+                confidence REAL NOT NULL DEFAULT 0.0,
+                turns_json TEXT NOT NULL DEFAULT '[]',
+                ruling_rationale TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_debates_project ON debate_logs (project_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS swarm_traces (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                swarm_name TEXT NOT NULL,
+                total_steps INTEGER NOT NULL DEFAULT 0,
+                violations_detected INTEGER NOT NULL DEFAULT 0,
+                safe INTEGER NOT NULL DEFAULT 1,
+                steps_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_swarm_traces_project ON swarm_traces (project_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS policy_proposals (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                rationale TEXT NOT NULL,
+                target_tools_json TEXT NOT NULL DEFAULT '[]',
+                rego_patch TEXT NOT NULL,
+                rego_tests TEXT NOT NULL,
+                risk_reduction_score REAL NOT NULL DEFAULT 0.0,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_policy_proposals_project ON policy_proposals (project_id, status);
+
+            CREATE TABLE IF NOT EXISTS a2a_tokens (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                issuer_agent TEXT NOT NULL,
+                target_agent TEXT NOT NULL,
+                delegation_intent TEXT NOT NULL,
+                allowed_tools_json TEXT NOT NULL DEFAULT '[]',
+                constraints_json TEXT NOT NULL DEFAULT '{}',
+                status TEXT NOT NULL DEFAULT 'active',
+                invocations_used INTEGER NOT NULL DEFAULT 0,
+                ttl_seconds INTEGER NOT NULL DEFAULT 30,
+                issued_at REAL NOT NULL,
+                expires_at REAL NOT NULL,
+                signature TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_a2a_tokens_project ON a2a_tokens (project_id, status);
+
+            CREATE TABLE IF NOT EXISTS honeytool_canaries (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                canary_token TEXT NOT NULL UNIQUE,
+                decoy_tool TEXT NOT NULL,
+                domain TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'armed',
+                trigger_count INTEGER NOT NULL DEFAULT 0,
+                last_triggered_at REAL,
+                last_sink TEXT,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_honeycanaries_project ON honeytool_canaries (project_id, status);
+
+            CREATE TABLE IF NOT EXISTS rag_inspections (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                original_text TEXT NOT NULL,
+                sanitized_text TEXT NOT NULL,
+                decision TEXT NOT NULL,
+                threat_score REAL NOT NULL DEFAULT 0.0,
+                violations_json TEXT NOT NULL DEFAULT '[]',
+                processing_time_ms REAL NOT NULL DEFAULT 0.0,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_rag_inspections_project ON rag_inspections (project_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS gitops_proposals (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                branch_name TEXT NOT NULL,
+                commit_message TEXT NOT NULL,
+                pr_title TEXT NOT NULL,
+                pr_body TEXT NOT NULL,
+                target_file_path TEXT NOT NULL,
+                policy_code TEXT NOT NULL,
+                test_code TEXT NOT NULL,
+                unified_diff TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'DRAFT',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_gitops_proposals_project ON gitops_proposals (project_id, status);
+
+            CREATE TABLE IF NOT EXISTS immunity_drift_points (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                immunity_score INTEGER NOT NULL,
+                grade TEXT NOT NULL,
+                fuzzing_resistance INTEGER NOT NULL,
+                blast_containment INTEGER NOT NULL,
+                honeytool_sensitivity INTEGER NOT NULL,
+                attestation_enforcement INTEGER NOT NULL,
+                trend TEXT NOT NULL DEFAULT 'STABLE',
+                time_label TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_immunity_drift_project ON immunity_drift_points (project_id, created_at);
             """)
 
             # Safe column migration for existing databases
@@ -1724,6 +1916,663 @@ class Database:
             )
         cur = conn.execute("SELECT * FROM invoices WHERE project_id = ? ORDER BY created_at DESC", (project_id,))
         return [dict(r) for r in cur.fetchall()]
+
+    # --- MCP Security Subsystem Operations ---
+    def list_mcp_servers(self, project_id: str = "default") -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM mcp_servers WHERE project_id = ? ORDER BY created_at DESC",
+            (project_id,),
+        )
+        rows = cur.fetchall()
+        if rows:
+            return [dict(r) for r in rows]
+
+        # Default initial registered MCP server
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        default_server = {
+            "id": "mcp_srv_default",
+            "project_id": project_id,
+            "name": "Local Tools Server",
+            "transport": "stdio",
+            "command_or_url": "python demo/tools/local_server.py",
+            "status": "active",
+            "pinned_tools_count": 0,
+            "last_inspected_at": now,
+            "created_at": now,
+        }
+        with conn:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO mcp_servers (id, project_id, name, transport, command_or_url, status, pinned_tools_count, last_inspected_at, created_at)
+                VALUES (:id, :project_id, :name, :transport, :command_or_url, :status, :pinned_tools_count, :last_inspected_at, :created_at)
+                """,
+                default_server,
+            )
+        cur = conn.execute("SELECT * FROM mcp_servers WHERE project_id = ? ORDER BY created_at DESC", (project_id,))
+        return [dict(r) for r in cur.fetchall()]
+
+    def create_or_update_mcp_server(
+        self,
+        server_id: str,
+        project_id: str,
+        name: str,
+        transport: str,
+        command_or_url: str,
+        status: str = "active",
+        pinned_tools_count: int = 0,
+    ) -> Dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO mcp_servers (id, project_id, name, transport, command_or_url, status, pinned_tools_count, last_inspected_at, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    transport = excluded.transport,
+                    command_or_url = excluded.command_or_url,
+                    status = excluded.status,
+                    pinned_tools_count = excluded.pinned_tools_count,
+                    last_inspected_at = excluded.last_inspected_at
+                """,
+                (server_id, project_id, name, transport, command_or_url, status, pinned_tools_count, now, now),
+            )
+        cur = conn.execute("SELECT * FROM mcp_servers WHERE id = ?", (server_id,))
+        return dict(cur.fetchone())
+
+    def list_mcp_pins(
+        self, project_id: str = "default", server_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        if server_id:
+            cur = conn.execute(
+                "SELECT * FROM mcp_tool_pins WHERE project_id = ? AND server_id = ? ORDER BY tool_name ASC",
+                (project_id, server_id),
+            )
+        else:
+            cur = conn.execute(
+                "SELECT * FROM mcp_tool_pins WHERE project_id = ? ORDER BY tool_name ASC",
+                (project_id,),
+            )
+        return [dict(r) for r in cur.fetchall()]
+
+    def save_mcp_pin(
+        self,
+        project_id: str,
+        server_id: str,
+        tool_name: str,
+        canonical_hash: str,
+        description_hash: str,
+        schema_hash: str,
+        description: str = "",
+        input_schema_json: str = "{}",
+        status: str = "pinned",
+    ) -> Dict[str, Any]:
+        conn = self.get_connection()
+        pin_id = f"pin_{uuid.uuid4().hex[:10]}"
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO mcp_tool_pins (id, project_id, server_id, tool_name, canonical_hash, description_hash, schema_hash, description, input_schema_json, status, pinned_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(project_id, server_id, tool_name) DO UPDATE SET
+                    canonical_hash = excluded.canonical_hash,
+                    description_hash = excluded.description_hash,
+                    schema_hash = excluded.schema_hash,
+                    description = excluded.description,
+                    input_schema_json = excluded.input_schema_json,
+                    status = excluded.status,
+                    pinned_at = excluded.pinned_at
+                """,
+                (pin_id, project_id, server_id, tool_name, canonical_hash, description_hash, schema_hash, description, input_schema_json, status, now),
+            )
+            # Update pinned count on server
+            conn.execute(
+                """
+                UPDATE mcp_servers
+                SET pinned_tools_count = (SELECT COUNT(*) FROM mcp_tool_pins WHERE server_id = ? AND project_id = ?)
+                WHERE id = ? AND project_id = ?
+                """,
+                (server_id, project_id, server_id, project_id),
+            )
+        cur = conn.execute(
+            "SELECT * FROM mcp_tool_pins WHERE project_id = ? AND server_id = ? AND tool_name = ?",
+            (project_id, server_id, tool_name),
+        )
+        return dict(cur.fetchone())
+
+    def delete_mcp_pin(self, project_id: str, server_id: str, tool_name: str) -> bool:
+        conn = self.get_connection()
+        with conn:
+            cur = conn.execute(
+                "DELETE FROM mcp_tool_pins WHERE project_id = ? AND server_id = ? AND tool_name = ?",
+                (project_id, server_id, tool_name),
+            )
+            deleted = cur.rowcount > 0
+            if deleted:
+                conn.execute(
+                    """
+                    UPDATE mcp_servers
+                    SET pinned_tools_count = (SELECT COUNT(*) FROM mcp_tool_pins WHERE server_id = ? AND project_id = ?)
+                    WHERE id = ? AND project_id = ?
+                    """,
+                    (server_id, project_id, server_id, project_id),
+                )
+            return deleted
+
+    def record_mcp_alert(
+        self,
+        project_id: str,
+        server_id: str,
+        tool_name: str,
+        pinned_hash: str,
+        observed_hash: str,
+        diff_summary: str,
+        severity: str = "critical",
+        action_taken: str = "blocked",
+    ) -> Dict[str, Any]:
+        conn = self.get_connection()
+        alert_id = f"mcp_alert_{uuid.uuid4().hex[:10]}"
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO mcp_alerts (id, project_id, server_id, tool_name, pinned_hash, observed_hash, diff_summary, severity, action_taken, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (alert_id, project_id, server_id, tool_name, pinned_hash, observed_hash, diff_summary, severity, action_taken, now),
+            )
+        cur = conn.execute("SELECT * FROM mcp_alerts WHERE id = ?", (alert_id,))
+        return dict(cur.fetchone())
+
+    def list_mcp_alerts(self, project_id: str = "default") -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM mcp_alerts WHERE project_id = ? ORDER BY created_at DESC",
+            (project_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+    # --- Scan Telemetry Operations ---
+    def record_scan(
+        self,
+        project_id: str,
+        target_dir: str,
+        report: Dict[str, Any],
+        mode: str = "enforce",
+        source: str = "cli",
+    ) -> Dict[str, Any]:
+        conn = self.get_connection()
+        scan_id = f"scan_{uuid.uuid4().hex[:10]}"
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        findings = report.get("findings", [])
+        blast_radius = report.get("blast_radius", {})
+        open_findings = [f for f in findings if f.get("status") == "open"]
+        high_findings = [f for f in open_findings if f.get("severity") in ("high", "critical")]
+
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO scans (id, project_id, target_dir, mode, findings_count, open_findings_count, high_findings_count, blast_radius_json, findings_json, report_json, source, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    scan_id,
+                    project_id,
+                    str(target_dir),
+                    mode,
+                    len(findings),
+                    len(open_findings),
+                    len(high_findings),
+                    json.dumps(blast_radius),
+                    json.dumps(findings),
+                    json.dumps(report),
+                    source,
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM scans WHERE id = ?", (scan_id,))
+        return dict(cur.fetchone())
+
+    def list_scans(self, project_id: str = "default", limit: int = 50) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM scans WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["blast_radius"] = json.loads(d.get("blast_radius_json", "{}"))
+            d["findings"] = json.loads(d.get("findings_json", "[]"))
+            rows.append(d)
+        return rows
+
+    def get_scan(self, scan_id: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute("SELECT * FROM scans WHERE id = ?", (scan_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        d["blast_radius"] = json.loads(d.get("blast_radius_json", "{}"))
+        d["findings"] = json.loads(d.get("findings_json", "[]"))
+        d["report"] = json.loads(d.get("report_json", "{}"))
+        return d
+
+    # --- Red-Team Campaign Operations ---
+    def record_redteam_run(self, project_id: str, campaign_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        run_id = campaign_data.get("campaign_id") or f"redteam_{uuid.uuid4().hex[:10]}"
+        now = campaign_data.get("timestamp") or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO redteam_runs (id, project_id, target_name, rounds_executed, total_probes, blocked_count, bypassed_count, catch_rate, ci_low, ci_high, probes_json, vulnerabilities_json, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    project_id,
+                    campaign_data.get("target_name", "Target-Agent"),
+                    campaign_data.get("rounds_executed", 5),
+                    campaign_data.get("total_probes", 0),
+                    campaign_data.get("blocked_count", 0),
+                    campaign_data.get("bypassed_count", 0),
+                    campaign_data.get("catch_rate", 100.0),
+                    campaign_data.get("confidence_interval_low", 0.0),
+                    campaign_data.get("confidence_interval_high", 100.0),
+                    json.dumps(campaign_data.get("probes", [])),
+                    json.dumps(campaign_data.get("vulnerabilities_found", [])),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM redteam_runs WHERE id = ?", (run_id,))
+        return dict(cur.fetchone())
+
+    def list_redteam_runs(self, project_id: str = "default", limit: int = 50) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM redteam_runs WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["probes"] = json.loads(d.get("probes_json", "[]"))
+            d["vulnerabilities_found"] = json.loads(d.get("vulnerabilities_json", "[]"))
+            rows.append(d)
+        return rows
+
+    # --- Multi-Agent Debate Operations ---
+    def record_debate(self, project_id: str, debate_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        debate_id = debate_data.get("debate_id") or f"debate_{uuid.uuid4().hex[:10]}"
+        now = debate_data.get("timestamp") or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO debate_logs (id, project_id, tool_name, arguments_json, final_action, consensus_score, confidence, turns_json, ruling_rationale, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    debate_id,
+                    project_id,
+                    debate_data.get("tool_name", "tool"),
+                    json.dumps(debate_data.get("arguments", {})),
+                    debate_data.get("final_action", "allow"),
+                    debate_data.get("consensus_score", 0.0),
+                    debate_data.get("confidence", 0.9),
+                    json.dumps(debate_data.get("turns", [])),
+                    debate_data.get("ruling_rationale", ""),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM debate_logs WHERE id = ?", (debate_id,))
+        return dict(cur.fetchone())
+
+    def list_debates(self, project_id: str = "default", limit: int = 50) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM debate_logs WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["arguments"] = json.loads(d.get("arguments_json", "{}"))
+            d["turns"] = json.loads(d.get("turns_json", "[]"))
+            rows.append(d)
+        return rows
+
+    # --- Swarm Traces Operations ---
+    def record_swarm_trace(self, project_id: str, trace_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        trace_id = trace_data.get("trace_id") or f"swarm_{uuid.uuid4().hex[:10]}"
+        now = trace_data.get("timestamp") or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO swarm_traces (id, project_id, swarm_name, total_steps, violations_detected, safe, steps_json, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    trace_id,
+                    project_id,
+                    trace_data.get("swarm_name", "Multi-Agent Swarm"),
+                    trace_data.get("total_steps", 0),
+                    trace_data.get("violations_detected", 0),
+                    1 if trace_data.get("safe", True) else 0,
+                    json.dumps(trace_data.get("steps", [])),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM swarm_traces WHERE id = ?", (trace_id,))
+        return dict(cur.fetchone())
+
+    def list_swarm_traces(self, project_id: str = "default", limit: int = 50) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM swarm_traces WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["steps"] = json.loads(d.get("steps_json", "[]"))
+            rows.append(d)
+        return rows
+
+    # --- AutoPolicy Proposals Operations ---
+    def record_policy_proposal(self, project_id: str, proposal_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        proposal_id = proposal_data.get("proposal_id") or f"prop_{uuid.uuid4().hex[:10]}"
+        now = proposal_data.get("created_at") or datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO policy_proposals (id, project_id, title, rationale, target_tools_json, rego_patch, rego_tests, risk_reduction_score, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    proposal_id,
+                    project_id,
+                    proposal_data.get("title", "AutoPolicy Proposal"),
+                    proposal_data.get("rationale", ""),
+                    json.dumps(proposal_data.get("target_tools", [])),
+                    proposal_data.get("rego_patch", ""),
+                    proposal_data.get("rego_tests", ""),
+                    proposal_data.get("risk_reduction_score", 0.85),
+                    proposal_data.get("status", "pending"),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM policy_proposals WHERE id = ?", (proposal_id,))
+        return dict(cur.fetchone())
+
+    def list_policy_proposals(self, project_id: str = "default", status: Optional[str] = None) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        if status:
+            cur = conn.execute(
+                "SELECT * FROM policy_proposals WHERE project_id = ? AND status = ? ORDER BY created_at DESC",
+                (project_id, status),
+            )
+        else:
+            cur = conn.execute(
+                "SELECT * FROM policy_proposals WHERE project_id = ? ORDER BY created_at DESC",
+                (project_id,),
+            )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["target_tools"] = json.loads(d.get("target_tools_json", "[]"))
+            rows.append(d)
+        return rows
+
+    def apply_policy_proposal(self, proposal_id: str, project_id: str = "default") -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        with conn:
+            conn.execute(
+                "UPDATE policy_proposals SET status = 'applied' WHERE id = ? AND project_id = ?",
+                (proposal_id, project_id),
+            )
+        cur = conn.execute("SELECT * FROM policy_proposals WHERE id = ?", (proposal_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+    # --- A2A Capability Tokens Operations ---
+    def record_a2a_token(self, project_id: str, token_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        token_id = token_data.get("jti", f"AS-A2A-{uuid.uuid4().hex[:10]}")
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO a2a_tokens (id, project_id, issuer_agent, target_agent, delegation_intent, allowed_tools_json, constraints_json, status, invocations_used, ttl_seconds, issued_at, expires_at, signature, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    token_id,
+                    project_id,
+                    token_data.get("issuer_agent", "Agent-A"),
+                    token_data.get("target_agent", "Agent-B"),
+                    token_data.get("delegation_intent", "Delegate Task"),
+                    json.dumps(token_data.get("allowed_tools", [])),
+                    json.dumps(token_data.get("constraints", {})),
+                    token_data.get("status", "active"),
+                    token_data.get("invocations_used", 0),
+                    token_data.get("ttl_seconds", 30),
+                    token_data.get("issued_at", time.time()),
+                    token_data.get("expires_at", time.time() + 30),
+                    token_data.get("signature", ""),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM a2a_tokens WHERE id = ?", (token_id,))
+        row = dict(cur.fetchone())
+        row["allowed_tools"] = json.loads(row.get("allowed_tools_json", "[]"))
+        row["constraints"] = json.loads(row.get("constraints_json", "{}"))
+        return row
+
+    def list_a2a_tokens(self, project_id: str = "default", limit: int = 50) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM a2a_tokens WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["allowed_tools"] = json.loads(d.get("allowed_tools_json", "[]"))
+            d["constraints"] = json.loads(d.get("constraints_json", "{}"))
+            rows.append(d)
+        return rows
+
+    def update_a2a_token_status(self, token_id: str, status: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        with conn:
+            conn.execute("UPDATE a2a_tokens SET status = ? WHERE id = ?", (status, token_id))
+        cur = conn.execute("SELECT * FROM a2a_tokens WHERE id = ?", (token_id,))
+        r = cur.fetchone()
+        return dict(r) if r else None
+
+    # --- Honeytool Canaries Operations ---
+    def record_honeytoken_canary(self, project_id: str, canary_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        cid = canary_data.get("canary_id", f"CANARY-{uuid.uuid4().hex[:8].upper()}")
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO honeytool_canaries (id, project_id, canary_token, decoy_tool, domain, status, trigger_count, last_triggered_at, last_sink, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    cid,
+                    project_id,
+                    canary_data.get("canary_token", f"AS-CANARY-{uuid.uuid4().hex[:8]}"),
+                    canary_data.get("decoy_tool", "dump_admin_db"),
+                    canary_data.get("domain", "general"),
+                    canary_data.get("status", "armed"),
+                    canary_data.get("trigger_count", 0),
+                    canary_data.get("last_triggered_at"),
+                    canary_data.get("last_sink"),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM honeytool_canaries WHERE id = ?", (cid,))
+        return dict(cur.fetchone())
+
+    def list_honeytoken_canaries(self, project_id: str = "default") -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM honeytool_canaries WHERE project_id = ? ORDER BY created_at DESC",
+            (project_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+    def trigger_honeytoken_canary(self, canary_token: str, sink_name: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        now_ts = time.time()
+        with conn:
+            conn.execute(
+                """
+                UPDATE honeytool_canaries
+                SET status = 'triggered', trigger_count = trigger_count + 1, last_triggered_at = ?, last_sink = ?
+                WHERE canary_token = ?
+                """,
+                (now_ts, sink_name, canary_token),
+            )
+        cur = conn.execute("SELECT * FROM honeytool_canaries WHERE canary_token = ?", (canary_token,))
+        r = cur.fetchone()
+        return dict(r) if r else None
+
+    # --- RAG Inspection Operations ---
+    def record_rag_inspection(self, project_id: str, inspection: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        ins_id = inspection.get("chunk_id", f"CHUNK-{uuid.uuid4().hex[:8].upper()}")
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO rag_inspections (id, project_id, original_text, sanitized_text, decision, threat_score, violations_json, processing_time_ms, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    ins_id,
+                    project_id,
+                    inspection.get("original_text", ""),
+                    inspection.get("sanitized_text", ""),
+                    inspection.get("decision", "PASS"),
+                    inspection.get("threat_score", 0.0),
+                    json.dumps(inspection.get("violations_detected", [])),
+                    inspection.get("processing_time_ms", 1.0),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM rag_inspections WHERE id = ?", (ins_id,))
+        r = dict(cur.fetchone())
+        r["violations_detected"] = json.loads(r.get("violations_json", "[]"))
+        return r
+
+    def list_rag_inspections(self, project_id: str = "default", limit: int = 50) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM rag_inspections WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        rows = []
+        for r in cur.fetchall():
+            d = dict(r)
+            d["violations_detected"] = json.loads(d.get("violations_json", "[]"))
+            rows.append(d)
+        return rows
+
+    # --- GitOps Proposals Operations ---
+    def record_gitops_proposal(self, project_id: str, pr_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        pid = pr_data.get("proposal_id", f"PR-{uuid.uuid4().hex[:6].upper()}")
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO gitops_proposals (id, project_id, branch_name, commit_message, pr_title, pr_body, target_file_path, policy_code, test_code, unified_diff, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    pid,
+                    project_id,
+                    pr_data.get("branch_name", "agentshield/hotfix"),
+                    pr_data.get("commit_message", "security hotfix"),
+                    pr_data.get("pr_title", "AutoPolicy Hotfix"),
+                    pr_data.get("pr_body", ""),
+                    pr_data.get("target_file_path", "policies/rego/rule.rego"),
+                    pr_data.get("policy_code", ""),
+                    pr_data.get("test_code", ""),
+                    pr_data.get("unified_diff", ""),
+                    pr_data.get("status", "DRAFT"),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM gitops_proposals WHERE id = ?", (pid,))
+        return dict(cur.fetchone())
+
+    def list_gitops_proposals(self, project_id: str = "default") -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM gitops_proposals WHERE project_id = ? ORDER BY created_at DESC",
+            (project_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+    def update_gitops_proposal_status(self, proposal_id: str, status: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        with conn:
+            conn.execute("UPDATE gitops_proposals SET status = ? WHERE id = ?", (status, proposal_id))
+        cur = conn.execute("SELECT * FROM gitops_proposals WHERE id = ?", (proposal_id,))
+        r = cur.fetchone()
+        return dict(r) if r else None
+
+    # --- Immunity Drift Operations ---
+    def record_immunity_drift_point(self, project_id: str, point_data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self.get_connection()
+        pid = point_data.get("point_id", f"DRIFT-{uuid.uuid4().hex[:6].upper()}")
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO immunity_drift_points (id, project_id, immunity_score, grade, fuzzing_resistance, blast_containment, honeytool_sensitivity, attestation_enforcement, trend, time_label, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    pid,
+                    project_id,
+                    point_data.get("immunity_score", 95),
+                    point_data.get("grade", "S"),
+                    point_data.get("fuzzing_resistance", 95),
+                    point_data.get("blast_containment", 98),
+                    point_data.get("honeytool_sensitivity", 94),
+                    point_data.get("attestation_enforcement", 96),
+                    point_data.get("trend", "STABLE"),
+                    point_data.get("time_label", datetime.datetime.now().strftime("%b %d %H:%M")),
+                    now,
+                ),
+            )
+        cur = conn.execute("SELECT * FROM immunity_drift_points WHERE id = ?", (pid,))
+        return dict(cur.fetchone())
+
+    def list_immunity_drift_points(self, project_id: str = "default", limit: int = 30) -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.execute(
+            "SELECT * FROM immunity_drift_points WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+            (project_id, limit),
+        )
+        return [dict(r) for r in reversed(cur.fetchall())]
+
+
 
 
 

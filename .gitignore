@@ -64,3 +64,5 @@ desktop.ini
 scratch/
 results/*.png
 results/*.svg
+*.db-wal
+*.db-shm

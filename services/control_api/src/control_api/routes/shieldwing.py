@@ -34,6 +34,8 @@ shieldwing_service = ShieldwingService()
 
 def _save_env_var(key: str, value: str) -> None:
     """Helper to persist or update key-value in .env file in REPO_ROOT."""
+    if "dummy" in value.lower() or "test-dummy" in value.lower() or "super-vl" in value.lower():
+        return
     env_file = REPO_ROOT / ".env"
     lines = []
     found = False
@@ -130,7 +132,7 @@ async def test_shieldwing_connection(
     if not api_key:
         raise HTTPException(status_code=400, detail="NVIDIA API Key is missing. Please provide a key.")
 
-    model = req.model or os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")
+    model = req.model or os.getenv("NVIDIA_MODEL", "meta/llama-3.2-11b-vision-instruct")
 
     try:
         from openai import AsyncOpenAI

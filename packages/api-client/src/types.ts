@@ -770,5 +770,70 @@ export const TestConnectionResponseSchema = z.object({
 });
 export type TestConnectionResponse = z.infer<typeof TestConnectionResponseSchema>;
 
+// ============================================================================
+// MCP Security Proxy & Rug-Pull Guard Contracts
+// ============================================================================
+
+export const MCPServerSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  name: z.string(),
+  transport: z.string(),
+  command_or_url: z.string(),
+  status: z.string(),
+  pinned_tools_count: z.number().default(0),
+  last_inspected_at: z.string().nullable().optional(),
+  created_at: z.string(),
+});
+export type MCPServer = z.infer<typeof MCPServerSchema>;
+
+export const CreateMCPServerRequestSchema = z.object({
+  name: z.string(),
+  transport: z.string().default("stdio"),
+  command_or_url: z.string(),
+});
+export type CreateMCPServerRequest = z.infer<typeof CreateMCPServerRequestSchema>;
+
+export const MCPPinSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  server_id: z.string(),
+  tool_name: z.string(),
+  canonical_hash: z.string(),
+  description_hash: z.string(),
+  schema_hash: z.string(),
+  description: z.string().nullable().optional().default(""),
+  input_schema_json: z.string().default("{}"),
+  status: z.string().default("pinned"),
+  pinned_at: z.string(),
+});
+export type MCPPin = z.infer<typeof MCPPinSchema>;
+
+export const CreateMCPPinRequestSchema = z.object({
+  server_id: z.string(),
+  tool_name: z.string(),
+  canonical_hash: z.string(),
+  description_hash: z.string(),
+  schema_hash: z.string(),
+  description: z.string().optional(),
+  input_schema: z.record(z.any()).optional(),
+});
+export type CreateMCPPinRequest = z.infer<typeof CreateMCPPinRequestSchema>;
+
+export const MCPAlertSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  server_id: z.string(),
+  tool_name: z.string(),
+  pinned_hash: z.string(),
+  observed_hash: z.string(),
+  diff_summary: z.string(),
+  severity: z.string().default("critical"),
+  action_taken: z.string().default("blocked"),
+  created_at: z.string(),
+});
+export type MCPAlert = z.infer<typeof MCPAlertSchema>;
+
+
 
 

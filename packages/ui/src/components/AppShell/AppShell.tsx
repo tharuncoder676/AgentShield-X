@@ -16,6 +16,15 @@ import {
   X,
   MapPin,
   CheckSquare,
+  Lock,
+  Terminal,
+  Crosshair,
+  Scale,
+  Network,
+  Sparkles,
+  KeyRound,
+  Database,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
@@ -60,7 +69,16 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   const navItems: NavItem[] = [
     { id: "overview", label: "Overview", icon: <Activity size={16} /> },
+    { id: "terminal", label: "Web Terminal", icon: <Terminal size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-ok/20 text-ok font-mono font-bold">CLI</span> },
     { id: "live", label: "Live Feed", icon: <Radio size={16} />, badge: <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" /> },
+    { id: "scans", label: "Repo Scans", icon: <Search size={16} /> },
+    { id: "swarm", label: "Swarm Defense", icon: <Network size={16} /> },
+    { id: "debate", label: "Debate Judge", icon: <Scale size={16} /> },
+    { id: "redteam", label: "Red-Team Swarm", icon: <Crosshair size={16} /> },
+    { id: "autopolicy", label: "AutoPolicy", icon: <Sparkles size={16} /> },
+    { id: "attestation", label: "A2A Attestation", icon: <KeyRound size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-cyan-400/20 text-cyan-400 font-mono font-bold">ZTA</span> },
+    { id: "immunity", label: "Immunity & Drift", icon: <TrendingUp size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-emerald-400/20 text-emerald-400 font-mono font-bold">92%</span> },
+    { id: "rag-firewall", label: "RAG Firewall", icon: <Database size={16} /> },
     { id: "incidents", label: "Incidents", icon: <AlertTriangle size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-bad/20 text-bad font-mono">3</span> },
     { id: "sessions", label: "Sessions & Replay", icon: <History size={16} /> },
     { id: "agents", label: "Agents", icon: <Users size={16} /> },
@@ -68,6 +86,7 @@ export const AppShell: React.FC<AppShellProps> = ({
     { id: "approvals", label: "Approvals", icon: <CheckSquare size={16} /> },
     { id: "models", label: "Detectors & Models", icon: <Cpu size={16} /> },
     { id: "honeytools", label: "Honeytools", icon: <Eye size={16} /> },
+    { id: "mcp", label: "MCP Proxy & Pins", icon: <Lock size={16} /> },
     { id: "audit", label: "Audit Log", icon: <CheckCircle size={16} /> },
     { id: "architecture", label: "Architecture", icon: <MapPin size={16} /> },
     { id: "settings", label: "Settings", icon: <Settings size={16} /> },
@@ -100,15 +119,23 @@ export const AppShell: React.FC<AppShellProps> = ({
           </button>
 
           {/* Logo / Brand */}
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-panel border border-ok/50 flex items-center justify-center text-ok">
-              <Shield size={16} />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded border border-cyan-400/60 bg-black flex items-center justify-center overflow-hidden shadow-[0_0_10px_rgba(0,240,255,0.35)] relative">
+              <img
+                src="/cli-theme.jpeg"
+                alt="AgentShield-X Logo"
+                className="w-full h-full object-cover scale-150"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+              <Shield size={16} className="text-cyan-400 absolute inset-0 m-auto -z-10" />
             </div>
             <div className="flex flex-col">
-              <span className="font-chakra font-bold text-sm tracking-wider uppercase text-fg leading-none">
-                AgentShield<span className="text-ok">-X</span>
+              <span className="font-chakra font-bold text-sm tracking-wider uppercase text-fg leading-none flex items-center gap-1">
+                <span>Agent</span><span className="text-cyan-400">Shield</span><span className="text-purple-400">-X</span>
               </span>
-              <span className="text-[10px] text-mut font-chakra leading-tight">
+              <span className="text-[10px] text-mut font-chakra leading-tight mt-0.5">
                 {orgName} / {projectName}
               </span>
             </div>

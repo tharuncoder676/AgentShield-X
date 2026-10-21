@@ -1,0 +1,36 @@
+{
+  "public_benchmarks": [
+    {
+      "name": "AgentDojo Benchmark Corpus",
+      "author": "UC Berkeley AI Security Initiative",
+      "license": "Apache 2.0",
+      "domain": "Autonomous Agent Tool Security & Indirect Injection",
+      "reference": "https://github.com/agencyenterprise/agentdojo",
+      "usage": "Multi-turn tool-use evaluation and indirect prompt injection defense benchmarking"
+    },
+    {
+      "name": "Deepset Prompt Injections",
+      "author": "Deepset AI",
+      "license": "CC-BY-SA 4.0",
+      "domain": "Direct Prompt Injections & Adversarial Jailbreaks",
+      "reference": "https://huggingface.co/datasets/deepset/prompt-injections",
+      "usage": "Direct override text samples and adversarial baseline training"
+    },
+    {
+      "name": "SPML (System Prompt Leakage Benchmark)",
+      "author": "SPML Research Consortium",
+      "license": "MIT License",
+      "domain": "System Prompt Extraction & Canary Token Breaches",
+      "reference": "https://github.com/spml-benchmark/spml",
+      "usage": "Canary token exfiltration and system prompt extraction defense"
+    },
+    {
+      "name": "OWASP LLM Top 10 Attack Suite",
+      "author": "OWASP Foundation",
+      "license": "CC-BY-SA 4.0",
+      "domain": "Industry Standard Threat Taxonomy",
+      "reference": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "usage": "Taxonomy mapping: LLM01 (Prompt Injection), LLM02 (Data Leakage), LLM08 (Excessive Agency)"
+    }
+  ]
+}

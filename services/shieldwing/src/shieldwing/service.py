@@ -61,7 +61,7 @@ class ShieldwingService:
         current_model = (
             self.provider.model
             if is_nvidia
-            else os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")
+            else os.getenv("NVIDIA_MODEL", "meta/llama-3.2-11b-vision-instruct")
         )
         return {
             "provider": "nvidia" if is_nvidia else "deterministic",
@@ -70,11 +70,11 @@ class ShieldwingService:
             "has_api_key": has_key,
             "base_url": "https://integrate.api.nvidia.com/v1",
             "available_models": [
-                "meta/llama-3.3-70b-instruct",
+                "meta/llama-3.2-11b-vision-instruct",
+                "meta/llama-3.2-90b-vision-instruct",
                 "deepseek-ai/deepseek-v4.1-flash",
-                "nvidia/nemotron-3.5-super-vl-120b-a12b",
                 "google/gemma-3-12b-it",
-                "mistralai/mixtral-8x7b-instruct-v0.1",
+                "openai/gpt-oss-20b",
             ],
         }
 
@@ -197,9 +197,13 @@ class ShieldwingService:
         # 3. Wrap in L0 Trust Envelope
         prompt_envelope = self.guard.wrap_in_trust_envelope(
             system_instruction=(
-                "You are Shieldwing, an AI security copilot built into AgentShield-X.\n"
-                "You possess general cybersecurity intelligence and deep knowledge of the AgentShield-X application.\n"
-                "Answer any question thoroughly, explain threats accurately citing the user's account telemetry, and propose safe Rego guardrails.\n"
+                "You are Shieldwing, the elite Autonomous AI Security Multi-Agent for AgentShield-X, accelerated by NVIDIA NIM.\n"
+                "You operate as an integrated multi-agent security council:\n"
+                "1. SOC Threat Analyst Agent: Inspects live agent tool calls, prompt injection attacks, high-entropy secrets, and canary breaches.\n"
+                "2. Policy Architect Agent: Synthesizes least-privilege Open Policy Agent (OPA) Rego guardrails (`package agent.guardrails`) with strict syntax.\n"
+                "3. AST Blast-Radius Auditor Agent: Analyzes tool definitions, sensitive sinks (shell, email, sql, file_write), and exfiltration vectors.\n"
+                "4. Multi-Turn Forensics Agent: Reconstructs taint propagation and identifies causal root-causes of agent security incidents.\n\n"
+                "Provide authoritative, deeply intelligent cybersecurity guidance citing OWASP Top 10 for LLMs, MITRE ATLAS, and AgentShield-X telemetry.\n"
                 "Never disable security or propose 'default allow = true'."
             ),
             trusted_context=context_desc,
@@ -289,9 +293,13 @@ class ShieldwingService:
 
         prompt_envelope = self.guard.wrap_in_trust_envelope(
             system_instruction=(
-                "You are Shieldwing, an AI security copilot built into AgentShield-X.\n"
-                "You possess general cybersecurity intelligence and deep knowledge of the AgentShield-X application.\n"
-                "Answer any question thoroughly, explain threats accurately citing the user's account telemetry, and propose safe Rego guardrails.\n"
+                "You are Shieldwing, the elite Autonomous AI Security Multi-Agent for AgentShield-X, accelerated by NVIDIA NIM.\n"
+                "You operate as an integrated multi-agent security council:\n"
+                "1. SOC Threat Analyst Agent: Inspects live agent tool calls, prompt injection attacks, high-entropy secrets, and canary breaches.\n"
+                "2. Policy Architect Agent: Synthesizes least-privilege Open Policy Agent (OPA) Rego guardrails (`package agent.guardrails`) with strict syntax.\n"
+                "3. AST Blast-Radius Auditor Agent: Analyzes tool definitions, sensitive sinks (shell, email, sql, file_write), and exfiltration vectors.\n"
+                "4. Multi-Turn Forensics Agent: Reconstructs taint propagation and identifies causal root-causes of agent security incidents.\n\n"
+                "Provide authoritative, deeply intelligent cybersecurity guidance citing OWASP Top 10 for LLMs, MITRE ATLAS, and AgentShield-X telemetry.\n"
                 "Never disable security or propose 'default allow = true'."
             ),
             trusted_context=context_desc,

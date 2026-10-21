@@ -19,8 +19,18 @@ import { Policies } from "./pages/Policies";
 import { Approvals } from "./pages/Approvals";
 import { Models } from "./pages/Models";
 import { Honeytools } from "./pages/Honeytools";
+import { McpProxy } from "./pages/McpProxy";
 import { Audit } from "./pages/Audit";
 import { Architecture } from "./pages/Architecture";
+import { Terminal } from "./pages/Terminal";
+import { Scans } from "./pages/Scans";
+import { Swarm } from "./pages/Swarm";
+import { Debate } from "./pages/Debate";
+import { RedTeam } from "./pages/RedTeam";
+import { AutoPolicy } from "./pages/AutoPolicy";
+import { Attestation } from "./pages/Attestation";
+import { Immunity } from "./pages/Immunity";
+import { RAGFirewall } from "./pages/RAGFirewall";
 import { Panel } from "@agentshield/ui";
 
 // Protected Route Guard
@@ -100,7 +110,16 @@ export const App: React.FC = () => {
             >
               <Route index element={<Navigate to="/overview" replace />} />
               <Route path="overview" element={<Overview />} />
+              <Route path="terminal" element={<Terminal />} />
               <Route path="live" element={<LiveFeed />} />
+              <Route path="scans" element={<Scans />} />
+              <Route path="swarm" element={<Swarm />} />
+              <Route path="debate" element={<Debate />} />
+              <Route path="redteam" element={<RedTeam />} />
+              <Route path="autopolicy" element={<AutoPolicy />} />
+              <Route path="attestation" element={<Attestation />} />
+              <Route path="immunity" element={<Immunity />} />
+              <Route path="rag-firewall" element={<RAGFirewall />} />
               <Route path="settings/keys" element={<ApiKeys />} />
 
               {/* Incidents & Taint Trace Subsystem */}
@@ -126,6 +145,9 @@ export const App: React.FC = () => {
 
               {/* Honeytools & Decoy Traps Subsystem */}
               <Route path="honeytools" element={<Honeytools />} />
+
+              {/* MCP Security Proxy & Tool Rug-Pull Subsystem */}
+              <Route path="mcp" element={<McpProxy />} />
 
               {/* Cryptographic Audit Log Subsystem */}
               <Route path="audit" element={<Audit />} />
