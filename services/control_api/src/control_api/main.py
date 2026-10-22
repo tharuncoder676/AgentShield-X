@@ -34,6 +34,8 @@ from control_api.routes.sandbox import router as sandbox_router
 from control_api.routes.rag import router as rag_router
 from control_api.routes.gitops import router as gitops_router
 from control_api.routes.immunity import router as immunity_router
+from control_api.routes.llm_proxy import router as llm_proxy_router
+from control_api.routes.webhooks import router as webhooks_router
 
 app = FastAPI(
     title="AgentShield-X Control API",
@@ -77,7 +79,8 @@ app.include_router(sandbox_router)
 app.include_router(rag_router)
 app.include_router(gitops_router)
 app.include_router(immunity_router)
-
+app.include_router(llm_proxy_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/health")

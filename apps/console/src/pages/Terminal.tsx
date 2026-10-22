@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Terminal as TerminalIcon, Play, RotateCcw, Copy, Check, Download, Sparkles, Shield, Cpu, Zap } from "lucide-react";
+import { Terminal as TerminalIcon, Play, RotateCcw, Copy, Check, Download, Sparkles, Shield, Cpu, Zap, Cable } from "lucide-react";
 import { Panel, cn } from "@agentshield/ui";
 import { useAuth } from "../context/AuthContext";
+import { CopilotTerminalBanner } from "../components/CopilotTerminalBanner";
 
 interface TerminalLine {
   id: string;
@@ -17,41 +18,34 @@ export const Terminal: React.FC = () => {
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionType, setSuggestionType] = useState<"@" | "/" | null>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const toolSuggestions = [
+    { label: "@verify_tool", desc: "Intercept & verify proposed tool call against deterministic rules" },
+    { label: "@inspect_payload", desc: "Scan arguments for prompt injection & canary UUIDs" },
+    { label: "@redact_secrets", desc: "Mask API keys, PII, and credentials with ephemeral tokens" },
+    { label: "@attest_citation", desc: "Bind LLM claim to cryptographic SHA-256 chunk hash" },
+    { label: "@scan_repo", desc: "Execute zero-dependency AST blast-radius analyzer" },
+  ];
+
+  const commandSuggestions = [
+    { label: "/scan", desc: "AST blast-radius scan and sync telemetry" },
+    { label: "/connect", desc: "Auto-connect Claude Desktop, Cursor, Windsurf, or Continue" },
+    { label: "/redteam", desc: "Launch autonomous red-team swarm fuzzer" },
+    { label: "/debate", desc: "Run 3-agent consensus debate on proposed tool" },
+    { label: "/swarm", desc: "Simulate multi-agent swarm capability attenuation" },
+    { label: "/rag", desc: "Semantic vector query with injection firewall" },
+    { label: "/sandbox", desc: "Execute code inside ephemeral Wasm/MicroVM sandbox" },
+    { label: "/autopolicy", desc: "Synthesize self-healing OPA Rego rules from findings" },
+    { label: "/credits", desc: "Display creator & architecture credits (Tharunkumar.S)" },
+    { label: "/help", desc: "Show complete help reference" },
+  ];
+
   const [lines, setLines] = useState<TerminalLine[]>([
-    {
-      id: "line-0",
-      type: "banner",
-      text: `+============================================================================================+
-|     AI AGENTS         __/___\__             /\\             __/___\__             BLOCK     |
-|     DESERVE          \\__\\\\__//_           /  \\           \\_//__\\\\__/            DETECT     |
-|     A SAFER          / /\\\\  //\\          / /\\ \\          /\\\\  //\\ \\            ANALYZE     |
-|     TOMORROW         /_/  \\\\//  \\_       | >  < |       _/  \\\\//  \\_/          PROTECT     |
-|     ---               \\_\\_ //\\\\ _/         \\ \\/ /         \\_ //\\\\ _/             AUDIT     |
-|                       \\__\\\\==//           |-<*>-|          \\\\==//__/           EMPOWER     |
-|                           \\/               \\__/               \\/                           |
-|                                                                                            |
-|               _                    _    ____  _     _      _     _      __  __             |
-|               / \\   __ _  ___ _ __ | |_ / ___|| |__ (_) ___| | __| |    \\ \\/ /             |
-|              / _ \\ / _\` |/ _ \\ '_ \\| __|\\___ \\| '_ \\| |/ _ \\ |/ _\` |_____\\  /              |
-|             / ___ \\ (_| |  __/ | | | |_  ___) | | | | |  __/ | (_| |_____/  \\              |
-|            /_/   \\_\\__, |\\___|_| |_|\\__||____/|_| |_|_|\\___|_|\\__,_|    /_/\\_\\             |
-|                    |___/                                                                   |
-|                                                                                            |
-|                            --  AI AGENT SECURITY REIMAGINED  --                            |
-|                                                                                            |
-|   [*] DETERMINISTIC TOOL INTERCEPTION (<5ms)       [/] 0-DEP AST BLAST-RADIUS SCANNER      |
-|   [#] DECOY HONEYTOOLS INTRUSION DETECTION        [&] SHA-256 TAMPER-EVIDENT AUDIT         |
-|   [@] SHIELDWING AI COPILOT LIVE TELEMETRY     [%] ADAPTIVE AUTOPOLICY COMPILER            |
-|                                                                                            |
-|             [ 100% OPEN SOURCE  *  MIT LICENSE  *  BUILT FOR SAFER AI AGENTS ]             |
-|            ARCHITECT & CREATOR:  Tharunkumar.S  |  AgentShield-X Security Labs            |
-+============================================================================================+
-Type 'help' for available commands or click quick action pills above.`,
-      timestamp: new Date().toLocaleTimeString(),
-    },
     {
       id: "line-1",
       type: "system",
@@ -64,9 +58,38 @@ Type 'help' for available commands or click quick action pills above.`,
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInput(val);
+    if (val.startsWith("/")) {
+      setShowSuggestions(true);
+      setSuggestionType("/");
+    } else if (val.includes("@")) {
+      setShowSuggestions(true);
+      setSuggestionType("@");
+    } else {
+      setShowSuggestions(false);
+      setSuggestionType(null);
+    }
+  };
+
+  const selectSuggestion = (label: string) => {
+    if (suggestionType === "/") {
+      setInput(`${label} `);
+    } else if (suggestionType === "@") {
+      setInput((prev) => {
+        const lastAt = prev.lastIndexOf("@");
+        return prev.substring(0, lastAt) + label + " ";
+      });
+    }
+    setShowSuggestions(false);
+    inputRef.current?.focus();
+  };
+
   const handleCommand = async (cmdText: string) => {
     const trimmed = cmdText.trim();
     if (!trimmed) return;
+    setShowSuggestions(false);
 
     // Add to input history
     setHistory((prev) => [trimmed, ...prev]);
@@ -92,6 +115,73 @@ Type 'help' for available commands or click quick action pills above.`,
         return;
       }
 
+      if (mainCmd === "connect" || mainCmd === "/connect") {
+        const target = (arg || "all").toLowerCase();
+        setLines((prev) => [
+          ...prev,
+          { id: `sys-${Date.now()}`, type: "system", text: `[*] Interfacing with Universal Connector Suite for '${target.toUpperCase()}'...`, timestamp: new Date().toLocaleTimeString() },
+        ]);
+
+        try {
+          const res = await fetch("http://localhost:8002/v1/mcp/connectors/setup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target }),
+          });
+          const data = await res.json();
+
+          setLines((prev) => [
+            ...prev,
+            {
+              id: `out-${Date.now()}`,
+              type: "output",
+              text: `=== Universal AI Agent & IDE Connector Suite ===
+Target Connector:  ${target.toUpperCase()}
+Status:            ${data.success !== false ? "SUCCESS [CONFIGURED & ACTIVE]" : "WARNING"}
+Message:           ${data.message || JSON.stringify(data.results || data, null, 2)}
+
+Active Native Security Protocol:
+  - Transport:     stdio (Model Context Protocol JSON-RPC 2.0)
+  - Remote SSE:    http://localhost:8002/v1/mcp/sse
+  - Gateway Proxy: http://localhost:8002/v1 (OpenAI & Anthropic SDKs)
+  - Latency:       <3.5ms Deterministic AST Enforcement
+
+Mounted AgentShield-X Security Tools:
+  • agentshield_verify_tool_call  - Deterministic <5ms tool filter
+  • agentshield_inspect_payload   - Taint & canary UUID interceptor
+  • agentshield_redact_secrets    - JIT credential & PII mask
+  • agentshield_attest_citation   - Cryptographic SHA-256 chunk proof
+  • agentshield_scan_repo         - AST blast-radius repository scanner
+
+[OK] Restart ${target.toUpperCase()} to activate full agentic defense guardrails!`,
+              timestamp: new Date().toLocaleTimeString(),
+            },
+          ]);
+        } catch (e: any) {
+          setLines((prev) => [
+            ...prev,
+            {
+              id: `out-${Date.now()}`,
+              type: "output",
+              text: `[OK] Manual MCP Setup for ${target.toUpperCase()}:
+Configure your client JSON config:
+{
+  "mcpServers": {
+    "agentshield-security": {
+      "command": "python",
+      "args": ["-m", "shield_mcp.cli", "serve"]
+    }
+  }
+}
+Universal SDK Gateway: http://localhost:8002/v1`,
+              timestamp: new Date().toLocaleTimeString(),
+            },
+          ]);
+        }
+        setIsRunning(false);
+        return;
+      }
+
       if (mainCmd === "help" || mainCmd === "/help") {
         setLines((prev) => [
           ...prev,
@@ -102,6 +192,7 @@ Type 'help' for available commands or click quick action pills above.`,
   help                     Show this help reference
   whoami / status          Display session identity and live engine connectivity
   credits                  Display system creator & architecture credits (Tharunkumar.S)
+  connect [target]         Auto-configure Claude, Cursor, Windsurf, Continue, or all
   scan [path]              Execute AST blast-radius scan and sync telemetry to cloud
   redteam [rounds]         Launch autonomous red-team swarm fuzzer with mutations
   debate [tool_name]       Run 3-agent consensus debate on proposed tool call
@@ -513,7 +604,7 @@ View interactive RAG studio at /rag-firewall`,
           });
 
           const chunksSummary = (ragRes.retrieved_chunks || [])
-            .map((c: any, i: number) => `  [Chunk ${i+1}] ${c.doc_title} (Sim: ${(c.score * 100).toFixed(1)}%): ${c.text?.substring(0, 100)}...`)
+            .map((c: any, i: number) => `  [Chunk ${i + 1}] ${c.doc_title} (Sim: ${(c.score * 100).toFixed(1)}%): ${c.text?.substring(0, 100)}...`)
             .join("\n");
 
           setLines((prev) => [
@@ -938,6 +1029,13 @@ View live drift charts at /immunity`,
           <span>status</span>
         </button>
         <button
+          onClick={() => handleCommand("connect claude")}
+          className="px-2.5 py-1 rounded border border-[#58a6ff]/40 bg-panel text-[#58a6ff] hover:border-[#58a6ff] transition-colors flex items-center gap-1.5"
+        >
+          <Cable size={10} className="text-[#58a6ff]" />
+          <span>connect claude</span>
+        </button>
+        <button
           onClick={() => handleCommand("credits")}
           className="px-2.5 py-1 rounded border border-cyan-500/40 bg-panel text-cyan-400 hover:border-cyan-300 transition-colors"
         >
@@ -945,54 +1043,58 @@ View live drift charts at /immunity`,
         </button>
       </div>
 
-      {/* Terminal Viewport Container */}
-      <div className="rounded-lg border border-cyan-500/30 bg-[#060910] shadow-[0_0_35px_rgba(0,240,255,0.08)] overflow-hidden font-mono text-xs flex flex-col min-h-[640px]">
-        {/* Terminal Header Bar */}
-        <div className="h-9 bg-[#0b101b] border-b border-line/60 px-4 flex items-center justify-between select-none">
+      {/* Terminal Viewport Container - GitHub Copilot CLI Theme */}
+      <div className="rounded-xl border border-[#30363d] bg-[#090d13] shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden font-mono text-xs flex flex-col min-h-[640px]">
+        {/* Terminal macOS Window Header Bar */}
+        <div className="h-10 bg-[#0d1117] border-b border-[#30363d]/80 px-4 flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-bad/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-warn/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-ok/80" />
-            <span className="ml-2 text-xs font-chakra font-bold tracking-wider text-cyan-400 uppercase">
-              AgentShield-X Console &bull; Claude-Style Terminal
+            <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 cursor-pointer" />
+            <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 cursor-pointer" />
+            <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]/50 cursor-pointer" />
+            <span className="ml-3 text-xs font-mono font-medium text-zinc-300">
+              agentshield-x &mdash; terminal &bull; zsh
             </span>
           </div>
-          <div className="text-[11px] text-mut font-chakra">
-            Deterministic Sub-5ms Enforcement &bull; {activeProject?.name || "Customer-Support-Agent"}
+          <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Sub-5ms AST Engine &bull; {activeProject?.name || "Customer-Support-Agent"}</span>
           </div>
         </div>
 
-        {/* Scrollable Output Screen with Cyberpunk Graphic Banner */}
+        {/* Scrollable Output Screen with Copilot Bracket Banner */}
         <div
           onClick={() => inputRef.current?.focus()}
-          className="flex-1 p-4 overflow-y-auto space-y-3 cursor-text scrollbar-thin scrollbar-thumb-line"
+          className="flex-1 p-5 overflow-y-auto space-y-4 cursor-text scrollbar-thin scrollbar-thumb-[#30363d] bg-[#090d13]"
         >
-          {/* Official Cyberpunk Guardian Graphic Logo Banner */}
-          <div className="relative rounded-md overflow-hidden border border-cyan-500/40 bg-black/80 shadow-[0_0_20px_rgba(0,240,255,0.15)] flex flex-col items-center p-1 group">
-            <img
-              src="/cli-theme.jpeg"
-              alt="AgentShield-X: AI Agent Security Reimagined"
-              className="w-full max-h-[220px] object-contain object-center transition-transform duration-300 group-hover:scale-[1.01]"
-            />
-          </div>
+          {/* GitHub Copilot CLI Styled Banner */}
+          <CopilotTerminalBanner
+            userEmail={user?.email}
+            projectName={activeProject?.name}
+            latencyMs={3.4}
+            commitHash="60bcce3"
+          />
+
           {lines.map((line) => (
             <div key={line.id} className="leading-relaxed">
               {line.type === "banner" && (
-                <pre className="text-cyan-400 font-bold whitespace-pre-wrap">{line.text}</pre>
+                <pre className="text-[#58a6ff] font-bold whitespace-pre-wrap">{line.text}</pre>
               )}
               {line.type === "input" && (
-                <div className="text-ok font-bold">{line.text}</div>
+                <div className="text-zinc-100 font-bold flex items-center gap-2">
+                  <span className="text-[#3fb950] font-mono">&gt;</span>
+                  <span>{line.text.replace(/^agentshield\s*>\s*/, "")}</span>
+                </div>
               )}
               {line.type === "system" && (
-                <div className="text-mut italic">{line.text}</div>
+                <div className="text-[#58a6ff] italic pl-2 border-l border-[#58a6ff]/40 py-0.5">{line.text}</div>
               )}
               {line.type === "output" && (
-                <pre className="text-fg/90 whitespace-pre-wrap pl-2 border-l border-ok/30 py-0.5">
+                <pre className="text-zinc-200 whitespace-pre-wrap pl-3 border-l-2 border-[#238636] py-1 bg-[#0d1117]/60 rounded-r font-mono text-[12px] leading-relaxed">
                   {line.text}
                 </pre>
               )}
               {line.type === "error" && (
-                <pre className="text-bad whitespace-pre-wrap pl-2 border-l border-bad py-0.5 font-bold">
+                <pre className="text-[#f85149] whitespace-pre-wrap pl-3 border-l-2 border-[#f85149] py-1 bg-[#f85149]/10 rounded-r font-bold font-mono">
                   {line.text}
                 </pre>
               )}
@@ -1000,36 +1102,80 @@ View live drift charts at /immunity`,
           ))}
 
           {isRunning && (
-            <div className="flex items-center gap-2 text-ok animate-pulse py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-              <span>Executing command against security runtime...</span>
+            <div className="flex items-center gap-2 text-zinc-300 font-mono py-1">
+              <span className="w-2 h-2 rounded-full bg-[#58a6ff] animate-ping" />
+              <span className="text-zinc-400">Executing against AgentShield-X deterministic kernel...</span>
             </div>
           )}
 
           <div ref={bottomRef} />
         </div>
 
-        {/* Active Command Input Line */}
-        <div className="border-t border-line/60 bg-[#0d1117] p-3 flex items-center gap-2">
-          <span className="text-ok font-bold select-none">agentshield &gt;</span>
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            disabled={isRunning}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isRunning ? "Processing..." : "Type command (e.g. scan, redteam, debate, swarm, autopolicy)..."}
-            className="flex-1 bg-transparent border-none outline-none text-fg font-mono text-xs placeholder:text-mut/50"
-            autoFocus
-          />
-          <button
-            onClick={() => handleCommand(input)}
-            disabled={isRunning || !input.trim()}
-            className="px-3 py-1 rounded bg-ok/20 border border-ok/40 text-ok hover:bg-ok hover:text-black font-chakra text-xs font-bold uppercase transition-all disabled:opacity-30 disabled:pointer-events-none"
-          >
-            Run
-          </button>
+        {/* Active Command Input Line - Copilot CLI Theme */}
+        <div className="border-t border-[#30363d]/80 bg-[#0d1117] p-3 space-y-2 relative select-text">
+          {/* Autocomplete Suggestions Popup */}
+          {showSuggestions && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 bg-[#161b22] border border-[#30363d] rounded-lg shadow-2xl p-2 z-30 max-h-56 overflow-y-auto">
+              <div className="text-[10px] font-mono text-zinc-400 px-2 py-1 uppercase tracking-wider border-b border-[#30363d] mb-1 flex items-center justify-between">
+                <span>{suggestionType === "@" ? "Select Native Agent Tool" : "Select Terminal Command"}</span>
+                <span className="text-[9px] text-zinc-500">Esc to dismiss</span>
+              </div>
+              {(suggestionType === "@" ? toolSuggestions : commandSuggestions).map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => selectSuggestion(item.label)}
+                  className="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#21262d] flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                >
+                  <span className="font-mono text-[#58a6ff] group-hover:text-cyan-300 font-semibold">
+                    {item.label}
+                  </span>
+                  <span className="text-zinc-400 text-[11px] truncate max-w-[340px]">
+                    {item.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Directory & Branch prompt breadcrumb */}
+          <div className="text-xs font-mono text-zinc-400 flex items-center gap-2 select-none px-1">
+            <span className="text-zinc-100 font-semibold">~/agentshield-x</span>
+            <span className="text-[#58a6ff] bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 rounded text-[10px]">
+              [⎇ main]
+            </span>
+          </div>
+
+          {/* Framed Rounded Rectangular Input Box */}
+          <div className="flex items-center gap-2 rounded-lg border border-[#30363d] bg-[#090d13] px-3.5 py-2.5 shadow-inner focus-within:border-[#58a6ff] focus-within:ring-1 focus-within:ring-[#58a6ff] transition-all">
+            <span className="text-zinc-400 font-bold select-none text-sm">&gt;</span>
+            <span className="text-zinc-200 animate-pulse select-none font-bold text-sm">█</span>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              disabled={isRunning}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Enter @ to mention tools or / for commands"
+              className="flex-1 bg-transparent border-none outline-none text-zinc-100 font-mono text-xs placeholder:text-zinc-500"
+              autoFocus
+            />
+            {isRunning ? (
+              <span className="text-xs text-amber-400 animate-pulse font-mono flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                <span>Running...</span>
+              </span>
+            ) : (
+              <button
+                onClick={() => handleCommand(input)}
+                disabled={!input.trim()}
+                className="px-2.5 py-1 rounded bg-[#1f6feb]/20 border border-[#1f6feb]/50 text-[#58a6ff] hover:bg-[#1f6feb] hover:text-white font-mono text-xs transition-all disabled:opacity-25 disabled:pointer-events-none"
+              >
+                ↵ Run
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

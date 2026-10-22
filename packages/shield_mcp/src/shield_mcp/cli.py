@@ -14,6 +14,18 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+# Ensure UTF-8 output on Windows terminals
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from shield_mcp.hasher import compute_tool_pin
 from shield_mcp.interceptors import (
     ResourceTaintInterceptor,
@@ -236,9 +248,70 @@ def main(argv=None) -> int:
         help="Optional path to save pinned tool definitions lockfile",
     )
 
+    # Command: serve (Native MCP Server)
+    serve_parser = subparsers.add_parser("serve", help="Start native AgentShield MCP Security Tools Server for Claude, Cursor, etc.")
+    serve_parser.add_argument(
+        "--name",
+        default="agentshield-security-server",
+        help="Server name reported in MCP initialize handshake",
+    )
+
+    # Command: connect (Auto-configurator)
+    connect_parser = subparsers.add_parser("connect", help="1-Click auto-configure AgentShield in Claude Desktop, Cursor, Windsurf, etc.")
+    connect_parser.add_argument(
+        "target",
+        nargs="?",
+        default="all",
+        choices=["claude", "cursor", "windsurf", "continue", "all"],
+        help="Target client to configure (default: all)",
+    )
+
+    # Command: status (Connector health check)
+    subparsers.add_parser("status", help="Check installation and configuration status of AI agent / IDE connectors")
+
     args = parser.parse_args(argv)
 
-    if not args.subcommand or args.subcommand == "proxy":
+    if args.subcommand == "serve":
+        from shield_mcp.server import AgentShieldMCPServer
+        server = AgentShieldMCPServer(server_name=args.name)
+        try:
+            asyncio.run(server.run_stdio())
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            pass
+        return 0
+
+    elif args.subcommand == "connect":
+        from shield_mcp.connectors import ConnectorManager
+        target = args.target.lower()
+        if target == "claude":
+            ok, msg = ConnectorManager.auto_configure_claude_desktop()
+            print(f"[{'OK' if ok else 'FAIL'}] {msg}")
+        elif target == "cursor":
+            ok, msg = ConnectorManager.auto_configure_cursor()
+            print(f"[{'OK' if ok else 'FAIL'}] {msg}")
+        elif target == "windsurf":
+            ok, msg = ConnectorManager.auto_configure_windsurf()
+            print(f"[{'OK' if ok else 'FAIL'}] {msg}")
+        elif target == "continue":
+            ok, msg = ConnectorManager.auto_configure_continue()
+            print(f"[{'OK' if ok else 'FAIL'}] {msg}")
+        else:
+            res = ConnectorManager.auto_configure_all()
+            for k, v in res.items():
+                print(f"[{'OK' if v['success'] else 'FAIL'}] {k.upper()}: {v['message']}")
+        return 0
+
+    elif args.subcommand == "status":
+        from shield_mcp.connectors import ConnectorManager
+        statuses = ConnectorManager.get_all_connector_statuses()
+        print("\n================ AgentShield-X Connector Status ================")
+        for s in statuses:
+            tag = "[PROTECTED]" if s["is_configured"] else ("[DETECTED] " if s["is_detected"] else "[NOT FOUND]")
+            print(f" {tag:<12} {s['name']:<22} Path: {s['config_path']}")
+        print("===============================================================\n")
+        return 0
+
+    elif not args.subcommand or args.subcommand == "proxy":
         upstream = getattr(args, "upstream", None)
         if not upstream:
             parser.print_help()

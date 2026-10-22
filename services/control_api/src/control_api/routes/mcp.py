@@ -188,3 +188,94 @@ def record_alert(
     )
     return MCPAlertDTO(**recorded)
 
+
+# =====================================================================
+# Universal Agent & IDE Connectors Endpoints
+# =====================================================================
+
+class SetupConnectorRequest(BaseModel):
+    target: str = Field(default="all", description="'claude', 'cursor', 'windsurf', 'continue', or 'all'")
+
+
+@router.get("/connectors/status")
+def get_connectors_status():
+    """Returns real-time detection and protection status for all AI agent and IDE connectors."""
+    from shield_mcp.connectors import ConnectorManager
+    return ConnectorManager.get_all_connector_statuses()
+
+
+@router.post("/connectors/setup")
+def setup_connector(req: SetupConnectorRequest):
+    """Automatically injects AgentShield-X native MCP server into Claude Desktop, Cursor, etc."""
+    from shield_mcp.connectors import ConnectorManager
+    target = req.target.lower()
+    if target == "claude":
+        ok, msg = ConnectorManager.auto_configure_claude_desktop()
+        return {"target": "claude", "success": ok, "message": msg}
+    elif target == "cursor":
+        ok, msg = ConnectorManager.auto_configure_cursor()
+        return {"target": "cursor", "success": ok, "message": msg}
+    elif target == "windsurf":
+        ok, msg = ConnectorManager.auto_configure_windsurf()
+        return {"target": "windsurf", "success": ok, "message": msg}
+    elif target == "continue":
+        ok, msg = ConnectorManager.auto_configure_continue()
+        return {"target": "continue", "success": ok, "message": msg}
+    else:
+        results = ConnectorManager.auto_configure_all()
+        return {"target": "all", "results": results}
+
+
+# =====================================================================
+# Remote MCP SSE & JSON-RPC Endpoints (Claude Remote Connectors)
+# =====================================================================
+
+@router.get("/sse")
+async def mcp_sse_stream():
+    """
+    Standard Model Context Protocol (MCP) Server-Sent Events (SSE) endpoint.
+    Allows remote Claude Desktop and cloud agent connectors to link over HTTP.
+    """
+    from fastapi.responses import StreamingResponse
+    import asyncio
+
+    async def event_generator():
+        # MCP SSE Handshake
+        yield f"event: endpoint\ndata: /v1/mcp/messages\n\n"
+        # Heartbeat ping every 15 seconds
+        while True:
+            await asyncio.sleep(15)
+            yield f": ping\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/messages")
+async def mcp_jsonrpc_messages(message: Dict[str, Any]):
+    """
+    Receives JSON-RPC 2.0 messages from remote MCP clients and executes native AgentShield tools.
+    """
+    from shield_mcp.server import AgentShieldMCPServer
+    from shield_mcp.models import JSONRPCMessage
+
+    server = AgentShieldMCPServer()
+    msg = JSONRPCMessage(
+        jsonrpc=message.get("jsonrpc", "2.0"),
+        id=message.get("id"),
+        method=message.get("method"),
+        params=message.get("params"),
+        result=message.get("result"),
+        error=message.get("error"),
+    )
+    response = await server.handle_request(msg)
+    return response or {"jsonrpc": "2.0", "result": "acknowledged"}
+
+

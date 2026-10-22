@@ -15,10 +15,12 @@ import {
   FileCode,
   AlertTriangle,
   Info,
+  Cable,
 } from "lucide-react";
 import { Panel, EmptyState, Drawer, cn } from "@agentshield/ui";
 import { useAuth } from "../context/AuthContext";
 import { MCPServer, MCPPin, MCPAlert } from "@agentshield/api-client";
+import { UniversalConnectorsHub } from "../components/UniversalConnectorsHub";
 
 export const McpProxy: React.FC = () => {
   const { activeProject, client } = useAuth();
@@ -29,7 +31,7 @@ export const McpProxy: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"pins" | "alerts" | "servers">("pins");
+  const [activeTab, setActiveTab] = useState<"connectors" | "pins" | "alerts" | "servers">("connectors");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
 
@@ -224,6 +226,18 @@ export const McpProxy: React.FC = () => {
       {/* Tabs */}
       <div className="flex border-b border-line gap-4">
         <button
+          onClick={() => setActiveTab("connectors")}
+          className={cn(
+            "pb-2 font-chakra font-bold text-xs uppercase tracking-wider border-b-2 transition-colors flex items-center gap-1.5",
+            activeTab === "connectors"
+              ? "border-ok text-ok"
+              : "border-transparent text-mut hover:text-fg"
+          )}
+        >
+          <Cable size={14} />
+          Universal Connectors & LLM Gateway
+        </button>
+        <button
           onClick={() => setActiveTab("pins")}
           className={cn(
             "pb-2 font-chakra font-bold text-xs uppercase tracking-wider border-b-2 transition-colors flex items-center gap-1.5",
@@ -260,6 +274,9 @@ export const McpProxy: React.FC = () => {
           Upstream MCP Servers ({servers.length})
         </button>
       </div>
+
+      {/* Tab: Universal Connectors */}
+      {activeTab === "connectors" && <UniversalConnectorsHub />}
 
       {/* Tab: Tool Definition Pins */}
       {activeTab === "pins" && (
