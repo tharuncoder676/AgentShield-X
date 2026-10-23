@@ -9,7 +9,7 @@
 ### SLIDE 1: Title Slide
 * *"Good morning respected guide and examiners. I am Tharunkumar from AI & ML.*
 * *My capstone project is **AgentShield-X: Universal AI Agent Security Runtime & Autonomous Defense Mesh**.*
-* *We built a sub-5ms security firewall that protects autonomous AI agents from prompt injection, tool hijacking, and MCP tool attacks."*
+* *We engineered a sub-5ms universal security runtime that protects autonomous AI agents from prompt injection, tool hijacking, and MCP tool attacks."*
 
 ---
 
@@ -116,7 +116,7 @@
 ### SLIDE 16: Results — Attack Case Studies
 * *"We validated two major attacks:*
 * *In an **MCP Rug-Pull attack**, an upstream weather server tried to secretly inject an instruction to steal SSH keys; AgentShield-X detected the hash mismatch and blocked it in 2ms.*
-* *In an **Indirect RAG injection**, hidden malicious text in a resume was neutralized by our RAG firewall before it reached the agent."*
+* *In an **Indirect RAG injection**, hidden malicious text in a resume was neutralized by our RAG Security Guard before it reached the agent."*
 
 ---
 
