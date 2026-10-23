@@ -26,7 +26,7 @@ interface AuthContextType {
 
 const client = new AgentShieldClient({
   baseUrl: window.location.origin.includes("localhost:3000")
-    ? "http://localhost:8000"
+    ? "http://localhost:8002"
     : "",
 });
 

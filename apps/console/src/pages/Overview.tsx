@@ -139,7 +139,7 @@ export const Overview: React.FC = () => {
             <span>HEALTHY</span>
           </div>
           <div className="text-[11px] text-mut font-chakra">
-            Port 8000 / SQLite WAL
+            Port 8002 / SQLite WAL
           </div>
         </Panel>
       </div>
@@ -151,7 +151,7 @@ export const Overview: React.FC = () => {
           <Panel title="Platform Health Status">
             <div className="divide-y divide-line text-xs font-mono">
               <div className="py-2.5 flex items-center justify-between">
-                <span className="text-mut">Ingress Gateway (8000):</span>
+                <span className="text-mut">Ingress Gateway (8002):</span>
                 <span className="text-ok font-semibold flex items-center gap-1">
                   <CheckCircle size={14} /> ONLINE
                 </span>

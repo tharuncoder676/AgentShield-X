@@ -156,7 +156,7 @@ import uuid
 from datetime import datetime, timezone
 
 # 1. Target your running AgentShield-X Gateway
-GATEWAY_URL = "http://127.0.0.1:8000/v1/events/tool-call"
+GATEWAY_URL = "http://127.0.0.1:8002/v1/events/tool-call"
 API_KEY = "${sdkKey}"
 
 # 2. Intercept an authentic agent tool call (Standard Library - zero pip packages needed!)
@@ -211,7 +211,7 @@ except Exception as e:
     print(f"Interception request error: {e}")
 `;
 
-  const curlSnippet = `curl -X POST http://127.0.0.1:8000/v1/events/tool-call \\
+  const curlSnippet = `curl -X POST http://127.0.0.1:8002/v1/events/tool-call \\
   -H "Content-Type: application/json" \\
   -H "X-Shield-API-Key: ${sdkKey}" \\
   -d '{
@@ -622,7 +622,7 @@ except Exception as e:
                       )}
                     </button>
                     <span className="text-[11px] text-mut font-mono">
-                      Target: http://127.0.0.1:8000 &bull; Project: {targetProjId}
+                      Target: http://127.0.0.1:8002 &bull; Project: {targetProjId}
                     </span>
                   </div>
 

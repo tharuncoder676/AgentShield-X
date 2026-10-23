@@ -40,7 +40,7 @@ export const StreamProvider: React.FC<{ children: React.ReactNode }> = ({
     // Determine ws url
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.origin.includes("localhost:3000")
-      ? "localhost:8000"
+      ? "localhost:8002"
       : window.location.host;
     const wsUrl = `${protocol}//${host}/v1/ws/decisions`;
 
