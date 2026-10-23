@@ -133,7 +133,7 @@ def print_banner():
     print(f" {gray}right from your terminal. Describe a task or enter {cyan}?{rst}{gray} or {cyan}/help{rst}{gray} for commands.{rst}\n")
 
     # Connection Status Bullets
-    print(f" {blue}●{rst} {white}Connected to Universal MCP Server & Engine{rst} {gray}(http://localhost:8002){rst}")
+    print(f" {blue}●{rst} {white}Engine API & MCP Server:{rst} {cyan}http://localhost:8002{rst} {gray}•{rst} {white}Web Console:{rst} {blue}http://localhost:3000{rst}")
     print(f" {blue}●{rst} {white}Logged in as user:{rst} {cyan}analyst@agentshield.test{rst} {gray}[Security Lead]{rst}")
     print(f" {green}●{rst} {white}Deterministic Interceptor Active:{rst} {green}3.4ms latency SLA{rst} {gray}(Zero-dependency AST){rst}\n")
 
@@ -664,7 +664,7 @@ def run_interactive_repl():
     print_banner()
     cfg = CLIConfig.load()
     control_url = cfg.get("control_url", DEFAULT_CONTROL_URL)
-    print(f"{Style.DIM}Connected to: {control_url} | Type {Style.BOLD}/help{Style.RESET}{Style.DIM} to see available commands.{Style.RESET}\n")
+    print(f"{Style.DIM}Engine API: {control_url} | Web Console: http://localhost:3000 | Type {Style.BOLD}/help{Style.RESET}{Style.DIM} for commands.{Style.RESET}\n")
 
     commands = {
         "/scan": "Scan local repo AST and sync blast-radius telemetry to Web",

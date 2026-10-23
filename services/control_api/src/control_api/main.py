@@ -4,8 +4,9 @@ AgentShield-X Control Plane API Service Entrypoint
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from control_api.routes.auth import router as auth_router
 from control_api.routes.orgs import router as orgs_router
@@ -81,6 +82,21 @@ app.include_router(gitops_router)
 app.include_router(immunity_router)
 app.include_router(llm_proxy_router)
 app.include_router(webhooks_router)
+
+
+@app.get("/")
+def root(request: Request):
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept and "text/html" not in accept:
+        return {
+            "service": "AgentShield-X Control API",
+            "status": "online",
+            "version": "1.0.0",
+            "web_console": "http://localhost:3000",
+            "docs": "/docs",
+            "health": "/health",
+        }
+    return RedirectResponse(url="http://localhost:3000")
 
 
 @app.get("/health")
