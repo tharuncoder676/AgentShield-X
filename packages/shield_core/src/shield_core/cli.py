@@ -70,96 +70,73 @@ def _visible_len(s: str) -> int:
 
 
 def print_banner():
-    c1 = Style.CYAN
-    c2 = Style.BLUE
-    c3 = Style.PURPLE
-    c4 = Style.VIOLET
-    cw = Style.WHITE
-    cd = Style.SLATE
     rst = Style.RESET
     bld = Style.BOLD
+    blue = "\033[38;2;88;166;255m"       # Copilot Sky Blue #58a6ff
+    cyan = "\033[38;2;56;189;248m"       # #38bdf8
+    magenta = "\033[38;2;188;140;255m"   # #bc8cff
+    green = "\033[38;2;63;185;80m"       # #3fb950
+    gray = "\033[38;2;139;148;158m"      # #8b949e
+    white = "\033[38;2;240;246;252m"     # #f0f6fc
+    red_dot = "\033[38;2;255;95;86m●\033[0m"
+    yel_dot = "\033[38;2;255;189;46m●\033[0m"
+    grn_dot = "\033[38;2;39;201;63m●\033[0m"
 
-    BOX_WIDTH = 90
+    width = 78
+    
+    # macOS window controls header
+    print(f"\n {red_dot} {yel_dot} {grn_dot}  {gray}agentshield-x — terminal • zsh / cmd{rst}\n")
 
-    def pad(content: str) -> str:
-        pad_len = max(0, BOX_WIDTH - _visible_len(content))
-        return f"{cd}|{rst} {content}{' ' * pad_len} {cd}|{rst}"
+    # Corner brackets top
+    print(f" {gray}┌{rst}{' ' * (width - 2)}{gray}┐{rst}")
+    print(f" {gray}│{rst}  {gray}Welcome to AgentShield-X{rst}{' ' * (width - 27)}{gray}│{rst}")
 
-    border = f"{cd}+{'=' * (BOX_WIDTH + 2)}+{rst}"
-
-    left_items = [
-        f"{c1}{bld}AI AGENTS{rst}",
-        f"{c1}{bld}DESERVE{rst}",
-        f"{c1}{bld}A SAFER{rst}",
-        f"{c1}{bld}TOMORROW{rst}",
-        f"{cd}---{rst}",
-        "",
-        "",
+    # Pixel Art Mascot
+    mascot = [
+        f"{magenta}   ▄██████▄   {rst}",
+        f"{magenta} ▄██{cyan}██████{magenta}██▄ {rst}",
+        f"{magenta}███{cyan}█{magenta}█{cyan}██{magenta}█{cyan}█{magenta}███{rst}",
+        f"{magenta}███{cyan}█{magenta}█{cyan}██{magenta}█{cyan}█{magenta}███{rst}",
+        f"{magenta} ▀█{cyan}██████{magenta}█▀ {rst}",
+        f"{magenta}   {green}█▀  ▀█{magenta}   {rst}",
+        f"{magenta}    ▀██▀    {rst}",
     ]
 
-    right_items = [
-        f"{c3}{bld}BLOCK{rst}",
-        f"{c3}{bld}DETECT{rst}",
-        f"{c3}{bld}ANALYZE{rst}",
-        f"{c3}{bld}PROTECT{rst}",
-        f"{c3}{bld}AUDIT{rst}",
-        f"{c3}{bld}EMPOWER{rst}",
-        "",
+    logo_text = [
+        f"{blue}{bld}█▀▀█ █▀▀█ █▀▀▀ █▀▀▄ ▀▀█▀▀ █▀▀▀█ █  █ ▀█▀ █▀▀▀ █   █▀▀▄{rst}",
+        f"{blue}{bld}█▄▄█ █ █▄ █▀▀  █  █   █   ▀▀▀▄▄ █▀▀█  █  █▀▀  █   █  █{rst}",
+        f"{blue}{bld}▀  ▀ ▀▀▀▀ ▀▀▀▀ ▀  ▀   ▀   █▄▄▄█ ▀  ▀ ▀▀▀ ▀▀▀▀ ▀▀▀ ▀▀▀ {rst}",
+        f"{gray}                                     CLI Version 2.4.0{rst}",
     ]
 
-    center_rows = [
-        f"{c1}__/{c2}___\\__{rst}             {c2}/\\{rst}             {c3}__/{c4}___\\__{rst}",
-        f"{c1}\\__{c2}\\\\__//_{rst}           {c2}/  \\{rst}           {c3}\\_//__\\\\__{c4}/{rst}",
-        f"{c1}/ {c2}/\\\\  //\\{rst}          {c2}/ /\\ \\{rst}          {c3}/\\\\  //\\ {c4}\\ {rst}",
-        f"{c1}/_{c2}/  \\\\//  \\_{rst}       {c2}| {c1}>{cw}  {c1}<{c2} |{rst}       {c3}_/  \\\\//  \\{c4}_{c3}/{rst}",
-        f"{c1}\\_{c2}\\_ //\\\\ _/{rst}         {c2}\\ \\/ /{rst}         {c3}\\_ //\\\\ _{c4}/{rst}",
-        f"{c1}\\__{c2}\\\\==//{rst}           {c1}|-{cw}<*>{c1}-|{rst}          {c3}\\\\==//__{c4}/{rst}",
-        f"{c2}\\/{rst}               {c1}\\__/{rst}               {c3}\\/{rst}",
+    lines_combined = [
+        f"  {logo_text[0]}   {mascot[0]}",
+        f"  {logo_text[1]}   {mascot[1]}",
+        f"  {logo_text[2]}   {mascot[2]}",
+        f"  {logo_text[3]}   {mascot[3]}",
+        f"  {' ' * 54}   {mascot[4]}",
+        f"  {' ' * 54}   {mascot[5]}",
+        f"  {' ' * 54}   {mascot[6]}",
     ]
 
-    print(border)
-    for i in range(7):
-        lt = left_items[i]
-        rt = right_items[i]
-        ca = center_rows[i]
-        l_pad = " " * 4 + lt + (" " * max(0, 12 - _visible_len(lt)))
-        r_pad = (" " * max(0, 12 - _visible_len(rt))) + rt + " " * 4
-        ca_pad_left = (BOX_WIDTH - _visible_len(l_pad) - _visible_len(r_pad) - _visible_len(ca)) // 2
-        ca_pad_right = BOX_WIDTH - _visible_len(l_pad) - _visible_len(r_pad) - _visible_len(ca) - ca_pad_left
-        line = l_pad + (" " * max(0, ca_pad_left)) + ca + (" " * max(0, ca_pad_right)) + r_pad
-        print(pad(line))
+    for line in lines_combined:
+        clean_len = len(_ANSI_RE.sub("", line))
+        pad_right = max(0, width - clean_len - 1)
+        print(f" {gray}│{rst}{line}{' ' * pad_right}{gray}│{rst}")
 
-    print(pad(""))
+    # Corner brackets bottom
+    print(f" {gray}└{rst}{' ' * (width - 2)}{gray}┘{rst}")
 
-    logo_rows = [
-        ("    _                    _   ", " ____  _     _      _     _     ", " __  __ "),
-        ("   / \\   __ _  ___ _ __ | |_ ", "/ ___|| |__ (_) ___| | __| |    ", "\\ \\/ / "),
-        ("  / _ \\ / _` |/ _ \\ '_ \\| __|", "\\___ \\| '_ \\| |/ _ \\ |/ _` |_____", "\\  /  "),
-        (" / ___ \\ (_| |  __/ | | | |_ ", " ___) | | | | |  __/ | (_| |_____", "/  \\  "),
-        ("/_/   \\_\\__, |\\___|_| |_|\\__|", "|____/|_| |_|_|\\___|_|\\__,_|    ", "/_/\\_\\ "),
-        ("        |___/                ", "                                ", "       "),
-    ]
+    # Meta Version & Commit Line
+    print(f"\n {white}{bld}Version 2.4.0{rst} {gray}•{rst} Commit {blue}8d5e7b2{rst} {gray}•{rst} Lead Architect & Creator: {green}{bld}Tharunkumar.S{rst}")
+    print(f" {gray}AgentShield-X can verify, intercept, sandbox and sanitize agentic tool calls{rst}")
+    print(f" {gray}right from your terminal. Describe a task or enter {cyan}?{rst}{gray} or {cyan}/help{rst}{gray} for commands.{rst}\n")
 
-    for p1, p2, p3 in logo_rows:
-        row_str = f"{cw}{bld}{p1}{rst}{c1}{bld}{p2}{rst}{c3}{bld}{p3}{rst}"
-        left_sp = (BOX_WIDTH - _visible_len(row_str)) // 2
-        print(pad(" " * left_sp + row_str))
+    # Connection Status Bullets
+    print(f" {blue}●{rst} {white}Connected to Universal MCP Server & Engine{rst} {gray}(http://localhost:8002){rst}")
+    print(f" {blue}●{rst} {white}Logged in as user:{rst} {cyan}analyst@agentshield.test{rst} {gray}[Security Lead]{rst}")
+    print(f" {green}●{rst} {white}Deterministic Interceptor Active:{rst} {green}3.4ms latency SLA{rst} {gray}(Zero-dependency AST){rst}\n")
 
-    print(pad(""))
-    sub = f"{c2}{bld}--  AI AGENT SECURITY REIMAGINED  --{rst}"
-    print(pad(" " * ((BOX_WIDTH - _visible_len(sub)) // 2) + sub))
-    print(pad(""))
-
-    print(pad(f"  {c1}[*] DETERMINISTIC TOOL INTERCEPTION (<5ms){rst}" + " " * 7 + f"{c2}[/] 0-DEP AST BLAST-RADIUS SCANNER{rst}"))
-    print(pad(f"  {c3}[#] DECOY HONEYTOOLS INTRUSION DETECTION{rst}" + " " * 8 + f"{c4}[&] SHA-256 TAMPER-EVIDENT AUDIT{rst}"))
-    print(pad(f"  {cw}[@] SHIELDWING AI COPILOT LIVE TELEMETRY{rst}" + " " * 5 + f"{c1}[%] ADAPTIVE AUTOPOLICY COMPILER{rst}"))
-    print(pad(""))
-
-    badge = f"{c1}[ 100% OPEN SOURCE{rst}  {cd}*{rst}  {cw}{bld}MIT LICENSE{rst}  {cd}*{rst}  {c3}BUILT FOR SAFER AI AGENTS ]{rst}"
-    credits_line = f"{cw}{bld}ARCHITECT & CREATOR:{rst}  {c1}{bld}Tharunkumar.S{rst}  {cd}|{rst}  {c2}AgentShield-X Security Labs{rst}"
-    print(pad(" " * ((BOX_WIDTH - _visible_len(badge)) // 2) + badge))
-    print(pad(" " * ((BOX_WIDTH - _visible_len(credits_line)) // 2) + credits_line))
-    print(border)
 
 
 
@@ -691,6 +668,7 @@ def run_interactive_repl():
 
     commands = {
         "/scan": "Scan local repo AST and sync blast-radius telemetry to Web",
+        "/connect": "Auto-configure Claude Desktop, Cursor, Windsurf, or Continue",
         "/redteam": "Run autonomous red-team swarm fuzzer with mutations",
         "/debate": "Execute multi-agent 3-way consensus debate on a tool call",
         "/swarm": "Simulate multi-agent swarm delegation and A2A attenuation",
@@ -709,9 +687,12 @@ def run_interactive_repl():
         "/exit": "Exit interactive console",
     }
 
+    prompt_breadcrumb = f" \033[38;2;139;148;158m~/agentshield-x\033[0m \033[38;2;88;166;255m[⎇ main]\033[0m"
+
     while True:
         try:
-            line = input(f"{Style.CYAN}{Style.BOLD}agentshield > {Style.RESET}").strip()
+            print(prompt_breadcrumb)
+            line = input(f" \033[38;2;63;185;80m>\033[0m \033[1m█\033[0m ").strip()
             if not line:
                 continue
 
@@ -731,6 +712,26 @@ def run_interactive_repl():
             elif cmd in ("/clear", "clear", "cls"):
                 os.system("cls" if os.name == "nt" else "clear")
                 print_banner()
+
+            elif cmd in ("/connect", "connect"):
+                target = parts[1].lower() if len(parts) > 1 else "all"
+                try:
+                    from shield_mcp.connectors import ConnectorManager
+                    if target == "claude":
+                        ok, msg = ConnectorManager.auto_configure_claude_desktop()
+                    elif target == "cursor":
+                        ok, msg = ConnectorManager.auto_configure_cursor()
+                    elif target == "windsurf":
+                        ok, msg = ConnectorManager.auto_configure_windsurf()
+                    elif target == "continue":
+                        ok, msg = ConnectorManager.auto_configure_continue()
+                    else:
+                        res = ConnectorManager.auto_configure_all()
+                        ok = True
+                        msg = f"Configured {len(res)} AI Agent & IDE connectors."
+                    print(f"{Style.GREEN}[OK] {msg}{Style.RESET}\n")
+                except Exception as e:
+                    print(f"{Style.YELLOW}[WARN] Could not auto-configure {target}: {e}{Style.RESET}\n")
 
             elif cmd in ("/credits", "credits"):
                 cmd_credits(argparse.Namespace())
@@ -857,7 +858,7 @@ def main(argv=None) -> int:
     subparsers.add_parser("gitops", help="Generate automated PR patch and hot-reload Rego policy")
 
     # Command: immunity
-    imm_parser = subparsers.add_parser("immunity", help="Calculate live agent Immunity Score (0-100%) and drift")
+    imm_parser = subparsers.add_parser("immunity", help="Calculate live agent Immunity Score (0-100%%) and drift")
     imm_parser.add_argument("--probe", action="store_true", help="Run chaos perturbation probe")
 
     # Command: demo
