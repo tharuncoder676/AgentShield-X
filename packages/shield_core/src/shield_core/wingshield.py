@@ -317,6 +317,7 @@ class WingshieldCopilotEngine:
 
     def __init__(self, greeting_recipient: str = "Tharun"):
         self.recipient = greeting_recipient
+        self.is_active = True
 
     def greet_user(self) -> None:
         """Speaks aloud and outputs the user's requested greeting."""
@@ -383,16 +384,51 @@ class WingshieldCopilotEngine:
             result_msg = ComputerAutomation.lock_computer()
             return result_msg, False
 
-        # 6. Desktop Automation: Open Applications
-        if low.startswith("open ") or low.startswith("launch ") or low.startswith("start "):
-            app_target = low.replace("open ", "").replace("launch ", "").replace("start ", "").strip()
-            
-            # YouTube
+        # 6. Desktop Automation: Open Applications (flexible prefix & direct app names)
+        direct_apps = {
+            "chrome": "chrome",
+            "google chrome": "chrome",
+            "edge": "edge",
+            "browser": "chrome",
+            "vs code": "vscode",
+            "vscode": "vscode",
+            "visual studio code": "vscode",
+            "cursor": "cursor",
+            "notepad": "notepad",
+            "calculator": "calculator",
+            "calc": "calculator",
+            "calendar": "calendar",
+            "task manager": "task manager",
+            "explorer": "explorer",
+            "file explorer": "explorer",
+            "terminal": "terminal",
+            "cmd": "terminal",
+            "paint": "paint",
+            "camera": "camera",
+            "spotify": "spotify",
+            "word": "word",
+            "excel": "excel",
+            "powerpoint": "powerpoint",
+        }
+
+        app_target = None
+        for prefix in ("open ", "launch ", "start ", "run "):
+            if low.startswith(prefix):
+                app_target = low[len(prefix):].strip()
+                break
+        if not app_target:
+            if low in direct_apps:
+                app_target = direct_apps[low]
+            else:
+                for k in direct_apps:
+                    if f"open {k}" in low or f"launch {k}" in low or f"start {k}" in low:
+                        app_target = direct_apps[k]
+                        break
+
+        if app_target:
             if "youtube" in app_target:
                 return ComputerAutomation.search_web("", engine="youtube"), False
-            
-            # GitHub
-            if "github" in app_target or "repo" in app_target and "http" in app_target:
+            if "github" in app_target or ("repo" in app_target and "http" in app_target):
                 webbrowser.open("https://github.com/tharuncoder676/AgentShield-X")
                 msg = "Opening AgentShield-X GitHub repository."
                 speak(msg, wait=False)
@@ -402,7 +438,21 @@ class WingshieldCopilotEngine:
             speak(result_msg, wait=False)
             return result_msg, False
 
-        # 7. Web & Video Searches
+        # 7. Navigation / Change Directory
+        if "change directory" in low or "change the directory" in low or low.startswith("cd ") or "directory to" in low:
+            if any(k in low for k in ("agentshield", "agent shield", "agentshield-x", "agency lakes", "shield x")):
+                repo_path = Path(__file__).resolve().parents[4]
+                try:
+                    os.chdir(str(repo_path))
+                    msg = f"Changed active directory to AgentShield-X workspace ({repo_path})."
+                except Exception as e:
+                    msg = f"Could not change directory: {e}"
+            else:
+                msg = f"Current working directory is {os.getcwd()}."
+            speak(msg, wait=False)
+            return msg, False
+
+        # 8. Web & Video Searches
         if "youtube" in low and any(k in low for k in ("search", "play", "find")):
             query = low.replace("search youtube for", "").replace("search youtube", "").replace("play", "").replace("youtube", "").strip()
             result_msg = ComputerAutomation.search_web(query, engine="youtube")
@@ -421,16 +471,22 @@ class WingshieldCopilotEngine:
             speak(f"Searching Google for {query}", wait=False)
             return result_msg, False
 
-        # 8. System Diagnostics (Battery, CPU, Memory)
+        # 9. System Diagnostics (Battery, CPU, Memory)
         if any(k in low for k in ("system status", "diagnostics", "battery", "cpu", "specs", "hardware", "memory", "ram")):
             stats = ComputerAutomation.get_system_diagnostics()
             msg = f"Live hardware diagnostic telemetry for your machine:\n{stats}"
             speak(f"Hardware diagnostics checked. CPU and memory are running optimally.", wait=False)
             return msg, False
 
-        # 9. Current Time & Date
-        if any(k in low for k in ("time", "what time", "date", "today")):
-            now_str = datetime.datetime.now().strftime("%I:%M %p on %A, %B %d, %Y")
+        # 10. Current Time & Date
+        if any(k in low for k in ("date", "today's date", "what is today's date", "what date", "tell me the date")):
+            now_str = datetime.datetime.now().strftime("%A, %B %d, %Y")
+            msg = f"Today is {now_str}."
+            speak(msg, wait=False)
+            return msg, False
+
+        if any(k in low for k in ("time", "what time")):
+            now_str = datetime.datetime.now().strftime("%I:%M %p")
             msg = f"The current time is {now_str}."
             speak(msg, wait=False)
             return msg, False
@@ -580,6 +636,7 @@ class WingshieldCopilotEngine:
                         or any(w in text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup"))
                     )
                     if is_wake:
+                        self.is_active = True
                         print("\033[1;32m[!] Wake word detected! Launching Wingshield Copilot...\033[0m")
                         speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
                         repo_root = Path(__file__).resolve().parents[4]
@@ -588,6 +645,14 @@ class WingshieldCopilotEngine:
                             ["cmd.exe", "/k", cmd_to_run],
                             creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
                         )
+                    elif self.is_active:
+                        # Once awake, execute every voice command spoken into microphone!
+                        print(f"\033[1;36m[🎤 Voice Action] Executing: '{text}'\033[0m")
+                        res, should_exit = self.process_command(text)
+                        if res:
+                            print(f"\033[38;2;240;246;252m{res}\033[0m\n")
+                        if should_exit:
+                            self.is_active = False
                 except sr.UnknownValueError:
                     pass
                 except sr.RequestError:
