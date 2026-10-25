@@ -1614,6 +1614,15 @@ class WingshieldCopilotEngine:
         )
         is_general_action = any(clean_text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch ", "scan ", "search ", "research ", "what is ", "who created ", "set calendar"))
         is_active_window = self.is_active and (time.time() - getattr(self, "last_active_time", 0.0) < 30.0)
+        is_meaningful_query = is_active_window and (len(clean_text.split()) >= 2 and len(clean_text) >= 6)
+
+        # Sleep / Stand down command
+        if any(clean_text == s for s in ("sleep", "go to sleep", "stand down", "at ease", "mute", "quiet", "stop listening")):
+            self.is_active = False
+            self.last_active_time = 0.0
+            print("\033[38;2;139;148;158m[!] Wingshield standing by.\033[0m")
+            speak("Wingshield standing by.", wait=False)
+            return
 
         if is_wake:
             self.is_active = True
@@ -1627,7 +1636,7 @@ class WingshieldCopilotEngine:
             print("\033[1;36m[!] AgentShield CLI request detected! Launching original AgentShield-X CLI.\033[0m")
             speak("Launching original AgentShield-X CLI terminal.", wait=False)
             ComputerAutomation.open_agentshield_cli_terminal()
-        elif has_direct_action or is_general_action or is_active_window:
+        elif has_direct_action or is_general_action or is_meaningful_query:
             exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", clean_text).strip()
             if not exec_text:
                 exec_text = clean_text
