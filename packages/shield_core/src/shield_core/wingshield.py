@@ -244,47 +244,69 @@ class ComputerAutomation:
 
     @staticmethod
     def open_url(url: str) -> bool:
-        """Reliably opens a URL in default browser using native Win32 ShellExecute, webbrowser, or cmd start."""
-        try:
-            if hasattr(os, "startfile"):
-                os.startfile(url)
+        """
+        Reliably opens a URL in user's default browser with Windows fast-path.
+        Exact replica of OpenJarvis core utils open_browser implementation.
+        """
+        if platform.system() == "Windows":
+            try:
+                # OpenJarvis canonical pattern: empty title argument after ``start``
+                # ensures Windows shell treats url as protocol/URL rather than window title.
+                subprocess.run(["cmd", "/c", "start", "", url], check=False)
                 return True
-        except Exception:
-            pass
+            except Exception:
+                pass
+            try:
+                if hasattr(os, "startfile"):
+                    os.startfile(url)
+                    return True
+            except Exception:
+                pass
         try:
             return webbrowser.open(url)
-        except Exception:
-            pass
-        try:
-            subprocess.Popen(["cmd", "/c", "start", "", url], shell=True)
-            return True
         except Exception:
             return False
 
     @staticmethod
     def open_app(app_name: str) -> Tuple[bool, str]:
-        app_low = app_name.lower().strip()
+        app_raw = app_name.strip()
+        app_low = app_raw.lower()
 
-        # YouTube
+        # Strip standard command prefixes if present
+        for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch "):
+            if app_low.startswith(prefix):
+                app_raw = app_raw[len(prefix):].strip()
+                app_low = app_raw.lower()
+                break
+
+        # Direct URL Handler
+        if app_low.startswith(("http://", "https://")) or any(ext in app_low for ext in (".com", ".org", ".net", ".io", ".dev", ".ai", ".co")):
+            target_url = app_raw
+            if not target_url.startswith(("http://", "https://")):
+                target_url = f"https://{target_url}"
+            ComputerAutomation.open_url(target_url)
+            return True, f"Opening URL: {target_url}"
+
+# YouTube & YouTube Search Automation (OpenJarvis Parity)
         if "youtube" in app_low:
+            # Detect YouTube search query
+            if any(k in app_low for k in ("search", "find", "play", "watch")) and app_low not in ("youtube", "open youtube"):
+                query = re.sub(r"^(search|find|play|watch|youtube|for|on|\s)+", "", app_low)
+                query = query.replace("on youtube", "").replace("in youtube", "").replace("for", "").strip()
+                if query:
+                    search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
+                    ComputerAutomation.open_url(search_url)
+                    return True, f"Searching YouTube for: '{query}'."
+
+            # Direct YouTube Homepage using canonical OpenJarvis browser launcher
+            ComputerAutomation.open_url("https://www.youtube.com")
             chrome_exe = ComputerAutomation.get_chrome_path()
-            launched = False
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "--new-window", "https://www.youtube.com"])
-                    launched = True
+                    subprocess.Popen([chrome_exe, "https://www.youtube.com"])
                 except Exception:
                     pass
-            if not launched:
-                try:
-                    if hasattr(os, "startfile"):
-                        os.startfile("https://www.youtube.com")
-                        launched = True
-                except Exception:
-                    pass
-            if not launched:
-                ComputerAutomation.open_url("https://www.youtube.com")
-            return True, "Opening YouTube in Chrome."
+            return True, "Opening YouTube in default browser."
 
         # Google Chrome
         if "chrome" in app_low:
@@ -335,28 +357,19 @@ class ComputerAutomation:
                 ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google."
 
-        # VS Code
-        elif "vs code" in app_low or "vscode" in app_low or app_low in ("code", "visual studio code"):
+# VS Code / Workspace (OpenJarvis clean execution without cmd quote-mangling)
+        elif any(k in app_low for k in ("vs code", "vscode", "code", "visual studio code")):
             repo_path = Path(__file__).resolve().parents[4]
-            code_cmd = shutil.which("code") or os.path.expandvars(r"%LocalAppData%\Programs\Microsoft VS Code\bin\code.cmd")
+            try:
+                subprocess.Popen(["cmd", "/c", "code", str(repo_path)])
+                return True, "Launching Visual Studio Code in current workspace."
+            except Exception:
+                pass
             vscode_bin = ComputerAutomation.get_vscode_path()
-            launched = False
-            if code_cmd and os.path.isfile(code_cmd):
+            if vscode_bin and os.path.isfile(vscode_bin):
                 try:
-                    subprocess.Popen(f'cmd.exe /c start "" "{code_cmd}" "{repo_path}"', shell=True)
-                    launched = True
-                except Exception:
-                    pass
-            if not launched and vscode_bin and os.path.isfile(vscode_bin):
-                try:
-                    subprocess.Popen(f'cmd.exe /c start "" "{vscode_bin}" "{repo_path}"', shell=True)
-                    launched = True
-                except Exception:
-                    pass
-            if not launched:
-                try:
-                    subprocess.Popen(f'cmd.exe /c start "" code "{repo_path}"', shell=True)
-                    launched = True
+                    subprocess.Popen([vscode_bin, str(repo_path)])
+                    return True, "Launching Visual Studio Code."
                 except Exception:
                     pass
             return True, "Launching Visual Studio Code in current workspace."
@@ -1755,16 +1768,18 @@ class WingshieldCopilotEngine:
                 self.sre.LoadGrammar(grammar)
 
                 def _sre_event(sender, args):
-                    if args and args.Result and args.Result.Text:
-                        text = str(args.Result.Text).strip()
-                        confidence = getattr(args.Result, "Confidence", 1.0)
-                        if text:
-                            print(f"\033[38;2;139;148;158m[Audio Stream] {text} (conf: {confidence:.2f})\033[0m")
-                            self.handle_voice_stream(text)
+                    try:
+                        if args and hasattr(args, "Result") and args.Result and hasattr(args.Result, "Text"):
+                            text = str(args.Result.Text).strip()
+                            confidence = getattr(args.Result, "Confidence", 1.0)
+                            if text:
+                                print(f"\033[38;2;139;148;158m[Audio Stream] {text} (conf: {confidence:.2f})\033[0m")
+                                self.handle_voice_stream(text)
+                    except Exception:
+                        pass
 
                 self._sre_callback = _sre_event
                 self.sre.SpeechRecognized += self._sre_callback
-                self.sre.SpeechRecognitionRejected += self._sre_callback
                 self.sre.RecognizeAsync(RecognizeMode.Multiple)
                 sre_active = True
                 print("\033[38;2;63;185;80m[+] Windows Native Speech Recognition Engine active & listening.\033[0m")

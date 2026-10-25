@@ -114,7 +114,20 @@ def desktop_open(payload: DesktopOpenPayload):
     try:
         from shield_core.wingshield import ComputerAutomation
         success, msg = ComputerAutomation.open_app(payload.target)
-        return {"success": success, "message": msg}
+        return {"success": success, "message": msg, "target": payload.target}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+class DesktopCommandPayload(BaseModel):
+    command: str
+
+@app.post("/v1/desktop/command")
+def desktop_command(payload: DesktopCommandPayload):
+    try:
+        from shield_core.wingshield import WingshieldCopilotEngine
+        copilot = WingshieldCopilotEngine(greeting_recipient="Tharun")
+        reply, should_exit = copilot.process_command(payload.command)
+        return {"success": True, "reply": reply, "should_exit": should_exit}
     except Exception as e:
         return {"success": False, "error": str(e)}
 

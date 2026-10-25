@@ -14,8 +14,10 @@ export const WingshieldVoiceAssistant: React.FC = () => {
   );
   const [isTourRunning, setIsTourRunning] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const [desktopStatus, setDesktopStatus] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const debounceTimerRef = useRef<any>(null);
 
   // Speech Synthesis Helper
   const speak = (text: string, onEnd?: () => void) => {
@@ -61,31 +63,40 @@ export const WingshieldVoiceAssistant: React.FC = () => {
 
       recognition.onresult = (event: any) => {
         let currentText = "";
+        let isFinal = false;
         for (let i = event.resultIndex; i < event.results.length; i++) {
           currentText += event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            isFinal = true;
+          }
         }
         setTranscript(currentText);
 
         const lower = currentText.toLowerCase().trim();
-        // If final or contains action keywords, trigger immediately
-        if (
+        if (!lower) return;
+
+        const hasActionableTarget =
           lower.includes("youtube") ||
           lower.includes("chrome") ||
           lower.includes("google") ||
           lower.includes("vs code") ||
           lower.includes("vscode") ||
           lower.includes("code") ||
+          lower.includes("spotify") ||
+          lower.includes("calc") ||
+          lower.includes("notepad") ||
           lower.includes("wakeup") ||
           lower.includes("wake up") ||
-          lower.includes("wingshield") ||
-          lower.includes("hey wingshield") ||
-          lower.includes("agentshield") ||
-          lower.includes("scan") ||
           lower.includes("tour") ||
+          lower.includes("scan") ||
           lower.includes("status") ||
-          lower.includes("open")
-        ) {
-          handleVoiceCommand(lower);
+          lower.includes("doctor");
+
+        if (isFinal || hasActionableTarget) {
+          if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = setTimeout(() => {
+            handleVoiceCommand(lower);
+          }, 350);
         }
       };
 
@@ -119,56 +130,73 @@ export const WingshieldVoiceAssistant: React.FC = () => {
     }
   };
 
-  // Voice Command Dispatcher
+  // Voice Command Dispatcher — OpenJarvis Architecture Parity
   const handleVoiceCommand = (cmd: string) => {
     const lower = cmd.toLowerCase().trim();
+    if (!lower) return;
 
-    // 1. YouTube Automation
-    if (lower.includes("youtube")) {
-      const msg = "Opening YouTube in Chrome for you, Tharun.";
-      setCopilotReply(msg);
-      speak(msg);
-      // Trigger via local backend automation bridge
+    // Helper to send to local OS automation backend with OpenJarvis parity
+    const sendDesktopOpen = (target: string, spokenText: string) => {
+      setCopilotReply(spokenText);
+      speak(spokenText);
+      setDesktopStatus(`Opening ${target}...`);
+      setTimeout(() => setDesktopStatus(null), 4000);
       try {
         fetch("http://localhost:8002/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target: "youtube" }),
-        }).catch(() => {});
+          body: JSON.stringify({ target }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d && d.message) {
+              setDesktopStatus(`OS: ${d.message}`);
+              setTimeout(() => setDesktopStatus(null), 4000);
+            }
+          })
+          .catch(() => {});
       } catch (_) {}
-      // Open in browser tab
-      window.open("https://www.youtube.com", "_blank");
+    };
+
+    // 1. YouTube Automation (OpenJarvis Parity)
+    if (lower.includes("youtube")) {
+      sendDesktopOpen(lower, "Opening YouTube in default browser for you, Tharun.");
       return;
     }
 
     // 2. Google Chrome Automation
     if (lower.includes("chrome") || lower.includes("open browser")) {
-      const msg = "Opening Google Chrome, Tharun.";
-      setCopilotReply(msg);
-      speak(msg);
-      try {
-        fetch("http://localhost:8002/v1/desktop/open", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target: "chrome" }),
-        }).catch(() => {});
-      } catch (_) {}
-      window.open("https://www.google.com", "_blank");
+      sendDesktopOpen(lower, "Opening Google Chrome, Tharun.");
       return;
     }
 
     // 3. VS Code Workspace Automation
-    if (lower.includes("vs code") || lower.includes("vscode") || lower.includes("open code")) {
-      const msg = "Launching Visual Studio Code in current workspace, Tharun.";
-      setCopilotReply(msg);
-      speak(msg);
-      try {
-        fetch("http://localhost:8002/v1/desktop/open", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target: "vscode" }),
-        }).catch(() => {});
-      } catch (_) {}
+    if (lower.includes("vs code") || lower.includes("vscode") || lower.includes("open code") || lower === "code") {
+      sendDesktopOpen("vscode", "Launching Visual Studio Code in current workspace, Tharun.");
+      return;
+    }
+
+    // 4. Spotify
+    if (lower.includes("spotify")) {
+      sendDesktopOpen("spotify", "Opening Spotify, Tharun.");
+      return;
+    }
+
+    // 5. Calculator
+    if (lower.includes("calc") || lower.includes("calculator")) {
+      sendDesktopOpen("calc", "Opening Calculator.");
+      return;
+    }
+
+    // 6. Notepad
+    if (lower.includes("notepad")) {
+      sendDesktopOpen("notepad", "Opening Notepad.");
+      return;
+    }
+
+    // 7. General Open Directive
+    if (lower.startsWith("open ") || lower.startsWith("launch ") || lower.startsWith("start ")) {
+      sendDesktopOpen(lower, `Executing desktop directive: ${lower}.`);
       return;
     }
 
@@ -379,6 +407,13 @@ export const WingshieldVoiceAssistant: React.FC = () => {
               {copilotReply}
             </div>
 
+            {desktopStatus && (
+              <div className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 rounded flex items-center gap-1.5 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span>{desktopStatus}</span>
+              </div>
+            )}
+
             {transcript && (
               <div className="text-[10px] text-zinc-400 italic">
                 Heard: "{transcript}"
@@ -403,32 +438,41 @@ export const WingshieldVoiceAssistant: React.FC = () => {
             </button>
 
             {/* Mic toggle & quick commands */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               <button
                 onClick={toggleListening}
-                className={`py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all ${
+                className={`py-2 px-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-all ${
                   isListening
                     ? "bg-red-500/20 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                     : "bg-[#161b22] text-zinc-300 border-[#30363d] hover:border-[#38bdf8]/60"
                 }`}
               >
-                {isListening ? <MicOff size={14} /> : <Mic size={14} className="text-[#38bdf8]" />}
-                <span>{isListening ? "Stop" : "Mic"}</span>
+                {isListening ? <MicOff size={13} /> : <Mic size={13} className="text-[#38bdf8]" />}
+                <span className="text-[11px]">{isListening ? "Stop" : "Mic"}</span>
               </button>
 
               <button
                 onClick={() => handleVoiceCommand("open youtube")}
-                className="py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-[#161b22] text-red-400 border border-[#30363d] hover:border-red-500/60 transition-all hover:bg-red-500/10"
-                title="Launch YouTube in Chrome"
+                className="py-2 px-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-center bg-[#161b22] text-red-400 border border-[#30363d] hover:border-red-500/60 transition-all hover:bg-red-500/10"
+                title="Launch YouTube in default browser"
               >
                 <span>▶ YouTube</span>
               </button>
 
               <button
-                onClick={() => handleVoiceCommand("research agent")}
-                className="py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-[#161b22] text-zinc-300 border border-[#30363d] hover:border-[#bc8cff]/60 transition-all"
+                onClick={() => handleVoiceCommand("open vs code")}
+                className="py-2 px-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-center bg-[#161b22] text-[#38bdf8] border border-[#30363d] hover:border-[#38bdf8]/60 transition-all hover:bg-[#38bdf8]/10"
+                title="Launch VS Code workspace"
               >
-                <Bot size={14} className="text-[#bc8cff]" />
+                <span>Code</span>
+              </button>
+
+              <button
+                onClick={() => handleVoiceCommand("research agent")}
+                className="py-2 px-1.5 rounded-lg text-[11px] font-semibold flex items-center justify-center bg-[#161b22] text-zinc-300 border border-[#30363d] hover:border-[#bc8cff]/60 transition-all"
+                title="Inspect Autonomous Agents"
+              >
+                <Bot size={13} className="text-[#bc8cff]" />
                 <span>Agents</span>
               </button>
             </div>

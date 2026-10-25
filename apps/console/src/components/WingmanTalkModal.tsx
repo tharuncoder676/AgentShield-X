@@ -163,31 +163,30 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     const lower = query.toLowerCase();
     let reply = "";
 
-    // 1. Desktop & Web App Automation
-    if (lower.includes("youtube") || lower.includes("open youtube")) {
-      reply = `Opening YouTube for you, ${config.operatorName}. Enjoy!`;
+    // 1. Desktop & Web App Automation (OpenJarvis Parity)
+    if (lower.includes("youtube")) {
+      reply = `Opening YouTube for you, ${config.operatorName}.`;
       try {
         fetch("http://localhost:8002/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target: "youtube" }),
+          body: JSON.stringify({ target: lower }),
         }).catch(() => {});
       } catch (_) {}
-      window.open("https://www.youtube.com", "_blank");
-    } else if (lower.includes("chrome") || lower.includes("open chrome")) {
-      reply = `Opening Google Chrome browser window, ${config.operatorName}.`;
+    } else if (lower.includes("chrome") || lower.includes("open browser")) {
+      reply = `Opening Google Chrome, ${config.operatorName}.`;
       try {
         fetch("http://localhost:8002/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target: "chrome" }),
+          body: JSON.stringify({ target: lower }),
         }).catch(() => {});
       } catch (_) {}
-      window.open("https://www.google.com", "_blank");
     } else if (
       lower.includes("vs code") ||
       lower.includes("vscode") ||
-      lower.includes("open code")
+      lower.includes("open code") ||
+      lower === "code"
     ) {
       reply = `Workspace initialized in VS Code for AgentShield-X repository.`;
       try {
@@ -195,6 +194,42 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: "vscode" }),
+        }).catch(() => {});
+      } catch (_) {}
+    } else if (lower.includes("calc") || lower.includes("calculator")) {
+      reply = `Launching Calculator.`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "calc" }),
+        }).catch(() => {});
+      } catch (_) {}
+    } else if (lower.includes("notepad")) {
+      reply = `Opening Notepad.`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "notepad" }),
+        }).catch(() => {});
+      } catch (_) {}
+    } else if (lower.includes("spotify")) {
+      reply = `Opening Spotify for you, ${config.operatorName}.`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "spotify" }),
+        }).catch(() => {});
+      } catch (_) {}
+    } else if (lower.startsWith("open ") || lower.startsWith("launch ") || lower.startsWith("start ")) {
+      reply = `Executing desktop directive: ${query}.`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: query }),
         }).catch(() => {});
       } catch (_) {}
     } else if (
