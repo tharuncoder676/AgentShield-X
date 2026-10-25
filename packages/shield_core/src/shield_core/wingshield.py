@@ -1705,30 +1705,53 @@ class WingshieldCopilotEngine:
         sre_active = False
         if SYSTEM_SPEECH_AVAILABLE:
             try:
-                sre = SpeechRecognitionEngine()
-                sre.SetInputToDefaultAudioDevice()
+                self.sre = SpeechRecognitionEngine()
+                self.sre.SetInputToDefaultAudioDevice()
                 c = Choices()
                 c.Add([
-                    "agentshield wakeup", "agentshield", "wingshield", "wakeup", "wake up",
-                    "open youtube", "open chrome", "open vs code", "open vscode", "open code",
-                    "open google", "open whatsapp", "open notepad", "open terminal",
-                    "youtube", "chrome", "vscode", "vs code", "google",
-                    "system status", "morning digest", "weather"
+                    # Wake up triggers (Copilot)
+                    "agentshield wakeup", "agent shield wakeup", "agentshield wake up", "agent shield wake up",
+                    "wingshield wakeup", "wingshield wake up", "wingshield", "wakeup", "wake up", "wake",
+                    "shield wakeup", "shield wake up",
+                    # Original CLI triggers
+                    "agentshield", "agent shield", "agentshield cli", "agent shield cli",
+                    "shield cli", "cli terminal", "cli",
+                    # Direct App Launchers
+                    "open youtube", "youtube", "play youtube", "watch youtube",
+                    "open chrome", "chrome", "launch chrome", "google chrome",
+                    "open google", "google", "web",
+                    "open vs code", "open vscode", "open code", "vscode", "vs code", "code",
+                    "open whatsapp", "whatsapp",
+                    "open notepad", "notepad",
+                    "open calculator", "calculator", "calc",
+                    "open terminal", "terminal", "cmd",
+                    "open explorer", "explorer", "files",
+                    "open paint", "paint",
+                    "open camera", "camera",
+                    "open spotify", "spotify",
+                    # Assistant commands
+                    "system status", "diagnostics", "battery",
+                    "morning digest", "daily briefing", "weather",
+                    "scan", "doctor", "take screenshot", "lock computer",
+                    "stand down", "sleep", "at ease"
                 ])
-                sre.LoadGrammar(Grammar(GrammarBuilder(c)))
-                try:
-                    sre.LoadGrammar(DictationGrammar())
-                except Exception:
-                    pass
+                gb = GrammarBuilder(c)
+                grammar = Grammar(gb)
+                grammar.Weight = 1.0
+                self.sre.LoadGrammar(grammar)
 
-                def _sre_callback(sender, args):
+                def _sre_event(sender, args):
                     if args and args.Result and args.Result.Text:
                         text = str(args.Result.Text).strip()
+                        confidence = getattr(args.Result, "Confidence", 1.0)
                         if text:
+                            print(f"\033[38;2;139;148;158m[Audio Stream] {text} (conf: {confidence:.2f})\033[0m")
                             self.handle_voice_stream(text)
 
-                sre.SpeechRecognized += _sre_callback
-                sre.RecognizeAsync(RecognizeMode.Multiple)
+                self._sre_callback = _sre_event
+                self.sre.SpeechRecognized += self._sre_callback
+                self.sre.SpeechRecognitionRejected += self._sre_callback
+                self.sre.RecognizeAsync(RecognizeMode.Multiple)
                 sre_active = True
                 print("\033[38;2;63;185;80m[+] Windows Native Speech Recognition Engine active & listening.\033[0m")
             except Exception as e:
