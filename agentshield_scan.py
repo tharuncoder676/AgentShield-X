@@ -45,7 +45,86 @@ DECOY_KEYWORDS = {
 }
 
 
-class DiscoveredTool:
+# Integration with AgentShield-X Semantic & Deep AST Dataflow Engine
+try:
+    from shield_core.semantic_scanner import (
+        SemanticDiscoveredTool,
+        inspect_function_ast,
+        ASTBehavioralProfile,
+    )
+except ImportError:
+    _core_src = Path(__file__).parent / "packages" / "shield_core" / "src"
+    if _core_src.exists():
+        sys.path.insert(0, str(_core_src))
+        from shield_core.semantic_scanner import (
+            SemanticDiscoveredTool,
+            inspect_function_ast,
+            ASTBehavioralProfile,
+        )
+    else:
+        # Fallback if shield_core is not present
+        class ASTBehavioralProfile:
+            def __init__(self):
+                self.has_outbound_sink = False
+                self.has_private_read = False
+                self.has_untrusted_input = False
+                self.has_raw_exec = False
+                self.outbound_calls = set()
+                self.private_calls = set()
+                self.untrusted_calls = set()
+
+        def inspect_function_ast(node: ast.FunctionDef) -> ASTBehavioralProfile:
+            return ASTBehavioralProfile()
+
+        class SemanticDiscoveredTool:
+            def __init__(
+                self,
+                name: str,
+                file_path: Path,
+                line: int,
+                source: Optional[str] = None,
+                reads: Optional[str] = None,
+                sink: Optional[str] = None,
+                honeytool: bool = False,
+                ast_profile: Optional[ASTBehavioralProfile] = None,
+            ):
+                self.name = name
+                self.file_path = file_path
+                self.line = line
+                self.source = source
+                self.reads = reads
+                self.sink = sink
+                self.honeytool = honeytool
+                self.ast_profile = ast_profile or ASTBehavioralProfile()
+
+            def is_untrusted_input(self) -> bool:
+                if self.source == "untrusted" or self.ast_profile.has_untrusted_input:
+                    return True
+                return any(k in self.name.lower() for k in UNTRUSTED_KEYWORDS)
+
+            def is_private_read(self) -> bool:
+                if self.honeytool:
+                    return False
+                if self.reads == "private" or self.ast_profile.has_private_read:
+                    return True
+                return any(k in self.name.lower() for k in PRIVATE_KEYWORDS)
+
+            def is_outbound_sink(self) -> bool:
+                if self.honeytool:
+                    return False
+                if self.sink == "external" or self.ast_profile.has_outbound_sink or self.ast_profile.has_raw_exec:
+                    return True
+                return any(k in self.name.lower() for k in SINK_KEYWORDS)
+
+            def is_decoy(self) -> bool:
+                if self.honeytool:
+                    return True
+                return any(k in self.name.lower() for k in DECOY_KEYWORDS)
+
+
+class DiscoveredTool(SemanticDiscoveredTool):
+    """Deep AST-profiled agent tool discovery entity with semantic projection."""
+
     def __init__(
         self,
         name: str,
@@ -55,45 +134,21 @@ class DiscoveredTool:
         reads: Optional[str] = None,
         sink: Optional[str] = None,
         honeytool: bool = False,
+        ast_profile: Optional[ASTBehavioralProfile] = None,
     ):
-        self.name = name
-        self.file_path = file_path
-        self.line = line
-        self.source = source
-        self.reads = reads
-        self.sink = sink
-        self.honeytool = honeytool
-
-    def is_untrusted_input(self) -> bool:
-        if self.source == "untrusted":
-            return True
-        low = self.name.lower()
-        return any(k in low for k in UNTRUSTED_KEYWORDS)
-
-    def is_private_read(self) -> bool:
-        if self.honeytool:
-            return False
-        if self.reads == "private":
-            return True
-        low = self.name.lower()
-        return any(k in low for k in PRIVATE_KEYWORDS)
-
-    def is_outbound_sink(self) -> bool:
-        if self.honeytool:
-            return False
-        if self.sink == "external":
-            return True
-        low = self.name.lower()
-        return any(k in low for k in SINK_KEYWORDS)
-
-    def is_decoy(self) -> bool:
-        if self.honeytool:
-            return True
-        low = self.name.lower()
-        return any(k in low for k in DECOY_KEYWORDS)
+        super().__init__(
+            name=name,
+            file_path=file_path,
+            line=line,
+            source=source,
+            reads=reads,
+            sink=sink,
+            honeytool=honeytool,
+            ast_profile=ast_profile,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "name": self.name,
             "file": str(self.file_path),
             "line": self.line,
@@ -106,6 +161,9 @@ class DiscoveredTool:
             "is_sink": self.is_outbound_sink(),
             "is_decoy": self.is_decoy(),
         }
+        if hasattr(self, "semantic_scores"):
+            d["semantic_scores"] = self.semantic_scores
+        return d
 
 
 class RepoScanner:
@@ -176,6 +234,7 @@ class RepoScanner:
                             is_tool_fn = True
 
                     if is_tool_fn:
+                        ast_prof = inspect_function_ast(node)
                         tools_found.append(
                             DiscoveredTool(
                                 name=tool_name,
@@ -185,6 +244,7 @@ class RepoScanner:
                                 reads=reads_val,
                                 sink=sink_val,
                                 honeytool=is_honey,
+                                ast_profile=ast_prof,
                             )
                         )
 

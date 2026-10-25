@@ -682,8 +682,9 @@ def run_interactive_repl():
         "/rag": "Inspect vector memory chunks for indirect prompt injection",
         "/gitops": "Generate automated PR patch & hot-reload Rego policy",
         "/immunity": "Calculate live agent Immunity Score (0-100%) and drift",
-        "/jarvis": "Launch JARVIS voice copilot & autonomous full security replay",
-        "/wakeup": "Wake up AgentShield-X autonomous JARVIS voice walkthrough",
+        "/wingshield": "Launch Wingshield Copilot: autonomous voice & complete laptop automation",
+        "/wakeup": "Wake up Wingshield Copilot - greets Tharun & enables full computer control",
+        "/jarvis": "Alias to Wingshield Copilot",
         "/clear": "Clear the terminal screen",
         "/exit": "Exit interactive console",
     }
@@ -714,12 +715,11 @@ def run_interactive_repl():
                 os.system("cls" if os.name == "nt" else "clear")
                 print_banner()
 
-            elif cmd in ("/jarvis", "jarvis", "/wakeup", "wakeup", "wake"):
-                from shield_core.jarvis import run_jarvis_cli, JarvisAutomationEngine
-                if "demo" in parts or "run" in parts or cmd in ("/wakeup", "wakeup"):
-                    JarvisAutomationEngine().run_full_autonomous_demo(voice_enabled=True)
-                else:
-                    run_jarvis_cli()
+            elif cmd in ("/wingshield", "wingshield", "/wakeup", "wakeup", "/jarvis", "jarvis", "wake"):
+                from shield_core.wingshield import run_wingshield_cli
+                run_wingshield_cli()
+
+            elif cmd in ("/connect", "connect"):
                 target = parts[1].lower() if len(parts) > 1 else "all"
                 try:
                     from shield_mcp.connectors import ConnectorManager
@@ -788,7 +788,20 @@ def run_interactive_repl():
                 cmd_autopolicy(argparse.Namespace())
 
             else:
-                print(f"{Style.YELLOW}Unknown command '{line}'. Type /help for available commands.{Style.RESET}")
+                if line.startswith("/"):
+                    print(f"{Style.YELLOW}Unknown command '{line}'. Type /help for available commands.{Style.RESET}")
+                else:
+                    # Natural language & Computer automation command via Wingshield Copilot
+                    try:
+                        from shield_core.wingshield import WingshieldCopilotEngine
+                        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+                        reply, should_exit = engine.process_command(line)
+                        if reply:
+                            print(f"\n{Style.CYAN}{reply}{Style.RESET}\n")
+                        if should_exit:
+                            break
+                    except Exception as e:
+                        print(f"{Style.YELLOW}Execution note: {e}{Style.RESET}")
 
         except (KeyboardInterrupt, EOFError):
             print(f"\n{Style.CYAN}Session terminated.{Style.RESET}")
@@ -886,9 +899,10 @@ def main(argv=None) -> int:
     inspect_parser.add_argument("--upstream", required=True, help="Command to run upstream MCP server")
     inspect_parser.add_argument("--save-pins", default=None, help="Path to save pinned tool definitions")
 
-    # Command: jarvis / wakeup
-    subparsers.add_parser("jarvis", help="Launch JARVIS autonomous voice assistant and security copilot")
-    subparsers.add_parser("wakeup", help="Wake up AgentShield-X autonomous security demonstration sequence")
+    # Command: wingshield / wakeup
+    subparsers.add_parser("wingshield", help="Launch Wingshield Copilot autonomous voice & desktop assistant")
+    subparsers.add_parser("wakeup", help="Wake up Wingshield Copilot - greets Tharun & enables complete laptop access")
+    subparsers.add_parser("jarvis", help="Alias to Wingshield Copilot")
 
     args = parser.parse_args(argv)
 
@@ -896,12 +910,9 @@ def main(argv=None) -> int:
         run_interactive_repl()
         return 0
 
-    if args.subcommand in ("jarvis", "wakeup"):
-        from shield_core.jarvis import run_jarvis_cli, JarvisAutomationEngine
-        if args.subcommand == "wakeup":
-            JarvisAutomationEngine().run_full_autonomous_demo(voice_enabled=True)
-            return 0
-        run_jarvis_cli()
+    if args.subcommand in ("wingshield", "wakeup", "jarvis"):
+        from shield_core.wingshield import run_wingshield_cli
+        run_wingshield_cli()
         return 0
 
     if args.subcommand in ("login", "auth"):

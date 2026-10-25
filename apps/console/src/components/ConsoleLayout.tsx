@@ -10,7 +10,7 @@ import {
 import { Bot, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useStream } from "../context/StreamContext";
-import { JarvisVoiceAssistant } from "./JarvisVoiceAssistant";
+import { WingshieldVoiceAssistant } from "./WingshieldVoiceAssistant";
 
 export const ConsoleLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -165,8 +165,8 @@ export const ConsoleLayout: React.FC = () => {
           )}
         </button>
 
-        {/* Floating JARVIS Voice Assistant & Autonomous Tour HUD */}
-        <JarvisVoiceAssistant />
+        {/* Floating Wingshield Copilot Voice Assistant & Autonomous Tour HUD */}
+        <WingshieldVoiceAssistant />
 
         {/* Shieldwing Copilot Drawer */}
         <ShieldwingDrawer

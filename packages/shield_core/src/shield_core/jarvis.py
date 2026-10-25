@@ -192,54 +192,7 @@ class JarvisAutomationEngine:
 
 
 def run_jarvis_cli():
-    """Starts interactive JARVIS voice / command mode in terminal."""
-    engine = JarvisAutomationEngine()
-    print("""
-\033[38;2;56;189;248m
-       ▄▄▄▄███▄▄▄▄      ▄████████    ▄████████ ▀████    ▐████▀ ▄█     ▄████████ 
-     ▄██▀▀▀███▀▀▀██▄   ███    ███   ███    ███   ███▌   ████▀ ███    ███    ███ 
-     ███   ███   ███   ███    ███   ███    ███    ███  ▐███   ███▌   ███    █▀  
-     ███   ███   ███   ███    ███  ▄███▄▄▄▄██▀    ▀███▄███▀   ███▌   ███        
-     ███   ███   ███ ▀███████████ ▀▀███▀▀▀▀▀       ████▀██▄   ███▌ ▀███████████ 
-     ███   ███   ███   ███    ███ ▀███████████    ▐███  ▀███  ███           ███ 
-     ███   ███   ███   ███    ███   ███    ███   ▄███     ███ ███     ▄█    ███ 
-      ▀█   ███   █▀    ███    █▀    ███    ███  ████       ████ █▀  ▄████████▀  
-                                    ███    ███                                  
-\033[0m
- \033[1;37mAgentShield-X JARVIS Autonomous Voice & Security Copilot\033[0m
- \033[38;2;139;148;158mSpeak or type 'wakeup' / 'demo' to run full automation walkthrough.\033[0m
- \033[38;2;139;148;158mCommands: 'scan', 'debate', 'mcp', 'attest', 'research', 'exit'\033[0m
-""")
-    speak("JARVIS online. Say or enter wakeup to begin.", wait=False)
+    """Forwarded to Wingshield Copilot CLI."""
+    from shield_core.wingshield import run_wingshield_cli
+    run_wingshield_cli()
 
-    while True:
-        try:
-            cmd = input("\033[38;2;56;189;248mJARVIS >\033[0m ").strip().lower()
-            if not cmd:
-                continue
-
-            if cmd in ("wakeup", "wake up", "wake up agentshield-x", "demo", "autoplay", "start", "run"):
-                engine.run_full_autonomous_demo(voice_enabled=True)
-
-            elif "research" in cmd or "project" in cmd:
-                engine.print_narration("Research Agent Architecture", JarvisProjectKnowledge.KNOWLEDGE_SUMMARY["research_agent"])
-
-            elif "scan" in cmd:
-                engine.print_narration("Initiating AST Scan", "Scanning local repository for untrusted inputs and outbound sinks.")
-                from shield_core.scanner import RepoScanner
-                print(RepoScanner.render_text(RepoScanner(".").scan(mode="enforce")))
-
-            elif "debate" in cmd:
-                from shield_core.judge import MultiAgentJudgeCommittee
-                engine.print_narration("Consensus Committee", "Convening 3-Judge Debate Committee.")
-                v = MultiAgentJudgeCommittee().evaluate_tool_call("send_email", {"to": "attacker@evil.test"}, True)
-                print(f"Verdict: {v.get('action')} - Reason: {v.get('reason')}")
-
-            elif cmd in ("exit", "quit", "q", "bye"):
-                speak("Deactivating JARVIS. Goodbye Tharunkumar.", wait=True)
-                print("\033[38;2;56;189;248mJARVIS offline.\033[0m")
-                break
-            else:
-                print(f"\033[38;2;251;191;36mCommand '{cmd}' recognized. Enter 'wakeup' for full automation demonstration.\033[0m")
-        except (KeyboardInterrupt, EOFError):
-            break
