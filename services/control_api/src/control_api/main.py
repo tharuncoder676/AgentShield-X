@@ -109,7 +109,31 @@ from pydantic import BaseModel
 class DesktopOpenPayload(BaseModel):
     target: str
 
+@app.get("/v1/desktop/open")
+@app.get("/v1/desktop/open/")
+@app.get("/open")
+@app.get("/youtube")
+def desktop_open_get(target: str = "youtube"):
+    try:
+        from shield_core.wingshield import ComputerAutomation
+        success, msg = ComputerAutomation.open_app(target)
+        return {"success": success, "message": msg, "target": target}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/v1/desktop/open/{target}")
+@app.post("/v1/desktop/open/{target}")
+@app.get("/open/{target}")
+def desktop_open_path(target: str):
+    try:
+        from shield_core.wingshield import ComputerAutomation
+        success, msg = ComputerAutomation.open_app(target)
+        return {"success": success, "message": msg, "target": target}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 @app.post("/v1/desktop/open")
+@app.post("/v1/desktop/open/")
 def desktop_open(payload: DesktopOpenPayload):
     try:
         from shield_core.wingshield import ComputerAutomation
@@ -120,6 +144,16 @@ def desktop_open(payload: DesktopOpenPayload):
 
 class DesktopCommandPayload(BaseModel):
     command: str
+
+@app.get("/v1/desktop/command")
+def desktop_command_get(command: str = "status"):
+    try:
+        from shield_core.wingshield import WingshieldCopilotEngine
+        copilot = WingshieldCopilotEngine(greeting_recipient="Tharun")
+        reply, should_exit = copilot.process_command(command)
+        return {"success": True, "reply": reply, "should_exit": should_exit}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 @app.post("/v1/desktop/command")
 def desktop_command(payload: DesktopCommandPayload):
