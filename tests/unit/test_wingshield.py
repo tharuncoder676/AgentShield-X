@@ -140,3 +140,45 @@ class TestWingshieldCopilot:
         assert not exit_sched
         assert "Scheduled" in reply_sched or "tasks" in reply_sched
 
+    def test_youtube_chrome_and_app_opening(self):
+        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+
+        # YouTube direct & search
+        r_yt1, _ = engine.process_command("open youtube")
+        assert "Opening YouTube" in r_yt1
+
+        r_yt2, _ = engine.process_command("youtube")
+        assert "Opening YouTube" in r_yt2
+
+        r_yt3, _ = engine.process_command("play youtube")
+        assert "Opening YouTube" in r_yt3
+
+        r_yt4, _ = engine.process_command("search youtube for machine learning")
+        assert "Searching YouTube for: 'machine learning'" in r_yt4
+
+        # Chrome & Google
+        r_ch1, _ = engine.process_command("open chrome")
+        assert "Opening Google Chrome" in r_ch1
+
+        r_ch2, _ = engine.process_command("chrome")
+        assert "Opening Google Chrome" in r_ch2
+
+        r_g1, _ = engine.process_command("open google")
+        assert "Opening Google" in r_g1
+
+        r_g2, _ = engine.process_command("google")
+        assert "Opening Google" in r_g2
+
+        r_g3, _ = engine.process_command("search google for AI agent security")
+        assert "Searching Google for: 'ai agent security'" in r_g3
+
+        # Web & Desktop apps
+        r_wa, _ = engine.process_command("open whatsapp")
+        assert "Opening WhatsApp" in r_wa
+
+        r_calc, _ = engine.process_command("open calculator")
+        assert "Opening Calculator" in r_calc
+
+        r_code, _ = engine.process_command("open vs code")
+        assert "Visual Studio Code" in r_code
+

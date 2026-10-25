@@ -134,21 +134,109 @@ class ComputerAutomation:
     """Controls computer desktop applications, system utilities, and web navigation."""
 
     @staticmethod
+    def get_chrome_path() -> Optional[str]:
+        candidates = [
+            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+        return None
+
+    @staticmethod
+    def get_edge_path() -> Optional[str]:
+        candidates = [
+            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%LocalAppData%\Microsoft\Edge\Application\msedge.exe"),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+        return None
+
+    @staticmethod
+    def open_url(url: str) -> bool:
+        """Reliably opens a URL in default browser using native Win32 ShellExecute, webbrowser, or cmd start."""
+        try:
+            if hasattr(os, "startfile"):
+                os.startfile(url)
+                return True
+        except Exception:
+            pass
+        try:
+            return webbrowser.open(url)
+        except Exception:
+            pass
+        try:
+            subprocess.Popen(["cmd", "/c", "start", "", url], shell=True)
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
     def open_app(app_name: str) -> Tuple[bool, str]:
         app_low = app_name.lower().strip()
 
+        # YouTube
+        if "youtube" in app_low:
+            ComputerAutomation.open_url("https://www.youtube.com")
+            return True, "Opening YouTube."
+
         # Google Chrome
         if "chrome" in app_low:
-            try:
-                subprocess.Popen(["cmd", "/c", "start", "chrome", "https://google.com"], shell=True)
-            except Exception:
-                webbrowser.get().open("https://google.com")
+            chrome_exe = ComputerAutomation.get_chrome_path()
+            if chrome_exe:
+                try:
+                    subprocess.Popen([chrome_exe])
+                    return True, "Opening Google Chrome."
+                except Exception:
+                    pass
+            ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google Chrome."
 
         # Microsoft Edge / Default Browser
-        elif "edge" in app_low or "browser" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "msedge"], shell=True)
+        elif "edge" in app_low or app_low in ("browser", "web browser"):
+            edge_exe = ComputerAutomation.get_edge_path()
+            if edge_exe:
+                try:
+                    subprocess.Popen([edge_exe])
+                    return True, "Opening Microsoft Edge."
+                except Exception:
+                    pass
+            ComputerAutomation.open_url("https://www.bing.com")
             return True, "Opening Microsoft Edge."
+
+        # Google
+        elif app_low in ("google", "google search", "web"):
+            ComputerAutomation.open_url("https://www.google.com")
+            return True, "Opening Google."
+
+        # Gmail
+        elif "gmail" in app_low or "mail" in app_low or "email" in app_low:
+            ComputerAutomation.open_url("https://mail.google.com")
+            return True, "Opening Gmail."
+
+        # GitHub
+        elif "github" in app_low or "repo" in app_low:
+            ComputerAutomation.open_url("https://github.com/tharuncoder676/AgentShield-X")
+            return True, "Opening AgentShield-X GitHub repository."
+
+        # WhatsApp
+        elif "whatsapp" in app_low:
+            try:
+                subprocess.Popen(["cmd", "/c", "start", "whatsapp:"], shell=True)
+            except Exception:
+                pass
+            ComputerAutomation.open_url("https://web.whatsapp.com")
+            return True, "Opening WhatsApp."
+
+        # ChatGPT
+        elif "chatgpt" in app_low or "gpt" in app_low or "openai" in app_low:
+            ComputerAutomation.open_url("https://chatgpt.com")
+            return True, "Opening ChatGPT."
 
         # VS Code
         elif "vs code" in app_low or "vscode" in app_low or app_low in ("code", "visual studio code"):
@@ -179,7 +267,8 @@ class ComputerAutomation:
             try:
                 subprocess.Popen(["cmd", "/c", "start", "outlookcal:"], shell=True)
             except Exception:
-                webbrowser.open("https://calendar.google.com")
+                pass
+            ComputerAutomation.open_url("https://calendar.google.com")
             return True, "Opening Calendar."
 
         # Windows Settings
@@ -214,7 +303,11 @@ class ComputerAutomation:
 
         # Spotify
         elif "spotify" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "spotify:"], shell=True)
+            try:
+                subprocess.Popen(["cmd", "/c", "start", "spotify:"], shell=True)
+            except Exception:
+                pass
+            ComputerAutomation.open_url("https://open.spotify.com")
             return True, "Opening Spotify."
 
         # Microsoft Office (Word, Excel, PowerPoint)
@@ -230,12 +323,12 @@ class ComputerAutomation:
 
         # Web Console
         elif "console" in app_low or "dashboard" in app_low or "agentshield" in app_low:
-            webbrowser.open("http://localhost:3000")
+            ComputerAutomation.open_url("http://localhost:3000")
             return True, "Opening AgentShield-X Web Console at http://localhost:3000."
 
         # Generic Windows Launch Fallback
         try:
-            subprocess.Popen(["cmd", "/c", "start", app_name], shell=True)
+            subprocess.Popen(["cmd", "/c", "start", "", app_name], shell=True)
             return True, f"Attempting to launch {app_name}."
         except Exception as e:
             return False, f"Could not launch {app_name}: {e}"
@@ -245,7 +338,7 @@ class ComputerAutomation:
         """Opens Calendar event scheduler in browser or Windows Calendar."""
         encoded = urllib.parse.quote(title)
         url = f"https://calendar.google.com/calendar/u/0/r/eventedit?text={encoded}"
-        webbrowser.open(url)
+        ComputerAutomation.open_url(url)
         return f"Opening calendar event creator for: '{title}'."
 
     @staticmethod
@@ -285,23 +378,36 @@ class ComputerAutomation:
 
     @staticmethod
     def search_web(query: str, engine: str = "google") -> str:
-        encoded = urllib.parse.quote(query)
+        q_clean = query.strip()
+        encoded = urllib.parse.quote(q_clean)
         if engine == "youtube":
+            if not q_clean:
+                ComputerAutomation.open_url("https://www.youtube.com")
+                return "Opening YouTube."
             url = f"https://www.youtube.com/results?search_query={encoded}"
-            webbrowser.open(url)
-            return f"Searching YouTube for: '{query}'"
+            ComputerAutomation.open_url(url)
+            return f"Searching YouTube for: '{q_clean}'"
         elif engine == "github":
+            if not q_clean:
+                ComputerAutomation.open_url("https://github.com/tharuncoder676/AgentShield-X")
+                return "Opening AgentShield-X GitHub repository."
             url = f"https://github.com/search?q={encoded}"
-            webbrowser.open(url)
-            return f"Searching GitHub for: '{query}'"
+            ComputerAutomation.open_url(url)
+            return f"Searching GitHub for: '{q_clean}'"
         elif engine == "arxiv":
+            if not q_clean:
+                q_clean = "AI agent security"
+                encoded = urllib.parse.quote(q_clean)
             url = f"https://arxiv.org/search/?query={encoded}&searchtype=all"
-            webbrowser.open(url)
-            return f"Opening arXiv research paper search for: '{query}'"
+            ComputerAutomation.open_url(url)
+            return f"Opening arXiv research paper search for: '{q_clean}'"
         else:
+            if not q_clean:
+                ComputerAutomation.open_url("https://www.google.com")
+                return "Opening Google."
             url = f"https://www.google.com/search?q={encoded}"
-            webbrowser.open(url)
-            return f"Searching Google for: '{query}'"
+            ComputerAutomation.open_url(url)
+            return f"Searching Google for: '{q_clean}'"
 
     @staticmethod
     def get_weather(location: str = "") -> str:
@@ -851,6 +957,7 @@ class WingshieldCopilotEngine:
     def __init__(self, greeting_recipient: str = "Tharun"):
         self.recipient = greeting_recipient
         self.is_active = True
+        self.last_active_time = time.time()
         self.trace_store = WingshieldTraceStore()
         self.scheduler = WingshieldScheduler()
 
@@ -895,6 +1002,11 @@ class WingshieldCopilotEngine:
     def _process_command_internal(self, raw_input: str) -> Tuple[str, bool]:
         cmd = raw_input.strip()
         low = cmd.lower()
+        # Normalize spoken speech artifacts
+        low = re.sub(r"\b(you\s*tube|u\s*tube)\b", "youtube", low)
+        low = re.sub(r"\b(crome)\b", "chrome", low)
+        low = re.sub(r"\b(vs\s*code|v\s*s\s*code)\b", "vscode", low)
+        low = re.sub(r"\b(agent\s*shield)\b", "agentshield", low)
 
         if not cmd:
             return "", False
@@ -991,13 +1103,25 @@ class WingshieldCopilotEngine:
 
         # 6. Desktop Automation: Open Applications (flexible prefix & direct app names)
         direct_apps = {
+            "youtube": "youtube",
             "chrome": "chrome",
             "google chrome": "chrome",
             "edge": "edge",
             "browser": "chrome",
+            "web": "google",
+            "google": "google",
+            "gmail": "gmail",
+            "email": "gmail",
+            "mail": "gmail",
+            "github": "github",
+            "repo": "github",
+            "repository": "github",
+            "whatsapp": "whatsapp",
+            "chatgpt": "chatgpt",
             "vs code": "vscode",
             "vscode": "vscode",
             "visual studio code": "vscode",
+            "code": "vscode",
             "cursor": "cursor",
             "notepad": "notepad",
             "calculator": "calculator",
@@ -1012,16 +1136,20 @@ class WingshieldCopilotEngine:
             "my files": "explorer",
             "terminal": "terminal",
             "cmd": "terminal",
+            "command prompt": "terminal",
             "paint": "paint",
             "camera": "camera",
             "spotify": "spotify",
             "word": "word",
             "excel": "excel",
             "powerpoint": "powerpoint",
+            "console": "console",
+            "dashboard": "console",
+            "agentshield": "console",
         }
 
         app_target = None
-        for prefix in ("open ", "launch ", "start ", "run "):
+        for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch "):
             if low.startswith(prefix):
                 app_target = low[len(prefix):].strip()
                 break
@@ -1029,19 +1157,27 @@ class WingshieldCopilotEngine:
             if low in direct_apps:
                 app_target = direct_apps[low]
             else:
-                for k in direct_apps:
-                    if f"open {k}" in low or f"launch {k}" in low or f"start {k}" in low:
-                        app_target = direct_apps[k]
+                for k, v in direct_apps.items():
+                    if low == k or f"open {k}" in low or f"launch {k}" in low or f"start {k}" in low:
+                        app_target = v
                         break
 
         if app_target:
-            if "youtube" in app_target:
-                return ComputerAutomation.search_web("", engine="youtube"), False
-            if "github" in app_target or ("repo" in app_target and "http" in app_target):
-                webbrowser.open("https://github.com/tharuncoder676/AgentShield-X")
-                msg = "Opening AgentShield-X GitHub repository."
-                speak(msg, wait=False)
-                return msg, False
+            # Check if this was a YouTube search with query
+            if "youtube" in app_target and any(k in low for k in ("search", "find")):
+                q = re.sub(r"^(open|launch|start|run|play|watch|search|find|youtube|\s)+", "", low)
+                q = q.replace("on youtube", "").replace("in youtube", "").replace("for", "").strip()
+                result_msg = ComputerAutomation.search_web(q, engine="youtube")
+                speak(result_msg, wait=False)
+                return result_msg, False
+
+            # Check if this was a Google search with query
+            if app_target in ("google", "chrome") and any(k in low for k in ("search", "find")):
+                q = re.sub(r"^(open|launch|start|run|search|find|google|chrome|\s)+", "", low)
+                q = q.replace("on google", "").replace("in google", "").replace("for", "").strip()
+                result_msg = ComputerAutomation.search_web(q, engine="google")
+                speak(result_msg, wait=False)
+                return result_msg, False
 
             ok, result_msg = ComputerAutomation.open_app(app_target)
             speak(result_msg, wait=False)
@@ -1084,22 +1220,40 @@ class WingshieldCopilotEngine:
             return result_msg, False
 
         # 11. Web & Video Searches
-        if "youtube" in low and any(k in low for k in ("search", "play", "find")):
-            query = low.replace("search youtube for", "").replace("search youtube", "").replace("play", "").replace("youtube", "").strip()
-            result_msg = ComputerAutomation.search_web(query, engine="youtube")
-            speak(f"Searching YouTube for {query}", wait=False)
-            return result_msg, False
+        if "youtube" in low:
+            if any(k in low for k in ("search", "play", "find", "watch")):
+                query = re.sub(r"^(search youtube for|search on youtube for|search youtube|search on youtube|search|play|find|watch|on youtube|in youtube|\s)+", "", low)
+                query = query.replace("on youtube", "").replace("in youtube", "").replace("youtube", "").strip()
+                result_msg = ComputerAutomation.search_web(query, engine="youtube")
+                speak(result_msg, wait=False)
+                return result_msg, False
+            else:
+                ok, result_msg = ComputerAutomation.open_app("youtube")
+                speak(result_msg, wait=False)
+                return result_msg, False
 
-        if "github" in low and "search" in low:
-            query = low.replace("search github for", "").replace("search github", "").replace("github", "").strip()
+        if "github" in low and any(k in low for k in ("search", "find", "repo")):
+            query = re.sub(r"^(search github for|search github|search on github|search|find|\s)+", "", low)
+            query = query.replace("on github", "").replace("in github", "").replace("github", "").strip()
             result_msg = ComputerAutomation.search_web(query, engine="github")
-            speak(f"Searching GitHub for {query}", wait=False)
+            speak(result_msg, wait=False)
             return result_msg, False
 
-        if low.startswith("search ") or low.startswith("google ") or "search google for" in low:
-            query = low.replace("search google for", "").replace("search for", "").replace("search ", "").replace("google ", "").strip()
+        if "google" in low and any(k in low for k in ("search", "find", "look up")):
+            query = re.sub(r"^(search google for|search google|search on google|google search|search|find|look up|\s)+", "", low)
+            query = query.replace("on google", "").replace("in google", "").replace("google", "").strip()
             result_msg = ComputerAutomation.search_web(query, engine="google")
-            speak(f"Searching Google for {query}", wait=False)
+            speak(result_msg, wait=False)
+            return result_msg, False
+        elif low in ("google", "open google", "launch google"):
+            ok, result_msg = ComputerAutomation.open_app("google")
+            speak(result_msg, wait=False)
+            return result_msg, False
+
+        if low.startswith("search ") or low.startswith("google ") or "search google for" in low or low.startswith("search for "):
+            query = re.sub(r"^(search google for|search for|search|google)\s+", "", low).strip()
+            result_msg = ComputerAutomation.search_web(query, engine="google")
+            speak(result_msg, wait=False)
             return result_msg, False
 
         # 9. System Diagnostics (Battery, CPU, Memory)
@@ -1277,16 +1431,44 @@ class WingshieldCopilotEngine:
                 try:
                     text = r.recognize_google(audio).lower()
                     print(f"\033[38;2;139;148;158m[Audio Stream] {text}\033[0m")
-                    clean_stream = re.sub(r"[^a-z0-9]", "", text)
+                    clean_text = text.strip()
+                    clean_text = re.sub(r"\b(you\s*tube|u\s*tube)\b", "youtube", clean_text)
+                    clean_text = re.sub(r"\b(crome)\b", "chrome", clean_text)
+                    clean_text = re.sub(r"\b(vs\s*code|v\s*s\s*code)\b", "vscode", clean_text)
+                    clean_text = re.sub(r"\b(agent\s*shield)\b", "agentshield", clean_text)
+
+                    clean_stream = re.sub(r"[^a-z0-9]", "", clean_text)
                     is_wake = (
                         ("agentshield" in clean_stream and "wake" in clean_stream)
                         or ("agent" in clean_stream and "shield" in clean_stream and "wake" in clean_stream)
                         or "wingshield" in clean_stream
                         or "wakeup" in clean_stream
-                        or any(w in text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup"))
+                        or any(w in clean_text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup"))
                     )
+
+                    direct_triggers = (
+                        "youtube", "chrome", "google", "gmail", "whatsapp", "github", "chatgpt",
+                        "vscode", "code", "cursor", "notepad", "calculator", "calc",
+                        "terminal", "cmd", "paint", "camera", "spotify", "calendar",
+                        "morning digest", "weather", "system status", "battery",
+                        "take screenshot", "lock computer", "scan", "doctor", "diagnostics"
+                    )
+                    has_direct_action = any(
+                        clean_text == t
+                        or clean_text.startswith(f"open {t}")
+                        or clean_text.startswith(f"launch {t}")
+                        or clean_text.startswith(f"start {t}")
+                        or clean_text.startswith(f"play {t}")
+                        or clean_text.startswith(f"watch {t}")
+                        or clean_text.startswith(t + " ")
+                        for t in direct_triggers
+                    )
+                    is_general_action = any(clean_text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch ", "scan ", "search ", "research ", "what is ", "who created ", "set calendar"))
+                    is_active_window = self.is_active and (time.time() - getattr(self, "last_active_time", 0.0) < 30.0)
+
                     if is_wake:
                         self.is_active = True
+                        self.last_active_time = time.time()
                         print("\033[1;32m[!] Wake word detected! Wingshield Copilot active.\033[0m")
                         speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
                         repo_root = Path(__file__).resolve().parents[4]
@@ -1298,18 +1480,20 @@ class WingshieldCopilotEngine:
                             )
                         except Exception as e:
                             print(f"[!] Could not spawn terminal window: {e}")
-                    elif self.is_active or any(text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "scan ", "what is ", "system status", "battery", "set calendar", "take screenshot", "lock computer", "who created", "who made", "wingshield", "agentshield")):
+                    elif has_direct_action or is_general_action or is_active_window:
                         # Once awake, or on direct actionable commands, execute immediately
-                        exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", text).strip()
+                        exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", clean_text).strip()
                         if not exec_text:
-                            exec_text = text
+                            exec_text = clean_text
                         self.is_active = True
+                        self.last_active_time = time.time()
                         print(f"\033[1;36m[VOICE ACTION] Executing: '{exec_text}'\033[0m")
                         res, should_exit = self.process_command(exec_text)
                         if res:
                             print(f"\033[38;2;240;246;252m{res}\033[0m\n")
                         if should_exit:
                             self.is_active = False
+                            self.last_active_time = 0.0
                 except sr.UnknownValueError:
                     pass
                 except sr.RequestError:
