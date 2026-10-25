@@ -11,5 +11,5 @@ echo Listening on microphone...
 echo Speak "Agentshield wakeup" or "Wingshield" to launch Copilot!
 echo.
 cd /d "%~dp0"
-python -m shield_core.wingshield --listen
+python -u -m shield_core.wingshield --listen
 pause

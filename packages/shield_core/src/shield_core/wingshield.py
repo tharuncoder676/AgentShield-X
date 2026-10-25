@@ -571,12 +571,21 @@ class WingshieldCopilotEngine:
                 try:
                     text = r.recognize_google(audio).lower()
                     print(f"\033[38;2;139;148;158m[Audio Stream] {text}\033[0m")
-                    if any(w in text for w in ("agentshield wakeup", "wake up agentshield", "wakeup", "wake up", "wingshield")):
+                    clean_stream = re.sub(r"[^a-z0-9]", "", text)
+                    is_wake = (
+                        ("agentshield" in clean_stream and "wake" in clean_stream)
+                        or ("agent" in clean_stream and "shield" in clean_stream and "wake" in clean_stream)
+                        or "wingshield" in clean_stream
+                        or "wakeup" in clean_stream
+                        or any(w in text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup"))
+                    )
+                    if is_wake:
                         print("\033[1;32m[!] Wake word detected! Launching Wingshield Copilot...\033[0m")
                         speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
-                        # Open new terminal with interactive loop
+                        repo_root = Path(__file__).resolve().parents[4]
+                        cmd_to_run = f'cd /d "{repo_root}" && python -m shield_core.cli wakeup'
                         subprocess.Popen(
-                            ["cmd.exe", "/k", "agentshield wakeup"],
+                            ["cmd.exe", "/k", cmd_to_run],
                             creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
                         )
                 except sr.UnknownValueError:
