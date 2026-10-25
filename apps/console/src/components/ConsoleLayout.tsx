@@ -10,6 +10,7 @@ import {
 import { Bot, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useStream } from "../context/StreamContext";
+import { JarvisVoiceAssistant } from "./JarvisVoiceAssistant";
 
 export const ConsoleLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -151,7 +152,7 @@ export const ConsoleLayout: React.FC = () => {
         {/* Floating Shieldwing Copilot Trigger Button */}
         <button
           onClick={() => setIsShieldwingOpen(true)}
-          className="fixed bottom-6 right-6 z-40 px-3.5 py-2.5 bg-panel border border-ok/50 text-ok hover:bg-ok/10 font-chakra font-bold text-xs uppercase tracking-wider rounded-sm shadow-xl flex items-center gap-2 backdrop-blur-md transition-all hover:scale-105"
+          className="fixed bottom-6 right-24 z-40 px-3.5 py-2.5 bg-panel border border-ok/50 text-ok hover:bg-ok/10 font-chakra font-bold text-xs uppercase tracking-wider rounded-sm shadow-xl flex items-center gap-2 backdrop-blur-md transition-all hover:scale-105"
           title="Open Shieldwing AI Security Copilot"
         >
           <div className="w-2 h-2 rounded-full bg-ok animate-pulse" />
@@ -163,6 +164,9 @@ export const ConsoleLayout: React.FC = () => {
             </span>
           )}
         </button>
+
+        {/* Floating JARVIS Voice Assistant & Autonomous Tour HUD */}
+        <JarvisVoiceAssistant />
 
         {/* Shieldwing Copilot Drawer */}
         <ShieldwingDrawer

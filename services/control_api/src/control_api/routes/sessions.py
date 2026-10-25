@@ -72,3 +72,4 @@ def replay_session(
         strict_mode=req.strict_mode,
     )
     return SessionReplayResponse(**result)
+

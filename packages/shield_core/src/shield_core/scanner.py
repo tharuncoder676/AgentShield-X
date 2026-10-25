@@ -38,7 +38,12 @@ DECOY_KEYWORDS = {
 }
 
 
-class DiscoveredTool:
+from shield_core.semantic_scanner import SemanticDiscoveredTool, inspect_function_ast, ASTBehavioralProfile
+
+
+class DiscoveredTool(SemanticDiscoveredTool):
+    """Universal discovered tool with multi-factor behavioral & semantic classification."""
+
     def __init__(
         self,
         name: str,
@@ -48,57 +53,18 @@ class DiscoveredTool:
         reads: Optional[str] = None,
         sink: Optional[str] = None,
         honeytool: bool = False,
+        ast_profile: Optional[ASTBehavioralProfile] = None,
     ):
-        self.name = name
-        self.file_path = file_path
-        self.line = line
-        self.source = source
-        self.reads = reads
-        self.sink = sink
-        self.honeytool = honeytool
-
-    def is_untrusted_input(self) -> bool:
-        if self.source == "untrusted":
-            return True
-        low = self.name.lower()
-        return any(k in low for k in UNTRUSTED_KEYWORDS)
-
-    def is_private_read(self) -> bool:
-        if self.honeytool:
-            return False
-        if self.reads == "private":
-            return True
-        low = self.name.lower()
-        return any(k in low for k in PRIVATE_KEYWORDS)
-
-    def is_outbound_sink(self) -> bool:
-        if self.honeytool:
-            return False
-        if self.sink == "external":
-            return True
-        low = self.name.lower()
-        return any(k in low for k in SINK_KEYWORDS)
-
-    def is_decoy(self) -> bool:
-        if self.honeytool:
-            return True
-        low = self.name.lower()
-        return any(k in low for k in DECOY_KEYWORDS)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "file": str(self.file_path),
-            "line": self.line,
-            "source": self.source,
-            "reads": self.reads,
-            "sink": self.sink,
-            "honeytool": self.honeytool,
-            "is_untrusted": self.is_untrusted_input(),
-            "is_private": self.is_private_read(),
-            "is_sink": self.is_outbound_sink(),
-            "is_decoy": self.is_decoy(),
-        }
+        super().__init__(
+            name=name,
+            file_path=file_path,
+            line=line,
+            source=source,
+            reads=reads,
+            sink=sink,
+            honeytool=honeytool,
+            ast_profile=ast_profile,
+        )
 
 
 class RepoScanner:
@@ -173,6 +139,7 @@ class RepoScanner:
                             is_tool_fn = True
 
                     if is_tool_fn:
+                        ast_prof = inspect_function_ast(node)
                         tools_found.append(
                             DiscoveredTool(
                                 name=tool_name,
@@ -182,6 +149,7 @@ class RepoScanner:
                                 reads=reads_val,
                                 sink=sink_val,
                                 honeytool=is_honey,
+                                ast_profile=ast_prof,
                             )
                         )
 

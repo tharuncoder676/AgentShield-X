@@ -682,7 +682,8 @@ def run_interactive_repl():
         "/rag": "Inspect vector memory chunks for indirect prompt injection",
         "/gitops": "Generate automated PR patch & hot-reload Rego policy",
         "/immunity": "Calculate live agent Immunity Score (0-100%) and drift",
-        "/login": "Authenticate and configure Control API credentials",
+        "/jarvis": "Launch JARVIS voice copilot & autonomous full security replay",
+        "/wakeup": "Wake up AgentShield-X autonomous JARVIS voice walkthrough",
         "/clear": "Clear the terminal screen",
         "/exit": "Exit interactive console",
     }
@@ -713,7 +714,12 @@ def run_interactive_repl():
                 os.system("cls" if os.name == "nt" else "clear")
                 print_banner()
 
-            elif cmd in ("/connect", "connect"):
+            elif cmd in ("/jarvis", "jarvis", "/wakeup", "wakeup", "wake"):
+                from shield_core.jarvis import run_jarvis_cli, JarvisAutomationEngine
+                if "demo" in parts or "run" in parts or cmd in ("/wakeup", "wakeup"):
+                    JarvisAutomationEngine().run_full_autonomous_demo(voice_enabled=True)
+                else:
+                    run_jarvis_cli()
                 target = parts[1].lower() if len(parts) > 1 else "all"
                 try:
                     from shield_mcp.connectors import ConnectorManager
@@ -880,10 +886,22 @@ def main(argv=None) -> int:
     inspect_parser.add_argument("--upstream", required=True, help="Command to run upstream MCP server")
     inspect_parser.add_argument("--save-pins", default=None, help="Path to save pinned tool definitions")
 
+    # Command: jarvis / wakeup
+    subparsers.add_parser("jarvis", help="Launch JARVIS autonomous voice assistant and security copilot")
+    subparsers.add_parser("wakeup", help="Wake up AgentShield-X autonomous security demonstration sequence")
+
     args = parser.parse_args(argv)
 
     if not args.subcommand or args.subcommand == "interactive":
         run_interactive_repl()
+        return 0
+
+    if args.subcommand in ("jarvis", "wakeup"):
+        from shield_core.jarvis import run_jarvis_cli, JarvisAutomationEngine
+        if args.subcommand == "wakeup":
+            JarvisAutomationEngine().run_full_autonomous_demo(voice_enabled=True)
+            return 0
+        run_jarvis_cli()
         return 0
 
     if args.subcommand in ("login", "auth"):
