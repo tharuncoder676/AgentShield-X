@@ -31,6 +31,7 @@ import { AutoPolicy } from "./pages/AutoPolicy";
 import { Attestation } from "./pages/Attestation";
 import { Immunity } from "./pages/Immunity";
 import { RAGFirewall } from "./pages/RAGFirewall";
+import { WingmanCommandCenter } from "./pages/WingmanCommandCenter";
 import { Panel } from "@agentshield/ui";
 
 // Protected Route Guard
@@ -99,6 +100,16 @@ export const App: React.FC = () => {
               }
             />
 
+            {/* Dedicated WINGMAN AI Full Cyber Command Deck */}
+            <Route
+              path="/command-center"
+              element={
+                <ProtectedRoute>
+                  <WingmanCommandCenter />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Authenticated Console Routes */}
             <Route
               path="/"
@@ -108,7 +119,8 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/overview" replace />} />
+              <Route index element={<Navigate to="/command-center" replace />} />
+              <Route path="command-center" element={<Navigate to="/command-center" replace />} />
               <Route path="overview" element={<Overview />} />
               <Route path="terminal" element={<Terminal />} />
               <Route path="live" element={<LiveFeed />} />
@@ -162,7 +174,7 @@ export const App: React.FC = () => {
             </Route>
 
             {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/overview" replace />} />
+            <Route path="*" element={<Navigate to="/command-center" replace />} />
           </Routes>
         </StreamProvider>
       </AuthProvider>

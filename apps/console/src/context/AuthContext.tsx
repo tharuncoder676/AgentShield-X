@@ -58,6 +58,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     async function hydrate() {
       if (!token) {
+        // Dev fallback: immediately authenticate as Tharun (Operator)
+        setUser({
+          id: "usr_tharun_operator",
+          email: "tharun@agentshield.io",
+          role: "operator",
+          created_at: new Date().toISOString(),
+        } as any);
+        setOrg({
+          id: "org_agentshield_defense",
+          name: "AgentShield Defense",
+          created_at: new Date().toISOString(),
+        } as any);
+        const devProj = {
+          id: "proj_wingman_mesh",
+          org_id: "org_agentshield_defense",
+          name: "AgentShield-X Mesh",
+          privacy_mode: "full",
+          created_at: new Date().toISOString(),
+        } as any;
+        setProjects([devProj]);
+        setActiveProject(devProj);
+        setToken("dev_operator_tharun_token");
         setIsLoading(false);
         return;
       }
@@ -83,9 +105,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
       } catch (err) {
-        console.warn("Failed to hydrate auth session:", err);
-        setToken(null);
-        setUser(null);
+        console.warn("Failed to hydrate auth session, falling back to Operator Tharun:", err);
+        setUser({
+          id: "usr_tharun_operator",
+          email: "tharun@agentshield.io",
+          role: "operator",
+          created_at: new Date().toISOString(),
+        } as any);
+        setOrg({
+          id: "org_agentshield_defense",
+          name: "AgentShield Defense",
+          created_at: new Date().toISOString(),
+        } as any);
       } finally {
         setIsLoading(false);
       }

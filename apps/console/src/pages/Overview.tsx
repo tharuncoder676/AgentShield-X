@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
+  Shield,
   ShieldAlert,
   Clock,
   Radio,
@@ -72,6 +73,13 @@ export const Overview: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/command-center"
+            className="bg-ok/20 border border-ok text-ok hover:bg-ok hover:text-black px-3.5 py-2 text-xs font-chakra font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-glow"
+          >
+            <Shield size={14} />
+            <span>Wingman Command Center</span>
+          </Link>
           <Link
             to="/live"
             className="bg-panel border border-line hover:border-ok text-fg px-3.5 py-2 text-xs font-chakra font-bold uppercase tracking-wider flex items-center gap-2 transition-colors"
