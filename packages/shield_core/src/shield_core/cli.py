@@ -904,6 +904,27 @@ def main(argv=None) -> int:
     subparsers.add_parser("wakeup", help="Wake up Wingshield Copilot - greets Tharun & enables complete laptop access")
     subparsers.add_parser("jarvis", help="Alias to Wingshield Copilot")
 
+    # Command: doctor (OpenJarvis Parity)
+    subparsers.add_parser("doctor", help="Run comprehensive diagnostic health checks across all AgentShield-X and Wingshield subsystems")
+
+    # Command: digest (OpenJarvis Parity)
+    subparsers.add_parser("digest", help="Generate and speak aloud the daily morning briefing")
+
+    # Command: ask (OpenJarvis Parity)
+    ask_parser = subparsers.add_parser("ask", help="Query Wingshield Copilot directly without interactive REPL")
+    ask_parser.add_argument("query", help="Command or natural language query for Wingshield Copilot")
+
+    # Command: schedule (OpenJarvis Parity)
+    sched_parser = subparsers.add_parser("schedule", help="Manage background scheduled tasks and monitors")
+    sched_parser.add_argument("action", nargs="?", default="list", choices=["list", "add", "cancel"], help="Schedule action")
+    sched_parser.add_argument("--prompt", default="scan this repo", help="Task prompt to execute")
+    sched_parser.add_argument("--interval", default="1h", help="Interval value (e.g., 30m, 1h, 24h)")
+    sched_parser.add_argument("--id", default=None, help="Task ID to cancel")
+
+    # Command: traces (OpenJarvis Parity)
+    traces_parser = subparsers.add_parser("traces", help="View recent Wingshield execution traces and latency telemetry")
+    traces_parser.add_argument("--limit", type=int, default=10, help="Number of recent traces to display")
+
     args = parser.parse_args(argv)
 
     if not args.subcommand or args.subcommand == "interactive":
@@ -913,6 +934,61 @@ def main(argv=None) -> int:
     if args.subcommand in ("wingshield", "wakeup", "jarvis"):
         from shield_core.wingshield import run_wingshield_cli
         run_wingshield_cli()
+        return 0
+
+    if args.subcommand == "doctor":
+        from shield_core.wingshield import WingshieldDoctor
+        diag = WingshieldDoctor.run_diagnostics()
+        print(WingshieldDoctor.format_report(diag))
+        return 0 if diag.get("overall_healthy") else 1
+    elif args.subcommand == "digest":
+        from shield_core.wingshield import ComputerAutomation, speak
+        spoken, report = ComputerAutomation.get_morning_digest("Tharun")
+        print(report)
+        speak(spoken, wait=True)
+        return 0
+    elif args.subcommand == "ask":
+        from shield_core.wingshield import WingshieldCopilotEngine
+        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+        reply, _ = engine.process_command(args.query)
+        print(f"\n{reply}\n")
+        return 0
+    elif args.subcommand == "schedule":
+        from shield_core.wingshield import WingshieldScheduler
+        sched = WingshieldScheduler()
+        if args.action == "add":
+            t = sched.add_task(prompt=args.prompt, schedule_type="interval", schedule_value=args.interval)
+            print(f"Task scheduled: '{t['prompt']}' (ID: {t['id']})")
+        elif args.action == "cancel" and args.id:
+            ok = sched.cancel_task(args.id)
+            print(f"Task {args.id} cancelled: {ok}")
+        else:
+            tasks = sched.list_tasks()
+            if not tasks:
+                print("No scheduled tasks found.")
+            else:
+                print("+============================================================================+")
+                print("|                      WINGSHIELD SCHEDULED TASKS                            |")
+                print("+----------------------------------------------------------------------------+")
+                for task in tasks:
+                    print(f"  * ID: {task['id']} | Action: '{task['prompt']}' | Status: {task['status']} | Type: {task['schedule_type']} ({task['schedule_value']})")
+                print("+============================================================================+")
+        return 0
+    elif args.subcommand == "traces":
+        from shield_core.wingshield import WingshieldTraceStore
+        ts = WingshieldTraceStore()
+        recent = ts.get_recent(limit=args.limit)
+        if not recent:
+            print("No execution traces recorded yet.")
+        else:
+            print("+============================================================================+")
+            print("|                  WINGSHIELD EXECUTION TRACE LOG (SQLITE)                   |")
+            print("+----------------------------------------------------------------------------+")
+            for t in recent:
+                ts_short = t.get("timestamp", "")[:19].replace("T", " ")
+                print(f"  * [{ts_short}] Action: {t.get('action_type', 'unknown').ljust(15)} | Latency: {t.get('latency_ms', 0):.1f}ms")
+                print(f"    Query : '{t.get('query', '')[:45]}' -> Status: {t.get('status')}")
+            print("+============================================================================+")
         return 0
 
     if args.subcommand in ("login", "auth"):

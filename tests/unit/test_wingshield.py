@@ -83,3 +83,60 @@ class TestWingshieldCopilot:
         reply_w, should_exit_w = engine.process_command("what is the weather")
         assert not should_exit_w
         assert "Weather" in reply_w
+
+    def test_trace_store_persistence(self, tmp_path):
+        from shield_core.wingshield import WingshieldTraceStore
+        db_file = tmp_path / "test_traces.db"
+        store = WingshieldTraceStore(db_path=db_file)
+        
+        t_id = store.record(query="test query", action_type="test_action", result="success", latency_ms=1.5)
+        assert t_id.startswith("trace_")
+        assert store.count() == 1
+
+        recent = store.get_recent(limit=5)
+        assert len(recent) == 1
+        assert recent[0]["query"] == "test query"
+        assert recent[0]["latency_ms"] == 1.5
+
+    def test_scheduler_task_lifecycle(self, tmp_path):
+        from shield_core.wingshield import WingshieldScheduler
+        db_file = tmp_path / "test_schedule.db"
+        scheduler = WingshieldScheduler(db_path=db_file)
+
+        task = scheduler.add_task(prompt="scan this repo", schedule_type="interval", schedule_value="1h")
+        assert task["id"].startswith("task_")
+        assert task["status"] == "active"
+
+        tasks = scheduler.list_tasks()
+        assert len(tasks) == 1
+        assert tasks[0]["prompt"] == "scan this repo"
+
+        cancelled = scheduler.cancel_task(task["id"])
+        assert cancelled
+        tasks_active = scheduler.list_tasks(status="active")
+        assert len(tasks_active) == 0
+
+    def test_wingshield_doctor_diagnostics(self):
+        from shield_core.wingshield import WingshieldDoctor
+        diag = WingshieldDoctor.run_diagnostics()
+        assert "checks" in diag
+        assert diag["lead_architect"] == "Tharunkumar.S"
+        report = WingshieldDoctor.format_report(diag)
+        assert "AGENTSHIELD-X & WINGSHIELD SYSTEM HEALTH DIAGNOSTICS" in report
+        assert "Tharunkumar.S" in report
+
+    def test_engine_doctor_traces_scheduler_commands(self):
+        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+
+        reply_doc, exit_doc = engine.process_command("doctor")
+        assert not exit_doc
+        assert "SYSTEM HEALTH DIAGNOSTICS" in reply_doc
+
+        reply_trace, exit_trace = engine.process_command("show traces")
+        assert not exit_trace
+        assert "TRACES" in reply_trace
+
+        reply_sched, exit_sched = engine.process_command("schedule list")
+        assert not exit_sched
+        assert "Scheduled" in reply_sched or "tasks" in reply_sched
+
