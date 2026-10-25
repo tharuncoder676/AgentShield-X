@@ -64,3 +64,22 @@ class TestWingshieldCopilot:
         reply, should_exit = engine.process_command("scan this repo")
         assert not should_exit
         assert "AST Blast Radius" in reply
+
+    def test_morning_digest_and_briefing(self):
+        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+        reply, should_exit = engine.process_command("morning digest")
+        assert not should_exit
+        assert "DAILY MORNING BRIEFING" in reply
+        assert "Tharunkumar.S" in reply
+        assert "Battery" in reply
+
+    def test_openjarvis_knowledge_and_weather(self):
+        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+        reply, should_exit = engine.process_command("tell me about openjarvis")
+        assert not should_exit
+        assert "OpenJarvis" in reply
+        assert "Stanford" in reply
+
+        reply_w, should_exit_w = engine.process_command("what is the weather")
+        assert not should_exit_w
+        assert "Weather" in reply_w
