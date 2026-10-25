@@ -165,10 +165,24 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
 
     // 1. Desktop & Web App Automation
     if (lower.includes("youtube") || lower.includes("open youtube")) {
-      reply = `Opening YouTube in new tab for you, ${config.operatorName}. Enjoy!`;
+      reply = `Opening YouTube for you, ${config.operatorName}. Enjoy!`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "youtube" }),
+        }).catch(() => {});
+      } catch (_) {}
       window.open("https://www.youtube.com", "_blank");
     } else if (lower.includes("chrome") || lower.includes("open chrome")) {
       reply = `Opening Google Chrome browser window, ${config.operatorName}.`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "chrome" }),
+        }).catch(() => {});
+      } catch (_) {}
       window.open("https://www.google.com", "_blank");
     } else if (
       lower.includes("vs code") ||
@@ -176,6 +190,13 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
       lower.includes("open code")
     ) {
       reply = `Workspace initialized in VS Code for AgentShield-X repository.`;
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "vscode" }),
+        }).catch(() => {});
+      } catch (_) {}
     } else if (
       lower.includes("who created you") ||
       lower.includes("creator") ||

@@ -66,13 +66,24 @@ export const WingshieldVoiceAssistant: React.FC = () => {
         }
         setTranscript(currentText);
 
-        const lower = currentText.toLowerCase();
+        const lower = currentText.toLowerCase().trim();
+        // If final or contains action keywords, trigger immediately
         if (
+          lower.includes("youtube") ||
+          lower.includes("chrome") ||
+          lower.includes("google") ||
+          lower.includes("vs code") ||
+          lower.includes("vscode") ||
+          lower.includes("code") ||
           lower.includes("wakeup") ||
           lower.includes("wake up") ||
           lower.includes("wingshield") ||
           lower.includes("hey wingshield") ||
-          lower.includes("agentshield")
+          lower.includes("agentshield") ||
+          lower.includes("scan") ||
+          lower.includes("tour") ||
+          lower.includes("status") ||
+          lower.includes("open")
         ) {
           handleVoiceCommand(lower);
         }
@@ -110,38 +121,112 @@ export const WingshieldVoiceAssistant: React.FC = () => {
 
   // Voice Command Dispatcher
   const handleVoiceCommand = (cmd: string) => {
-    if (cmd.includes("tour") || cmd.includes("replay") || cmd.includes("wake up") || cmd.includes("wakeup") || cmd.includes("full demo")) {
+    const lower = cmd.toLowerCase().trim();
+
+    // 1. YouTube Automation
+    if (lower.includes("youtube")) {
+      const msg = "Opening YouTube in Chrome for you, Tharun.";
+      setCopilotReply(msg);
+      speak(msg);
+      // Trigger via local backend automation bridge
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "youtube" }),
+        }).catch(() => {});
+      } catch (_) {}
+      // Open in browser tab
+      window.open("https://www.youtube.com", "_blank");
+      return;
+    }
+
+    // 2. Google Chrome Automation
+    if (lower.includes("chrome") || lower.includes("open browser")) {
+      const msg = "Opening Google Chrome, Tharun.";
+      setCopilotReply(msg);
+      speak(msg);
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "chrome" }),
+        }).catch(() => {});
+      } catch (_) {}
+      window.open("https://www.google.com", "_blank");
+      return;
+    }
+
+    // 3. VS Code Workspace Automation
+    if (lower.includes("vs code") || lower.includes("vscode") || lower.includes("open code")) {
+      const msg = "Launching Visual Studio Code in current workspace, Tharun.";
+      setCopilotReply(msg);
+      speak(msg);
+      try {
+        fetch("http://localhost:8002/v1/desktop/open", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: "vscode" }),
+        }).catch(() => {});
+      } catch (_) {}
+      return;
+    }
+
+    // 4. Tour & Presentation
+    if (lower.includes("tour") || lower.includes("replay") || lower.includes("wake up") || lower.includes("wakeup") || lower.includes("full demo")) {
       startAutonomousTour();
-    } else if (cmd.includes("scan") || cmd.includes("blast radius")) {
+      return;
+    }
+
+    // 5. Architecture & Scans
+    if (lower.includes("scan") || lower.includes("blast radius") || lower.includes("architecture")) {
       navigate("/architecture");
       const msg = "Navigating to Architecture. Running AST blast radius analyzer. Identifying reachability from untrusted inputs to sensitive sinks.";
       setCopilotReply(msg);
       speak(msg);
-    } else if (cmd.includes("debate") || cmd.includes("terminal")) {
+      return;
+    }
+
+    // 6. Terminal & Debate
+    if (lower.includes("debate") || lower.includes("terminal")) {
       navigate("/terminal");
       const msg = "Opening Copilot Terminal. Convening 3-Judge Autonomous Debate Committee for borderline tool calls.";
       setCopilotReply(msg);
       speak(msg);
-    } else if (cmd.includes("mcp") || cmd.includes("connector") || cmd.includes("rug pull")) {
+      return;
+    }
+
+    // 7. MCP Connectors
+    if (lower.includes("mcp") || lower.includes("connector") || lower.includes("rug pull")) {
       navigate("/mcp-proxy");
       const msg = "Accessing Universal MCP Connectors Hub. Canonical SHA-256 tool hash pinning is active to block dynamic tool poisoning.";
       setCopilotReply(msg);
       speak(msg);
-    } else if (cmd.includes("honey") || cmd.includes("canary")) {
+      return;
+    }
+
+    // 8. Honeytools
+    if (lower.includes("honey") || lower.includes("canary")) {
       navigate("/honeytools");
       const msg = "Deploying decoy canary honeytools across Finance and CloudOps domains to sever unauthorized exfiltration attempts.";
       setCopilotReply(msg);
       speak(msg);
-    } else if (cmd.includes("research agent") || cmd.includes("agent")) {
+      return;
+    }
+
+    // 9. Research Agent
+    if (lower.includes("research agent") || lower.includes("agent")) {
       navigate("/agents");
       const msg = "Our target Research Agent integrates web search, notes, and email. AgentShield-X enforces sub-5ms deterministic containment.";
       setCopilotReply(msg);
       speak(msg);
-    } else {
-      const msg = "Hello Tharun! Command received. Wingshield Copilot defense mesh operating under 3.4ms latency SLA.";
-      setCopilotReply(msg);
-      speak(msg);
+      return;
     }
+
+    // Default Fallback
+    const msg = `Hello Tharun! Command '${cmd}' received. Wingshield Copilot defense mesh operating under 3.4ms latency SLA.`;
+    setCopilotReply(msg);
+    speak(msg);
   };
 
   // Autonomous Presentation Tour Sequences
@@ -318,32 +403,66 @@ export const WingshieldVoiceAssistant: React.FC = () => {
             </button>
 
             {/* Mic toggle & quick commands */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={toggleListening}
-                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
+                className={`py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all ${
                   isListening
                     ? "bg-red-500/20 text-red-400 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                     : "bg-[#161b22] text-zinc-300 border-[#30363d] hover:border-[#38bdf8]/60"
                 }`}
               >
                 {isListening ? <MicOff size={14} /> : <Mic size={14} className="text-[#38bdf8]" />}
-                {isListening ? "Stop Mic" : "Start Voice Mic"}
+                <span>{isListening ? "Stop" : "Mic"}</span>
+              </button>
+
+              <button
+                onClick={() => handleVoiceCommand("open youtube")}
+                className="py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-[#161b22] text-red-400 border border-[#30363d] hover:border-red-500/60 transition-all hover:bg-red-500/10"
+                title="Launch YouTube in Chrome"
+              >
+                <span>▶ YouTube</span>
               </button>
 
               <button
                 onClick={() => handleVoiceCommand("research agent")}
-                className="py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 bg-[#161b22] text-zinc-300 border border-[#30363d] hover:border-[#bc8cff]/60 transition-all"
+                className="py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-[#161b22] text-zinc-300 border border-[#30363d] hover:border-[#bc8cff]/60 transition-all"
               >
                 <Bot size={14} className="text-[#bc8cff]" />
-                Research Agent
+                <span>Agents</span>
               </button>
             </div>
+
+            {/* Quick text command box */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const input = (e.currentTarget.elements.namedItem("cmdText") as HTMLInputElement)?.value;
+                if (input) {
+                  handleVoiceCommand(input);
+                  (e.currentTarget.elements.namedItem("cmdText") as HTMLInputElement).value = "";
+                }
+              }}
+              className="mt-2 flex items-center gap-1.5"
+            >
+              <input
+                name="cmdText"
+                type="text"
+                placeholder="Type 'open youtube', 'open chrome', 'scan'..."
+                className="flex-1 bg-[#161b22] border border-[#30363d] focus:border-[#38bdf8] text-xs px-2.5 py-1.5 rounded-lg text-zinc-200 outline-none"
+              />
+              <button
+                type="submit"
+                className="px-3 py-1.5 bg-[#38bdf8]/20 hover:bg-[#38bdf8] text-[#38bdf8] hover:text-black border border-[#38bdf8]/60 rounded-lg text-xs font-bold transition-all"
+              >
+                Run
+              </button>
+            </form>
           </div>
 
           {/* Prompt Hint */}
           <div className="mt-3 text-[10px] text-zinc-400 text-center tracking-tight">
-            Say <span className="text-[#38bdf8] font-bold">"Hello Tharun"</span> / <span className="text-[#38bdf8] font-bold">"Wake up AgentShield-X"</span> or <span className="text-[#bc8cff] font-bold">"Scan repo"</span> / <span className="text-[#3fb950] font-bold">"Debate"</span>
+            Say or type <span className="text-red-400 font-bold">"Open YouTube"</span> / <span className="text-[#38bdf8] font-bold">"Open Chrome"</span> / <span className="text-[#bc8cff] font-bold">"Scan repo"</span>
           </div>
         </div>
       )}

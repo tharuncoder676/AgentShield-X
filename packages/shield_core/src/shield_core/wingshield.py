@@ -271,8 +271,15 @@ class ComputerAutomation:
             launched = False
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen(f'cmd.exe /c start "" "{chrome_exe}" "https://www.youtube.com"', shell=True)
+                    subprocess.Popen([chrome_exe, "--new-window", "https://www.youtube.com"])
                     launched = True
+                except Exception:
+                    pass
+            if not launched:
+                try:
+                    if hasattr(os, "startfile"):
+                        os.startfile("https://www.youtube.com")
+                        launched = True
                 except Exception:
                     pass
             if not launched:
@@ -285,8 +292,15 @@ class ComputerAutomation:
             launched = False
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen(f'cmd.exe /c start "" "{chrome_exe}" "https://www.google.com"', shell=True)
+                    subprocess.Popen([chrome_exe, "--new-window", "https://www.google.com"])
                     launched = True
+                except Exception:
+                    pass
+            if not launched:
+                try:
+                    if hasattr(os, "startfile"):
+                        os.startfile("https://www.google.com")
+                        launched = True
                 except Exception:
                     pass
             if not launched:
@@ -299,7 +313,7 @@ class ComputerAutomation:
             launched = False
             if edge_exe and os.path.isfile(edge_exe):
                 try:
-                    subprocess.Popen(f'cmd.exe /c start "" "{edge_exe}" "https://www.bing.com"', shell=True)
+                    subprocess.Popen([edge_exe, "--new-window", "https://www.bing.com"])
                     launched = True
                 except Exception:
                     pass
@@ -313,7 +327,7 @@ class ComputerAutomation:
             launched = False
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen(f'cmd.exe /c start "" "{chrome_exe}" "https://www.google.com"', shell=True)
+                    subprocess.Popen([chrome_exe, "--new-window", "https://www.google.com"])
                     launched = True
                 except Exception:
                     pass

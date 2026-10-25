@@ -104,6 +104,21 @@ def health():
     return {"status": "ok", "service": "control-api", "version": "1.0.0"}
 
 
+from pydantic import BaseModel
+
+class DesktopOpenPayload(BaseModel):
+    target: str
+
+@app.post("/v1/desktop/open")
+def desktop_open(payload: DesktopOpenPayload):
+    try:
+        from shield_core.wingshield import ComputerAutomation
+        success, msg = ComputerAutomation.open_app(payload.target)
+        return {"success": success, "message": msg}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8002)
