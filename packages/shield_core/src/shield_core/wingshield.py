@@ -126,14 +126,22 @@ def _get_sapi():
         return _sapi_voice
 
 
+_last_speak_until = 0.0
+
+
 def speak(text: str, wait: bool = False) -> None:
     """Speaks text aloud with ultra-low latency using Windows native SAPI5."""
+    global _last_speak_until
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
 
     clean_text = text.replace('"', '').replace("'", "").replace("\n", " ").strip()
     if not clean_text:
         return
+
+    words = len(clean_text.split())
+    # Estimate speech duration + 1.2s buffer to prevent mic feedback echo
+    _last_speak_until = time.time() + max(1.5, words * 0.35 + 1.2)
 
     # Method 1: In-process COM SpVoice (instant 0ms response)
     voice = _get_sapi()
@@ -1568,10 +1576,14 @@ class WingshieldCopilotEngine:
 
     def handle_voice_stream(self, text: str) -> None:
         """Processes incoming recognized text from either SRE or SpeechRecognition."""
+        global _last_speak_until
+        # Suppress incoming audio while TTS speaker is active or echoing
+        if time.time() < _last_speak_until:
+            return
+
         if not text:
             return
         clean_text = text.lower().strip()
-        print(f"\033[38;2;139;148;158m[Audio Stream] {clean_text}\033[0m")
         clean_text = re.sub(r"\b(you\s*tube|u\s*tube)\b", "youtube", clean_text)
         clean_text = re.sub(r"\b(crome)\b", "chrome", clean_text)
         clean_text = re.sub(r"\b(vs\s*code|v\s*s\s*code)\b", "vscode", clean_text)
@@ -1613,8 +1625,7 @@ class WingshieldCopilotEngine:
             for t in direct_triggers
         )
         is_general_action = any(clean_text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch ", "scan ", "search ", "research ", "what is ", "who created ", "set calendar"))
-        is_active_window = self.is_active and (time.time() - getattr(self, "last_active_time", 0.0) < 30.0)
-        is_meaningful_query = is_active_window and (len(clean_text.split()) >= 2 and len(clean_text) >= 6)
+        addressed_to_copilot = any(clean_text.startswith(p) for p in ("wingshield", "agentshield", "agent shield", "copilot", "jarvis", "hey wingshield", "hey copilot", "ok wingshield"))
 
         # Sleep / Stand down command
         if any(clean_text == s for s in ("sleep", "go to sleep", "stand down", "at ease", "mute", "quiet", "stop listening")):
@@ -1627,21 +1638,22 @@ class WingshieldCopilotEngine:
         if is_wake:
             self.is_active = True
             self.last_active_time = time.time()
+            print(f"\033[38;2;139;148;158m[Audio Stream] {clean_text}\033[0m")
             print("\033[1;32m[!] Wake word detected! Wingshield Copilot active.\033[0m")
             speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
             ComputerAutomation.open_wingshield_terminal()
         elif is_cli_trigger:
             self.is_active = True
             self.last_active_time = time.time()
+            print(f"\033[38;2;139;148;158m[Audio Stream] {clean_text}\033[0m")
             print("\033[1;36m[!] AgentShield CLI request detected! Launching original AgentShield-X CLI.\033[0m")
             speak("Launching original AgentShield-X CLI terminal.", wait=False)
             ComputerAutomation.open_agentshield_cli_terminal()
-        elif has_direct_action or is_general_action or is_meaningful_query:
-            exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", clean_text).strip()
+        elif has_direct_action or is_general_action or addressed_to_copilot:
+            exec_text = re.sub(r"^(hey\s+|ok\s+)?(wingshield|agentshield|agent shield|copilot|jarvis)\s*", "", clean_text).strip()
             if not exec_text:
                 exec_text = clean_text
-            self.is_active = True
-            self.last_active_time = time.time()
+            print(f"\033[38;2;139;148;158m[Audio Stream] {clean_text}\033[0m")
             print(f"\033[1;36m[VOICE ACTION] Executing: '{exec_text}'\033[0m")
             res, should_exit = self.process_command(exec_text)
             if res:
