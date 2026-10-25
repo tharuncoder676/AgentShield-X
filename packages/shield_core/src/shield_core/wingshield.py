@@ -115,6 +115,21 @@ def speak(text: str, wait: bool = False) -> None:
         pass
 
 
+def query_ollama(prompt: str, model: str = "wingshield-x", timeout: int = 35) -> Optional[str]:
+    """Queries the local Ollama instance for personalized AI responses from wingshield-x."""
+    try:
+        url = "http://127.0.0.1:11434/api/generate"
+        payload = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode("utf-8")
+        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode("utf-8"))
+                return data.get("response", "").strip()
+    except Exception:
+        return None
+    return None
+
+
 class ComputerAutomation:
     """Controls computer desktop applications, system utilities, and web navigation."""
 
@@ -784,6 +799,25 @@ class WingshieldDoctor:
                 "message": f"Scheduler error: {e}",
             })
 
+        # 9. Local Ollama Personalized AI Engine
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=2) as r:
+                if r.status == 200:
+                    models_data = json.loads(r.read().decode())
+                    model_names = [m.get("name") for m in models_data.get("models", [])]
+                    has_ws = any("wingshield-x" in m for m in model_names)
+                    checks.append({
+                        "name": "Local Ollama AI Engine",
+                        "status": "OK",
+                        "message": "Online (Model 'wingshield-x' active)" if has_ws else f"Online ({len(model_names)} models loaded)",
+                    })
+        except Exception:
+            checks.append({
+                "name": "Local Ollama AI Engine",
+                "status": "WARN",
+                "message": "Ollama service offline or not listening on 11434",
+            })
+
         all_ok = all(c["status"] == "OK" for c in checks)
         return {
             "checks": checks,
@@ -1195,7 +1229,16 @@ class WingshieldCopilotEngine:
             out = ComputerAutomation.execute_cli_command(cmd)
             return f"$ {cmd}\n{out}", False
 
-        # 17. General Conversational Fallback
+        # 17. Local Ollama Personalized Model Inference (wingshield-x)
+        ollama_reply = query_ollama(cmd, model="wingshield-x", timeout=35)
+        if ollama_reply:
+            summary = ollama_reply.split("\n")[0].strip()
+            if len(summary) > 140:
+                summary = summary[:140] + "..."
+            speak(summary, wait=False)
+            return ollama_reply, False
+
+        # 18. General Conversational Fallback
         fallback = f"Command '{cmd}' received. Wingshield Copilot is ready to open apps, run security scans, or execute computer tasks for you, Tharun."
         speak(fallback, wait=False)
         return fallback, False
