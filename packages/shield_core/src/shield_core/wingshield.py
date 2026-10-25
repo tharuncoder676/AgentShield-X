@@ -65,6 +65,21 @@ except ImportError:
 try:
     import speech_recognition as sr
     SPEECH_REC_AVAILABLE = True
+    # Monkey-patch sr.Microphone.__exit__ to safely handle stream=None failures on Windows audio
+    def _safe_microphone_exit(self, exc_type, exc_value, traceback):
+        try:
+            if hasattr(self, "stream") and self.stream is not None:
+                self.stream.close()
+        except Exception:
+            pass
+        finally:
+            self.stream = None
+            if hasattr(self, "audio") and self.audio is not None:
+                try:
+                    self.audio.terminate()
+                except Exception:
+                    pass
+    sr.Microphone.__exit__ = _safe_microphone_exit
 except ImportError:
     SPEECH_REC_AVAILABLE = False
 
@@ -158,6 +173,41 @@ class ComputerAutomation:
         return None
 
     @staticmethod
+    def get_vscode_path() -> Optional[str]:
+        candidates = [
+            os.path.expandvars(r"%LocalAppData%\Programs\Microsoft VS Code\Code.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Microsoft VS Code\Code.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft VS Code\Code.exe"),
+            os.path.expandvars(r"%LocalAppData%\Programs\Microsoft VS Code\bin\code.cmd"),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+        return None
+
+    @staticmethod
+    def open_wingshield_terminal() -> Tuple[bool, str]:
+        """Spawns a dedicated new Windows terminal running Wingshield Copilot matrix."""
+        repo_root = Path(__file__).resolve().parents[4]
+        cmd_str = f'cmd.exe /c start "Wingshield Copilot - AgentShield-X" cmd.exe /k "cd /d \"{repo_root}\" && title Wingshield Copilot - AgentShield-X && python -m shield_core.cli wakeup"'
+        try:
+            subprocess.Popen(cmd_str, shell=True)
+            return True, "Launching Wingshield Copilot terminal window."
+        except Exception as e:
+            return False, f"Could not launch Wingshield terminal: {e}"
+
+    @staticmethod
+    def open_agentshield_cli_terminal() -> Tuple[bool, str]:
+        """Spawns a dedicated new Windows terminal running the original AgentShield-X CLI."""
+        repo_root = Path(__file__).resolve().parents[4]
+        cmd_str = f'cmd.exe /c start "AgentShield-X Security CLI" cmd.exe /k "cd /d \"{repo_root}\" && title AgentShield-X Security CLI && python -m shield_core.cli"'
+        try:
+            subprocess.Popen(cmd_str, shell=True)
+            return True, "Launching original AgentShield-X CLI terminal window."
+        except Exception as e:
+            return False, f"Could not launch AgentShield CLI: {e}"
+
+    @staticmethod
     def open_url(url: str) -> bool:
         """Reliably opens a URL in default browser using native Win32 ShellExecute, webbrowser, or cmd start."""
         try:
@@ -182,6 +232,13 @@ class ComputerAutomation:
 
         # YouTube
         if "youtube" in app_low:
+            chrome_exe = ComputerAutomation.get_chrome_path()
+            if chrome_exe:
+                try:
+                    subprocess.Popen([chrome_exe, "https://www.youtube.com"])
+                    return True, "Opening YouTube in Chrome."
+                except Exception:
+                    pass
             ComputerAutomation.open_url("https://www.youtube.com")
             return True, "Opening YouTube."
 
@@ -190,7 +247,7 @@ class ComputerAutomation:
             chrome_exe = ComputerAutomation.get_chrome_path()
             if chrome_exe:
                 try:
-                    subprocess.Popen([chrome_exe])
+                    subprocess.Popen([chrome_exe, "https://www.google.com"])
                     return True, "Opening Google Chrome."
                 except Exception:
                     pass
@@ -202,7 +259,7 @@ class ComputerAutomation:
             edge_exe = ComputerAutomation.get_edge_path()
             if edge_exe:
                 try:
-                    subprocess.Popen([edge_exe])
+                    subprocess.Popen([edge_exe, "https://www.bing.com"])
                     return True, "Opening Microsoft Edge."
                 except Exception:
                     pass
@@ -211,8 +268,39 @@ class ComputerAutomation:
 
         # Google
         elif app_low in ("google", "google search", "web"):
+            chrome_exe = ComputerAutomation.get_chrome_path()
+            if chrome_exe:
+                try:
+                    subprocess.Popen([chrome_exe, "https://www.google.com"])
+                    return True, "Opening Google in Chrome."
+                except Exception:
+                    pass
             ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google."
+
+        # VS Code
+        elif "vs code" in app_low or "vscode" in app_low or app_low in ("code", "visual studio code"):
+            vscode_bin = ComputerAutomation.get_vscode_path()
+            repo_path = Path(__file__).resolve().parents[4]
+            if vscode_bin:
+                try:
+                    subprocess.Popen([vscode_bin, str(repo_path)])
+                    return True, "Launching Visual Studio Code in current workspace."
+                except Exception:
+                    pass
+            try:
+                subprocess.Popen(["code", "."], shell=True)
+                return True, "Launching Visual Studio Code in current workspace."
+            except Exception as e:
+                return False, f"Could not launch VS Code: {e}"
+
+        # AgentShield-X Original CLI Terminal
+        elif app_low in ("agentshield", "agentshield cli", "shield cli", "cli terminal"):
+            return ComputerAutomation.open_agentshield_cli_terminal()
+
+        # Wingshield Copilot Terminal
+        elif app_low in ("wingshield", "wingshield copilot", "copilot"):
+            return ComputerAutomation.open_wingshield_terminal()
 
         # Gmail
         elif "gmail" in app_low or "mail" in app_low or "email" in app_low:
@@ -238,17 +326,16 @@ class ComputerAutomation:
             ComputerAutomation.open_url("https://chatgpt.com")
             return True, "Opening ChatGPT."
 
-        # VS Code
-        elif "vs code" in app_low or "vscode" in app_low or app_low in ("code", "visual studio code"):
-            subprocess.Popen(["code", "."], shell=True)
-            return True, "Launching Visual Studio Code in current workspace."
-
         # Cursor IDE
         elif "cursor" in app_low:
             try:
                 subprocess.Popen(["cursor", "."], shell=True)
                 return True, "Launching Cursor IDE in current workspace."
             except Exception:
+                vscode_bin = ComputerAutomation.get_vscode_path()
+                if vscode_bin:
+                    subprocess.Popen([vscode_bin, "."])
+                    return True, "Launching Code editor."
                 subprocess.Popen(["code", "."], shell=True)
                 return True, "Launching Code editor."
 
@@ -322,7 +409,7 @@ class ComputerAutomation:
             return True, "Opening Microsoft PowerPoint."
 
         # Web Console
-        elif "console" in app_low or "dashboard" in app_low or "agentshield" in app_low:
+        elif "console" in app_low or "dashboard" in app_low:
             ComputerAutomation.open_url("http://localhost:3000")
             return True, "Opening AgentShield-X Web Console at http://localhost:3000."
 
@@ -382,9 +469,15 @@ class ComputerAutomation:
         encoded = urllib.parse.quote(q_clean)
         if engine == "youtube":
             if not q_clean:
-                ComputerAutomation.open_url("https://www.youtube.com")
-                return "Opening YouTube."
+                return ComputerAutomation.open_app("youtube")[1]
             url = f"https://www.youtube.com/results?search_query={encoded}"
+            chrome_exe = ComputerAutomation.get_chrome_path()
+            if chrome_exe:
+                try:
+                    subprocess.Popen([chrome_exe, url])
+                    return f"Searching YouTube for: '{q_clean}'"
+                except Exception:
+                    pass
             ComputerAutomation.open_url(url)
             return f"Searching YouTube for: '{q_clean}'"
         elif engine == "github":
@@ -403,9 +496,15 @@ class ComputerAutomation:
             return f"Opening arXiv research paper search for: '{q_clean}'"
         else:
             if not q_clean:
-                ComputerAutomation.open_url("https://www.google.com")
-                return "Opening Google."
+                return ComputerAutomation.open_app("google")[1]
             url = f"https://www.google.com/search?q={encoded}"
+            chrome_exe = ComputerAutomation.get_chrome_path()
+            if chrome_exe:
+                try:
+                    subprocess.Popen([chrome_exe, url])
+                    return f"Searching Google for: '{q_clean}'"
+                except Exception:
+                    pass
             ComputerAutomation.open_url(url)
             return f"Searching Google for: '{q_clean}'"
 
@@ -1145,7 +1244,12 @@ class WingshieldCopilotEngine:
             "powerpoint": "powerpoint",
             "console": "console",
             "dashboard": "console",
-            "agentshield": "console",
+            "agentshield": "agentshield",
+            "agentshield cli": "agentshield",
+            "shield cli": "agentshield",
+            "wingshield": "wingshield",
+            "wingshield copilot": "wingshield",
+            "copilot": "wingshield",
         }
 
         app_target = None
@@ -1438,12 +1542,21 @@ class WingshieldCopilotEngine:
                     clean_text = re.sub(r"\b(agent\s*shield)\b", "agentshield", clean_text)
 
                     clean_stream = re.sub(r"[^a-z0-9]", "", clean_text)
+                    clean_stream = re.sub(r"[^a-z0-9]", "", clean_text)
                     is_wake = (
                         ("agentshield" in clean_stream and "wake" in clean_stream)
                         or ("agent" in clean_stream and "shield" in clean_stream and "wake" in clean_stream)
                         or "wingshield" in clean_stream
                         or "wakeup" in clean_stream
-                        or any(w in clean_text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup"))
+                        or any(w in clean_text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup", "wingshield wakeup"))
+                    )
+
+                    is_cli_trigger = (
+                        not is_wake
+                        and (
+                            clean_text in ("agentshield", "open agentshield", "launch agentshield", "agentshield cli", "agent shield", "shield cli", "cli terminal")
+                            or clean_stream in ("agentshield", "openagentshield", "agentshieldcli")
+                        )
                     )
 
                     direct_triggers = (
@@ -1451,7 +1564,8 @@ class WingshieldCopilotEngine:
                         "vscode", "code", "cursor", "notepad", "calculator", "calc",
                         "terminal", "cmd", "paint", "camera", "spotify", "calendar",
                         "morning digest", "weather", "system status", "battery",
-                        "take screenshot", "lock computer", "scan", "doctor", "diagnostics"
+                        "take screenshot", "lock computer", "scan", "doctor", "diagnostics",
+                        "agentshield", "wingshield"
                     )
                     has_direct_action = any(
                         clean_text == t
@@ -1471,15 +1585,13 @@ class WingshieldCopilotEngine:
                         self.last_active_time = time.time()
                         print("\033[1;32m[!] Wake word detected! Wingshield Copilot active.\033[0m")
                         speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
-                        repo_root = Path(__file__).resolve().parents[4]
-                        cmd_to_run = f'cd /d "{repo_root}" && title Wingshield Copilot Terminal && python -m shield_core.cli wakeup'
-                        try:
-                            subprocess.Popen(
-                                f'cmd.exe /c start "AgentShield-X Wingshield Copilot" cmd.exe /k "{cmd_to_run}"',
-                                shell=True,
-                            )
-                        except Exception as e:
-                            print(f"[!] Could not spawn terminal window: {e}")
+                        ComputerAutomation.open_wingshield_terminal()
+                    elif is_cli_trigger:
+                        self.is_active = True
+                        self.last_active_time = time.time()
+                        print("\033[1;36m[!] AgentShield CLI request detected! Launching original AgentShield-X CLI.\033[0m")
+                        speak("Launching original AgentShield-X CLI terminal.", wait=False)
+                        ComputerAutomation.open_agentshield_cli_terminal()
                     elif has_direct_action or is_general_action or is_active_window:
                         # Once awake, or on direct actionable commands, execute immediately
                         exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", clean_text).strip()
@@ -1502,7 +1614,7 @@ class WingshieldCopilotEngine:
                 break
             except Exception as e:
                 print(f"\033[38;2;251;191;36m[!] Audio loop note: {e}\033[0m")
-                time.sleep(0.5)
+                time.sleep(1.5)
 
     def run_interactive_loop(self) -> None:
         """Runs the main terminal interaction loop with voice greeting & computer access."""

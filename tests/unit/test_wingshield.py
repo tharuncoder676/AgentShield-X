@@ -182,3 +182,10 @@ class TestWingshieldCopilot:
         r_code, _ = engine.process_command("open vs code")
         assert "Visual Studio Code" in r_code
 
+        # Terminal launchers
+        r_ashield, _ = engine.process_command("agentshield")
+        assert "AgentShield-X CLI terminal" in r_ashield
+
+        r_wake, _ = engine.process_command("agentshield wakeup")
+        assert "Wingshield Copilot online" in r_wake
+

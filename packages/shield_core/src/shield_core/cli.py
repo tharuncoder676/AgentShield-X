@@ -664,7 +664,9 @@ def run_interactive_repl():
     print_banner()
     cfg = CLIConfig.load()
     control_url = cfg.get("control_url", DEFAULT_CONTROL_URL)
-    print(f"{Style.DIM}Engine API: {control_url} | Web Console: http://localhost:3000 | Type {Style.BOLD}/help{Style.RESET}{Style.DIM} for commands.{Style.RESET}\n")
+    print(f"{Style.DIM}Engine API: {control_url} | Web Console: http://localhost:3000 | Type {Style.BOLD}/help{Style.RESET}{Style.DIM} for commands.{Style.RESET}")
+    print(f"\033[38;2;56;189;248m[*] Wingshield Copilot:\033[0m \033[1;32mONLINE & INTEGRATED\033[0m \033[38;2;139;148;158m(Desktop automation, app launching & voice assistance enabled)\033[0m")
+    print(f"\033[38;2;139;148;158m    Type any command ('open youtube', 'open chrome', 'open vs code') or press [Enter] to speak.\033[0m\n")
 
     commands = {
         "/scan": "Scan local repo AST and sync blast-radius telemetry to Web",
@@ -696,7 +698,30 @@ def run_interactive_repl():
             print(prompt_breadcrumb)
             line = input(f" \033[38;2;63;185;80m>\033[0m \033[1m█\033[0m ").strip()
             if not line:
-                continue
+                # Multi-modal input: Empty submission on Enter activates voice input via Wingshield
+                try:
+                    from shield_core.wingshield import WingshieldCopilotEngine
+                    eng = WingshieldCopilotEngine(greeting_recipient="Tharun")
+                    spoken = eng.listen_microphone_once()
+                    if spoken:
+                        line = spoken
+                    else:
+                        continue
+                except Exception:
+                    continue
+
+            if line.lower() in ("mic", "voice", "listen"):
+                try:
+                    from shield_core.wingshield import WingshieldCopilotEngine
+                    eng = WingshieldCopilotEngine(greeting_recipient="Tharun")
+                    spoken = eng.listen_microphone_once()
+                    if spoken:
+                        line = spoken
+                    else:
+                        print(f"{Style.YELLOW}No clear voice audio detected. You can type directly.{Style.RESET}")
+                        continue
+                except Exception:
+                    continue
 
             parts = line.split()
             cmd = parts[0].lower()
@@ -716,7 +741,8 @@ def run_interactive_repl():
                 print_banner()
 
             elif cmd in ("/wingshield", "wingshield", "/wakeup", "wakeup", "/jarvis", "jarvis", "wake"):
-                from shield_core.wingshield import run_wingshield_cli
+                from shield_core.wingshield import WingshieldCopilotEngine, run_wingshield_cli
+                WingshieldCopilotEngine(greeting_recipient="Tharun").greet_user()
                 run_wingshield_cli()
 
             elif cmd in ("/connect", "connect"):
