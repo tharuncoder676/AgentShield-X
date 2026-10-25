@@ -45,6 +45,7 @@ if hasattr(sys.stderr, "reconfigure"):
         pass
 
 import json
+import shutil
 import sqlite3
 import threading
 import time
@@ -61,11 +62,37 @@ try:
 except ImportError:
     PSUTIL_AVAILABLE = False
 
+# Try importing Windows Native System.Speech.Recognition via Python.NET (clr)
+SYSTEM_SPEECH_AVAILABLE = False
+try:
+    import clr
+    clr.AddReference(r"C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Speech\v4.0_4.0.0.0__31bf3856ad364e35\System.Speech.dll")
+    from System.Speech.Recognition import (
+        SpeechRecognitionEngine,
+        Choices,
+        GrammarBuilder,
+        Grammar,
+        DictationGrammar,
+        RecognizeMode,
+    )
+    SYSTEM_SPEECH_AVAILABLE = True
+except Exception:
+    SYSTEM_SPEECH_AVAILABLE = False
+
 # Try importing speech_recognition for microphone audio
 try:
     import speech_recognition as sr
     SPEECH_REC_AVAILABLE = True
-    # Monkey-patch sr.Microphone.__exit__ to safely handle stream=None failures on Windows audio
+
+    # Safe monkey-patches for Microphone __enter__ and __exit__ on Windows
+    _orig_mic_enter = sr.Microphone.__enter__
+    def _safe_microphone_enter(self):
+        res = _orig_mic_enter(self)
+        if getattr(self, "stream", None) is None:
+            raise RuntimeError("PortAudio microphone stream could not be initialized")
+        return res
+    sr.Microphone.__enter__ = _safe_microphone_enter
+
     def _safe_microphone_exit(self, exc_type, exc_value, traceback):
         try:
             if hasattr(self, "stream") and self.stream is not None:
@@ -233,74 +260,92 @@ class ComputerAutomation:
         # YouTube
         if "youtube" in app_low:
             chrome_exe = ComputerAutomation.get_chrome_path()
-            if chrome_exe:
+            launched = False
+            if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "https://www.youtube.com"])
-                    return True, "Opening YouTube in Chrome."
+                    subprocess.Popen(f'cmd.exe /c start "" "{chrome_exe}" "https://www.youtube.com"', shell=True)
+                    launched = True
                 except Exception:
                     pass
-            ComputerAutomation.open_url("https://www.youtube.com")
-            return True, "Opening YouTube."
+            if not launched:
+                ComputerAutomation.open_url("https://www.youtube.com")
+            return True, "Opening YouTube in Chrome."
 
         # Google Chrome
         if "chrome" in app_low:
             chrome_exe = ComputerAutomation.get_chrome_path()
-            if chrome_exe:
+            launched = False
+            if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "https://www.google.com"])
-                    return True, "Opening Google Chrome."
+                    subprocess.Popen(f'cmd.exe /c start "" "{chrome_exe}" "https://www.google.com"', shell=True)
+                    launched = True
                 except Exception:
                     pass
-            ComputerAutomation.open_url("https://www.google.com")
+            if not launched:
+                ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google Chrome."
 
         # Microsoft Edge / Default Browser
         elif "edge" in app_low or app_low in ("browser", "web browser"):
             edge_exe = ComputerAutomation.get_edge_path()
-            if edge_exe:
+            launched = False
+            if edge_exe and os.path.isfile(edge_exe):
                 try:
-                    subprocess.Popen([edge_exe, "https://www.bing.com"])
-                    return True, "Opening Microsoft Edge."
+                    subprocess.Popen(f'cmd.exe /c start "" "{edge_exe}" "https://www.bing.com"', shell=True)
+                    launched = True
                 except Exception:
                     pass
-            ComputerAutomation.open_url("https://www.bing.com")
+            if not launched:
+                ComputerAutomation.open_url("https://www.bing.com")
             return True, "Opening Microsoft Edge."
 
         # Google
         elif app_low in ("google", "google search", "web"):
             chrome_exe = ComputerAutomation.get_chrome_path()
-            if chrome_exe:
+            launched = False
+            if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "https://www.google.com"])
-                    return True, "Opening Google in Chrome."
+                    subprocess.Popen(f'cmd.exe /c start "" "{chrome_exe}" "https://www.google.com"', shell=True)
+                    launched = True
                 except Exception:
                     pass
-            ComputerAutomation.open_url("https://www.google.com")
+            if not launched:
+                ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google."
 
         # VS Code
         elif "vs code" in app_low or "vscode" in app_low or app_low in ("code", "visual studio code"):
-            vscode_bin = ComputerAutomation.get_vscode_path()
             repo_path = Path(__file__).resolve().parents[4]
-            if vscode_bin:
+            code_cmd = shutil.which("code") or os.path.expandvars(r"%LocalAppData%\Programs\Microsoft VS Code\bin\code.cmd")
+            vscode_bin = ComputerAutomation.get_vscode_path()
+            launched = False
+            if code_cmd and os.path.isfile(code_cmd):
                 try:
-                    subprocess.Popen([vscode_bin, str(repo_path)])
-                    return True, "Launching Visual Studio Code in current workspace."
+                    subprocess.Popen(f'cmd.exe /c start "" "{code_cmd}" "{repo_path}"', shell=True)
+                    launched = True
                 except Exception:
                     pass
-            try:
-                subprocess.Popen(["code", "."], shell=True)
-                return True, "Launching Visual Studio Code in current workspace."
-            except Exception as e:
-                return False, f"Could not launch VS Code: {e}"
+            if not launched and vscode_bin and os.path.isfile(vscode_bin):
+                try:
+                    subprocess.Popen(f'cmd.exe /c start "" "{vscode_bin}" "{repo_path}"', shell=True)
+                    launched = True
+                except Exception:
+                    pass
+            if not launched:
+                try:
+                    subprocess.Popen(f'cmd.exe /c start "" code "{repo_path}"', shell=True)
+                    launched = True
+                except Exception:
+                    pass
+            return True, "Launching Visual Studio Code in current workspace."
+
+        # AgentShield Wakeup / Wingshield Copilot Terminal
+        elif "wakeup" in app_low or "wingshield" in app_low or app_low in ("agentshield wakeup", "wake up", "wake"):
+            return ComputerAutomation.open_wingshield_terminal()
 
         # AgentShield-X Original CLI Terminal
-        elif app_low in ("agentshield", "agentshield cli", "shield cli", "cli terminal"):
+        elif app_low in ("agentshield", "agentshield cli", "shield cli", "cli terminal", "agent shield", "cli"):
             return ComputerAutomation.open_agentshield_cli_terminal()
-
-        # Wingshield Copilot Terminal
-        elif app_low in ("wingshield", "wingshield copilot", "copilot"):
-            return ComputerAutomation.open_wingshield_terminal()
 
         # Gmail
         elif "gmail" in app_low or "mail" in app_low or "email" in app_low:
@@ -1244,9 +1289,19 @@ class WingshieldCopilotEngine:
             "powerpoint": "powerpoint",
             "console": "console",
             "dashboard": "console",
+            "agentshield wakeup": "wingshield",
+            "agent shield wakeup": "wingshield",
+            "wingshield wakeup": "wingshield",
+            "wakeup": "wingshield",
+            "wake up": "wingshield",
+            "wake": "wingshield",
             "agentshield": "agentshield",
             "agentshield cli": "agentshield",
+            "agent shield": "agentshield",
+            "agent shield cli": "agentshield",
             "shield cli": "agentshield",
+            "cli terminal": "agentshield",
+            "cli": "agentshield",
             "wingshield": "wingshield",
             "wingshield copilot": "wingshield",
             "copilot": "wingshield",
@@ -1267,6 +1322,16 @@ class WingshieldCopilotEngine:
                         break
 
         if app_target:
+            if app_target == "wingshield":
+                speak(f"Hello {self.recipient}! Wingshield Copilot online.", wait=False)
+                ok, result_msg = ComputerAutomation.open_wingshield_terminal()
+                return result_msg, False
+
+            if app_target == "agentshield":
+                speak("Launching original AgentShield-X CLI terminal.", wait=False)
+                ok, result_msg = ComputerAutomation.open_agentshield_cli_terminal()
+                return result_msg, False
+
             # Check if this was a YouTube search with query
             if "youtube" in app_target and any(k in low for k in ("search", "find")):
                 q = re.sub(r"^(open|launch|start|run|play|watch|search|find|youtube|\s)+", "", low)
@@ -1501,111 +1566,169 @@ class WingshieldCopilotEngine:
         speak(fallback, wait=False)
         return fallback, False
 
+    def handle_voice_stream(self, text: str) -> None:
+        """Processes incoming recognized text from either SRE or SpeechRecognition."""
+        if not text:
+            return
+        clean_text = text.lower().strip()
+        print(f"\033[38;2;139;148;158m[Audio Stream] {clean_text}\033[0m")
+        clean_text = re.sub(r"\b(you\s*tube|u\s*tube)\b", "youtube", clean_text)
+        clean_text = re.sub(r"\b(crome)\b", "chrome", clean_text)
+        clean_text = re.sub(r"\b(vs\s*code|v\s*s\s*code)\b", "vscode", clean_text)
+        clean_text = re.sub(r"\b(agent\s*shield)\b", "agentshield", clean_text)
+
+        clean_stream = re.sub(r"[^a-z0-9]", "", clean_text)
+        is_wake = (
+            ("agentshield" in clean_stream and "wake" in clean_stream)
+            or ("agent" in clean_stream and "shield" in clean_stream and "wake" in clean_stream)
+            or "wingshield" in clean_stream
+            or "wakeup" in clean_stream
+            or any(w in clean_text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup", "wingshield wakeup"))
+        )
+
+        is_cli_trigger = (
+            not is_wake
+            and (
+                clean_text in ("agentshield", "open agentshield", "launch agentshield", "agentshield cli", "agent shield", "agent shield cli", "shield cli", "cli terminal", "cli")
+                or clean_stream in ("agentshield", "openagentshield", "agentshieldcli")
+            )
+        )
+
+        direct_triggers = (
+            "youtube", "chrome", "google", "gmail", "whatsapp", "github", "chatgpt",
+            "vscode", "code", "cursor", "notepad", "calculator", "calc",
+            "terminal", "cmd", "paint", "camera", "spotify", "calendar",
+            "morning digest", "weather", "system status", "battery",
+            "take screenshot", "lock computer", "scan", "doctor", "diagnostics",
+            "agentshield", "wingshield"
+        )
+        has_direct_action = any(
+            clean_text == t
+            or clean_text.startswith(f"open {t}")
+            or clean_text.startswith(f"launch {t}")
+            or clean_text.startswith(f"start {t}")
+            or clean_text.startswith(f"play {t}")
+            or clean_text.startswith(f"watch {t}")
+            or clean_text.startswith(t + " ")
+            for t in direct_triggers
+        )
+        is_general_action = any(clean_text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch ", "scan ", "search ", "research ", "what is ", "who created ", "set calendar"))
+        is_active_window = self.is_active and (time.time() - getattr(self, "last_active_time", 0.0) < 30.0)
+
+        if is_wake:
+            self.is_active = True
+            self.last_active_time = time.time()
+            print("\033[1;32m[!] Wake word detected! Wingshield Copilot active.\033[0m")
+            speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
+            ComputerAutomation.open_wingshield_terminal()
+        elif is_cli_trigger:
+            self.is_active = True
+            self.last_active_time = time.time()
+            print("\033[1;36m[!] AgentShield CLI request detected! Launching original AgentShield-X CLI.\033[0m")
+            speak("Launching original AgentShield-X CLI terminal.", wait=False)
+            ComputerAutomation.open_agentshield_cli_terminal()
+        elif has_direct_action or is_general_action or is_active_window:
+            exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", clean_text).strip()
+            if not exec_text:
+                exec_text = clean_text
+            self.is_active = True
+            self.last_active_time = time.time()
+            print(f"\033[1;36m[VOICE ACTION] Executing: '{exec_text}'\033[0m")
+            res, should_exit = self.process_command(exec_text)
+            if res:
+                print(f"\033[38;2;240;246;252m{res}\033[0m\n")
+            if should_exit:
+                self.is_active = False
+                self.last_active_time = 0.0
+
     def listen_microphone_once(self) -> Optional[str]:
-        """Captures voice input from the laptop microphone using SpeechRecognition."""
-        if not SPEECH_REC_AVAILABLE:
-            return None
-        r = sr.Recognizer()
-        try:
-            with sr.Microphone() as source:
-                print("\033[38;2;56;189;248m[*] Wingshield is listening... (Speak now)\033[0m")
-                r.adjust_for_ambient_noise(source, duration=0.6)
-                audio = r.listen(source, timeout=6, phrase_time_limit=8)
-            text = r.recognize_google(audio)
-            print(f"\033[38;2;139;148;158mHeard: \"{text}\"\033[0m")
-            return text
-        except Exception:
-            return None
+        """Captures voice input from the laptop microphone using SpeechRecognition or Windows SRE."""
+        # 1. Try SpeechRecognition (Google STT) if available and working
+        if SPEECH_REC_AVAILABLE:
+            r = sr.Recognizer()
+            try:
+                with sr.Microphone() as source:
+                    print("\033[38;2;56;189;248m[*] Wingshield is listening... (Speak now)\033[0m")
+                    r.adjust_for_ambient_noise(source, duration=0.4)
+                    audio = r.listen(source, timeout=5, phrase_time_limit=6)
+                text = r.recognize_google(audio)
+                print(f"\033[38;2;139;148;158mHeard: \"{text}\"\033[0m")
+                return text
+            except Exception:
+                pass
+
+        # 2. Native Windows SRE fallback
+        if SYSTEM_SPEECH_AVAILABLE:
+            try:
+                import System
+                print("\033[38;2;56;189;248m[*] Wingshield listening via Windows SRE... (Speak now)\033[0m")
+                sre = SpeechRecognitionEngine()
+                sre.SetInputToDefaultAudioDevice()
+                sre.LoadGrammar(DictationGrammar())
+                res = sre.Recognize(System.TimeSpan.FromSeconds(5))
+                if res and res.Text:
+                    text = str(res.Text).strip()
+                    print(f"\033[38;2;139;148;158mHeard: \"{text}\"\033[0m")
+                    return text
+            except Exception:
+                pass
+
+        return None
 
     def listen_wakeword_loop(self) -> None:
         """Continuously listens in background for wake word 'agentshield wakeup' / 'wakeup'."""
-        if not SPEECH_REC_AVAILABLE:
-            print("\033[38;2;251;191;36m[WARN] SpeechRecognition not installed or microphone unavailable.\033[0m")
-            return
-
-        r = sr.Recognizer()
         print("\033[38;2;56;189;248m[+] Wingshield Background Wake-Word Listener Active...\033[0m")
-        print("\033[38;2;139;148;158mSay 'Agentshield wakeup' or 'Wingshield' to activate your Copilot.\033[0m")
+        print("\033[38;2;139;148;158mSay 'Agentshield wakeup' for Wingshield Copilot, or 'Agentshield' for AgentShield-X CLI.\033[0m")
+
+        # 1. Start Windows Native SAPI SpeechRecognitionEngine in background if available
+        sre_active = False
+        if SYSTEM_SPEECH_AVAILABLE:
+            try:
+                sre = SpeechRecognitionEngine()
+                sre.SetInputToDefaultAudioDevice()
+                c = Choices()
+                c.Add([
+                    "agentshield wakeup", "agentshield", "wingshield", "wakeup", "wake up",
+                    "open youtube", "open chrome", "open vs code", "open vscode", "open code",
+                    "open google", "open whatsapp", "open notepad", "open terminal",
+                    "youtube", "chrome", "vscode", "vs code", "google",
+                    "system status", "morning digest", "weather"
+                ])
+                sre.LoadGrammar(Grammar(GrammarBuilder(c)))
+                try:
+                    sre.LoadGrammar(DictationGrammar())
+                except Exception:
+                    pass
+
+                def _sre_callback(sender, args):
+                    if args and args.Result and args.Result.Text:
+                        text = str(args.Result.Text).strip()
+                        if text:
+                            self.handle_voice_stream(text)
+
+                sre.SpeechRecognized += _sre_callback
+                sre.RecognizeAsync(RecognizeMode.Multiple)
+                sre_active = True
+                print("\033[38;2;63;185;80m[+] Windows Native Speech Recognition Engine active & listening.\033[0m")
+            except Exception as e:
+                print(f"\033[38;2;139;148;158m[i] SRE note: {e}\033[0m")
+
+        # 2. Main loop: if SpeechRecognition (PortAudio) is available and SRE is not active, listen with Google STT;
+        # otherwise, sleep peacefully and let SRE handle speech recognition asynchronously.
+        r = sr.Recognizer() if SPEECH_REC_AVAILABLE else None
 
         while True:
+            if not SPEECH_REC_AVAILABLE or sre_active:
+                time.sleep(1.0)
+                continue
+
             try:
                 with sr.Microphone() as source:
                     r.adjust_for_ambient_noise(source, duration=0.5)
                     audio = r.listen(source, timeout=10, phrase_time_limit=5)
                 try:
                     text = r.recognize_google(audio).lower()
-                    print(f"\033[38;2;139;148;158m[Audio Stream] {text}\033[0m")
-                    clean_text = text.strip()
-                    clean_text = re.sub(r"\b(you\s*tube|u\s*tube)\b", "youtube", clean_text)
-                    clean_text = re.sub(r"\b(crome)\b", "chrome", clean_text)
-                    clean_text = re.sub(r"\b(vs\s*code|v\s*s\s*code)\b", "vscode", clean_text)
-                    clean_text = re.sub(r"\b(agent\s*shield)\b", "agentshield", clean_text)
-
-                    clean_stream = re.sub(r"[^a-z0-9]", "", clean_text)
-                    clean_stream = re.sub(r"[^a-z0-9]", "", clean_text)
-                    is_wake = (
-                        ("agentshield" in clean_stream and "wake" in clean_stream)
-                        or ("agent" in clean_stream and "shield" in clean_stream and "wake" in clean_stream)
-                        or "wingshield" in clean_stream
-                        or "wakeup" in clean_stream
-                        or any(w in clean_text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup", "wingshield wakeup"))
-                    )
-
-                    is_cli_trigger = (
-                        not is_wake
-                        and (
-                            clean_text in ("agentshield", "open agentshield", "launch agentshield", "agentshield cli", "agent shield", "shield cli", "cli terminal")
-                            or clean_stream in ("agentshield", "openagentshield", "agentshieldcli")
-                        )
-                    )
-
-                    direct_triggers = (
-                        "youtube", "chrome", "google", "gmail", "whatsapp", "github", "chatgpt",
-                        "vscode", "code", "cursor", "notepad", "calculator", "calc",
-                        "terminal", "cmd", "paint", "camera", "spotify", "calendar",
-                        "morning digest", "weather", "system status", "battery",
-                        "take screenshot", "lock computer", "scan", "doctor", "diagnostics",
-                        "agentshield", "wingshield"
-                    )
-                    has_direct_action = any(
-                        clean_text == t
-                        or clean_text.startswith(f"open {t}")
-                        or clean_text.startswith(f"launch {t}")
-                        or clean_text.startswith(f"start {t}")
-                        or clean_text.startswith(f"play {t}")
-                        or clean_text.startswith(f"watch {t}")
-                        or clean_text.startswith(t + " ")
-                        for t in direct_triggers
-                    )
-                    is_general_action = any(clean_text.startswith(prefix) for prefix in ("open ", "launch ", "start ", "run ", "play ", "watch ", "scan ", "search ", "research ", "what is ", "who created ", "set calendar"))
-                    is_active_window = self.is_active and (time.time() - getattr(self, "last_active_time", 0.0) < 30.0)
-
-                    if is_wake:
-                        self.is_active = True
-                        self.last_active_time = time.time()
-                        print("\033[1;32m[!] Wake word detected! Wingshield Copilot active.\033[0m")
-                        speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
-                        ComputerAutomation.open_wingshield_terminal()
-                    elif is_cli_trigger:
-                        self.is_active = True
-                        self.last_active_time = time.time()
-                        print("\033[1;36m[!] AgentShield CLI request detected! Launching original AgentShield-X CLI.\033[0m")
-                        speak("Launching original AgentShield-X CLI terminal.", wait=False)
-                        ComputerAutomation.open_agentshield_cli_terminal()
-                    elif has_direct_action or is_general_action or is_active_window:
-                        # Once awake, or on direct actionable commands, execute immediately
-                        exec_text = re.sub(r"^(wingshield|agentshield|agent shield|copilot)\s*", "", clean_text).strip()
-                        if not exec_text:
-                            exec_text = clean_text
-                        self.is_active = True
-                        self.last_active_time = time.time()
-                        print(f"\033[1;36m[VOICE ACTION] Executing: '{exec_text}'\033[0m")
-                        res, should_exit = self.process_command(exec_text)
-                        if res:
-                            print(f"\033[38;2;240;246;252m{res}\033[0m\n")
-                        if should_exit:
-                            self.is_active = False
-                            self.last_active_time = 0.0
+                    self.handle_voice_stream(text)
                 except sr.UnknownValueError:
                     pass
                 except sr.RequestError:
@@ -1614,7 +1737,7 @@ class WingshieldCopilotEngine:
                 break
             except Exception as e:
                 print(f"\033[38;2;251;191;36m[!] Audio loop note: {e}\033[0m")
-                time.sleep(1.5)
+                time.sleep(3.0)
 
     def run_interactive_loop(self) -> None:
         """Runs the main terminal interaction loop with voice greeting & computer access."""

@@ -187,5 +187,43 @@ class TestWingshieldCopilot:
         assert "AgentShield-X CLI terminal" in r_ashield
 
         r_wake, _ = engine.process_command("agentshield wakeup")
-        assert "Wingshield Copilot online" in r_wake
+        assert "Wingshield Copilot" in r_wake
+
+    def test_voice_stream_dual_terminal_and_app_dispatch(self, monkeypatch):
+        engine = WingshieldCopilotEngine(greeting_recipient="Tharun")
+
+        wingshield_calls = []
+        agentshield_calls = []
+        app_calls = []
+
+        from shield_core.wingshield import ComputerAutomation
+        monkeypatch.setattr(ComputerAutomation, "open_wingshield_terminal", lambda: wingshield_calls.append(True) or (True, "Wingshield Opened"))
+        monkeypatch.setattr(ComputerAutomation, "open_agentshield_cli_terminal", lambda: agentshield_calls.append(True) or (True, "AgentShield CLI Opened"))
+        monkeypatch.setattr(ComputerAutomation, "open_app", lambda app: app_calls.append(app) or (True, f"Opened {app}"))
+
+        # 1. agentshield wakeup -> opens Wingshield terminal
+        engine.handle_voice_stream("agentshield wakeup")
+        assert len(wingshield_calls) == 1
+        assert len(agentshield_calls) == 0
+
+        # 2. agentshield -> opens original AgentShield CLI terminal
+        engine.handle_voice_stream("agentshield")
+        assert len(agentshield_calls) == 1
+
+        # 3. agentshield cli -> opens original AgentShield CLI terminal
+        engine.handle_voice_stream("agentshield cli")
+        assert len(agentshield_calls) == 2
+
+        # 4. open youtube -> opens youtube
+        engine.handle_voice_stream("open youtube")
+        assert "youtube" in app_calls
+
+        # 5. open chrome -> opens chrome
+        engine.handle_voice_stream("open chrome")
+        assert "chrome" in app_calls
+
+        # 6. open vs code -> opens vscode
+        engine.handle_voice_stream("open vs code")
+        assert "vscode" in app_calls
+
 
