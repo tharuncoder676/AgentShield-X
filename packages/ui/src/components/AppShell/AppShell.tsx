@@ -151,7 +151,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   <span>Agent</span><span className="text-purple-400">Shield</span><span className="text-fuchsia-400">-X</span>
                 </span>
                 <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  v1.0.0
+                  v2.4.0
                 </span>
               </div>
               <span className="text-[10px] text-mut font-chakra leading-tight mt-0.5">

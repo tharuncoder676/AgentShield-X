@@ -82,29 +82,13 @@ export const Signup: React.FC = () => {
         {/* Brand Logo Lockup: Centered at top of card */}
         <div className="flex justify-center mb-6">
           <Link to="/" className="flex items-center space-x-2.5 group">
-            <div className="relative w-9 h-9 flex items-center justify-center">
-              <svg className="w-8 h-8 drop-shadow-md" viewBox="0 0 32 32" fill="none">
-                <path
-                  d="M16 2L5 8V16C5 23 9.7 29.4 16 31C22.3 29.4 27 23 27 16V8L16 2Z"
-                  fill="#121318"
-                  stroke="#3b82f6"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M17.5 7L10 17H16L14.5 25L22 15H16L17.5 7Z"
-                  fill="url(#lightning_grad_signup)"
-                />
-                <defs>
-                  <linearGradient id="lightning_grad_signup" x1="10" y1="7" x2="22" y2="25" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#fbbf24" />
-                    <stop offset="0.5" stopColor="#3b82f6" />
-                    <stop offset="1" stopColor="#60a5fa" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <span className="font-chakra font-bold text-2xl tracking-wide text-white group-hover:text-blue-400 transition-colors">
-              Shield<span className="text-[#3b82f6]">Wing</span>
+            <img
+              src="/logo-square.png"
+              alt="AgentShield-X Logo"
+              className="w-9 h-9 rounded-xl border border-[#a855f7]/40 shadow-md shadow-[#a855f7]/20 object-cover group-hover:border-[#a855f7] transition-all"
+            />
+            <span className="font-chakra font-bold text-2xl tracking-wide text-white group-hover:text-purple-300 transition-colors">
+              AgentShield<span className="text-[#a855f7]">-X</span>
             </span>
           </Link>
         </div>

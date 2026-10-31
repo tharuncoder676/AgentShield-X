@@ -453,7 +453,7 @@ export const Landing: React.FC = () => {
                 AgentShield<span className="text-[#a855f7]">-X</span>
               </span>
               <span className="hidden sm:inline-block text-[10px] font-mono font-bold text-[#a855f7] bg-[#120a24] border border-[#a855f7]/40 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                v1.0.0
+                v2.4.0
               </span>
             </Link>
           </div>
