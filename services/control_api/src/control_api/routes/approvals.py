@@ -3,7 +3,6 @@ AgentShield-X Human-in-the-Loop Approvals Queue Router
 Enables security operators to inspect escalated actions, review payload context, and approve or deny execution.
 """
 
-from __future__ import annotations
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status

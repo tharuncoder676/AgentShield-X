@@ -132,35 +132,37 @@ export const McpProxy: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
+      {/* Header - AgentShield-X Style */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#120a24]/80 border border-purple-500/20 backdrop-blur-xl shadow-[0_0_30px_rgba(168,85,247,0.12)]">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-chakra font-bold uppercase tracking-wider text-fg flex items-center gap-2">
-              <Lock className="text-ok" size={20} />
-              MCP Security Proxy & Tool Rug-Pull Guard
-            </h1>
-            <span className="text-[10px] px-2 py-0.5 bg-ok/10 text-ok border border-ok/30 rounded font-mono uppercase tracking-wider">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[10px] px-2.5 py-0.5 bg-purple-950/80 text-purple-300 border border-purple-500/40 rounded font-mono uppercase tracking-wider shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               Enforce Active
             </span>
+            <span className="text-purple-400/50">&bull;</span>
+            <span className="text-xs text-purple-300/80 font-mono">Zero-Trust Tool Isolation</span>
           </div>
-          <p className="text-xs text-mut mt-1">
+          <h1 className="text-2xl sm:text-3xl font-chakra font-bold uppercase tracking-wider bg-gradient-to-r from-white via-purple-100 to-purple-400 bg-clip-text text-transparent flex items-center gap-2.5">
+            <Lock className="text-purple-400" size={24} />
+            MCP Security Proxy & Tool Rug-Pull Guard
+          </h1>
+          <p className="text-xs text-purple-200/70 mt-1 max-w-2xl">
             Zero-trust Model Context Protocol proxy that pins tool definitions, detects shadow schema mutations, and blocks indirect prompt injection.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={loadData}
             disabled={isLoading}
-            className="px-3 py-1.5 bg-panel border border-line text-mut hover:text-fg text-xs font-chakra uppercase rounded flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2 bg-[#160d2e]/80 border border-purple-500/30 text-purple-200 hover:text-white hover:border-purple-400 text-xs font-chakra font-bold uppercase tracking-wider rounded-lg flex items-center gap-2 transition-all backdrop-blur-xl"
           >
             <RefreshCw size={14} className={cn(isLoading && "animate-spin")} />
             Refresh
           </button>
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="px-3 py-1.5 bg-ok text-bg font-chakra font-bold text-xs uppercase tracking-wider rounded flex items-center gap-1.5 hover:bg-ok/90 transition-colors shadow-sm"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 hover:from-purple-500 hover:to-fuchsia-600 text-white font-chakra font-bold text-xs uppercase tracking-wider rounded-lg flex items-center gap-2 shadow-[0_0_20px_rgba(168,85,247,0.45)] border border-purple-400/40 transition-all"
           >
             <Plus size={14} />
             Pin New Tool
@@ -168,59 +170,59 @@ export const McpProxy: React.FC = () => {
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* Metrics Row - AgentShield-X Bento Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Panel className="p-4 border-line bg-panel/50">
+        <div className="p-4 rounded-xl border border-purple-500/20 bg-[#120a24]/70 backdrop-blur-xl hover:border-purple-400/40 transition-all shadow-[0_0_20px_rgba(168,85,247,0.08)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-mut uppercase font-chakra tracking-wider">Pinned Definitions</span>
-            <Lock className="text-ok" size={16} />
+            <span className="text-xs text-purple-300/80 uppercase font-chakra tracking-wider">Pinned Definitions</span>
+            <Lock className="text-purple-400" size={16} />
           </div>
-          <div className="mt-2 text-2xl font-chakra font-bold text-fg">
+          <div className="mt-2 text-2xl font-chakra font-bold text-white">
             {pins.length}
           </div>
-          <div className="mt-1 text-[11px] text-mut flex items-center gap-1">
-            <span className="text-ok font-mono font-bold">100%</span> verified canonical hashes
+          <div className="mt-1 text-[11px] text-purple-300/70 flex items-center gap-1">
+            <span className="text-purple-300 font-mono font-bold">100%</span> verified canonical hashes
           </div>
-        </Panel>
+        </div>
 
-        <Panel className="p-4 border-line bg-panel/50">
+        <div className="p-4 rounded-xl border border-purple-500/20 bg-[#120a24]/70 backdrop-blur-xl hover:border-purple-400/40 transition-all shadow-[0_0_20px_rgba(168,85,247,0.08)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-mut uppercase font-chakra tracking-wider">Monitored Servers</span>
-            <Server className="text-fg" size={16} />
+            <span className="text-xs text-purple-300/80 uppercase font-chakra tracking-wider">Monitored Servers</span>
+            <Server className="text-purple-400" size={16} />
           </div>
-          <div className="mt-2 text-2xl font-chakra font-bold text-fg">
+          <div className="mt-2 text-2xl font-chakra font-bold text-white">
             {servers.length}
           </div>
-          <div className="mt-1 text-[11px] text-mut">
+          <div className="mt-1 text-[11px] text-purple-300/70">
             stdio & SSE protocol endpoints
           </div>
-        </Panel>
+        </div>
 
-        <Panel className="p-4 border-line bg-panel/50">
+        <div className="p-4 rounded-xl border border-purple-500/20 bg-[#120a24]/70 backdrop-blur-xl hover:border-purple-400/40 transition-all shadow-[0_0_20px_rgba(168,85,247,0.08)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-mut uppercase font-chakra tracking-wider">Rug-Pulls Deflected</span>
-            <ShieldAlert className={alerts.length > 0 ? "text-bad" : "text-ok"} size={16} />
+            <span className="text-xs text-purple-300/80 uppercase font-chakra tracking-wider">Rug-Pulls Deflected</span>
+            <ShieldAlert className={alerts.length > 0 ? "text-rose-400" : "text-purple-400"} size={16} />
           </div>
-          <div className="mt-2 text-2xl font-chakra font-bold text-fg">
+          <div className="mt-2 text-2xl font-chakra font-bold text-white">
             {alerts.length}
           </div>
-          <div className="mt-1 text-[11px] text-mut">
+          <div className="mt-1 text-[11px] text-purple-300/70">
             Shadow schema mutations blocked
           </div>
-        </Panel>
+        </div>
 
-        <Panel className="p-4 border-line bg-panel/50">
+        <div className="p-4 rounded-xl border border-purple-500/20 bg-[#120a24]/70 backdrop-blur-xl hover:border-purple-400/40 transition-all shadow-[0_0_20px_rgba(168,85,247,0.08)]">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-mut uppercase font-chakra tracking-wider">Supply-Chain Health</span>
-            <ShieldCheck className="text-ok" size={16} />
+            <span className="text-xs text-purple-300/80 uppercase font-chakra tracking-wider">Supply-Chain Health</span>
+            <ShieldCheck className="text-purple-400" size={16} />
           </div>
-          <div className="mt-2 text-2xl font-chakra font-bold text-ok">
+          <div className="mt-2 text-2xl font-chakra font-bold text-purple-300 drop-shadow-[0_0_10px_rgba(192,132,252,0.4)]">
             Protected
           </div>
-          <div className="mt-1 text-[11px] text-mut">
+          <div className="mt-1 text-[11px] text-purple-300/70">
             Zero-trust fail-closed policy
           </div>
-        </Panel>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -230,8 +232,8 @@ export const McpProxy: React.FC = () => {
           className={cn(
             "pb-2 font-chakra font-bold text-xs uppercase tracking-wider border-b-2 transition-colors flex items-center gap-1.5",
             activeTab === "connectors"
-              ? "border-ok text-ok"
-              : "border-transparent text-mut hover:text-fg"
+              ? "border-purple-400 text-purple-300 shadow-[0_2px_10px_rgba(168,85,247,0.4)]"
+              : "border-transparent text-purple-300/60 hover:text-white"
           )}
         >
           <Cable size={14} />
@@ -242,8 +244,8 @@ export const McpProxy: React.FC = () => {
           className={cn(
             "pb-2 font-chakra font-bold text-xs uppercase tracking-wider border-b-2 transition-colors flex items-center gap-1.5",
             activeTab === "pins"
-              ? "border-ok text-ok"
-              : "border-transparent text-mut hover:text-fg"
+              ? "border-purple-400 text-purple-300 shadow-[0_2px_10px_rgba(168,85,247,0.4)]"
+              : "border-transparent text-purple-300/60 hover:text-white"
           )}
         >
           <Lock size={14} />
@@ -254,8 +256,8 @@ export const McpProxy: React.FC = () => {
           className={cn(
             "pb-2 font-chakra font-bold text-xs uppercase tracking-wider border-b-2 transition-colors flex items-center gap-1.5",
             activeTab === "alerts"
-              ? "border-ok text-ok"
-              : "border-transparent text-mut hover:text-fg"
+              ? "border-purple-400 text-purple-300 shadow-[0_2px_10px_rgba(168,85,247,0.4)]"
+              : "border-transparent text-purple-300/60 hover:text-white"
           )}
         >
           <AlertTriangle size={14} />
@@ -266,8 +268,8 @@ export const McpProxy: React.FC = () => {
           className={cn(
             "pb-2 font-chakra font-bold text-xs uppercase tracking-wider border-b-2 transition-colors flex items-center gap-1.5",
             activeTab === "servers"
-              ? "border-ok text-ok"
-              : "border-transparent text-mut hover:text-fg"
+              ? "border-purple-400 text-purple-300 shadow-[0_2px_10px_rgba(168,85,247,0.4)]"
+              : "border-transparent text-purple-300/60 hover:text-white"
           )}
         >
           <Server size={14} />
@@ -325,7 +327,7 @@ export const McpProxy: React.FC = () => {
                             <span>{pin.canonical_hash.slice(0, 16)}...{pin.canonical_hash.slice(-8)}</span>
                             <button
                               onClick={() => handleCopy(pin.canonical_hash, pin.id)}
-                              className="text-mut hover:text-fg"
+                              className="text-purple-300/60 hover:text-white"
                               title="Copy full hash"
                             >
                               {copiedIndex === pin.id ? <Check size={12} className="text-ok" /> : <Copy size={12} />}
@@ -471,7 +473,7 @@ export const McpProxy: React.FC = () => {
                       "claude-cfg"
                     )
                   }
-                  className="absolute top-3 right-3 text-mut hover:text-fg p-1 rounded bg-panel border border-line"
+                  className="absolute top-3 right-3 text-purple-300/60 hover:text-white p-1 rounded bg-panel border border-line"
                   title="Copy configuration snippet"
                 >
                   {copiedIndex === "claude-cfg" ? <Check size={13} className="text-ok" /> : <Copy size={13} />}
@@ -550,7 +552,7 @@ export const McpProxy: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsDrawerOpen(false)}
-              className="px-3 py-1.5 text-mut hover:text-fg font-chakra uppercase"
+              className="px-3 py-1.5 text-purple-300/60 hover:text-white font-chakra uppercase"
             >
               Cancel
             </button>

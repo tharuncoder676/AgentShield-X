@@ -1,0 +1,60 @@
+apiVersion: agentshield.security/v1alpha1
+kind: AgentSecurityPolicy
+metadata:
+  name: enterprise-support-guard
+  version: "1.4.0"
+  author: Tharunkumar.S
+  environment: production
+  tags:
+    - customer-facing
+    - zero-trust
+    - pci-dss
+
+spec:
+  target_agents:
+    - "agent-prod-support-*"
+    - "agent-billing-helper"
+
+  enforcement_mode: enforce
+
+  rate_limits:
+    max_tool_calls_per_minute: 45
+    max_cost_per_session_usd: 1.50
+
+  egress_filters:
+    allowed_domains:
+      - "api.company.internal"
+      - "*.stripe.com"
+      - "support.zendesk.com"
+    blocked_cidrs:
+      - "169.254.169.254/32"  # AWS Metadata service
+      - "10.0.0.0/8"
+
+  honeytokens:
+    enabled: true
+    injection_rate: 0.15
+    traps:
+      - "fake_aws_key"
+      - "decoy_db_pass"
+
+  tool_rules:
+    - tool_name: "bash_*"
+      action: block
+      reason: "Shell command execution forbidden for customer support agents"
+
+    - tool_name: "query_database"
+      action: require_approval
+      argument_constraints:
+        query: "(?i)(drop|delete|truncate|alter)"
+      action_on_match: block
+
+    - tool_name: "send_refund_email"
+      action: require_approval
+      reason: "Financial transactions require Human-in-the-Loop authorization"
+
+    - tool_name: "retrieve_user_profile"
+      action: allow
+      mask_fields:
+        - "ssn"
+        - "credit_card"
+

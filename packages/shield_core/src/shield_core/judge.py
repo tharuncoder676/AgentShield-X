@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from shield_core.compat import BaseModel, Field
 from shield_core.models import ShieldAction, TaskContract
+from shield_core.agentic_defense import default_agentic_defense
 
 
 class DebateTurn(BaseModel):
@@ -71,6 +72,28 @@ class MultiAgentJudgeCommittee:
             if ind in args_str or ind in context_lower:
                 adversary_evidence.append(f"Detected suspicious pattern: '{ind}'")
                 adversary_score += 0.25
+
+        # Multi-factor cognitive analysis (catches indirect, unknown, and paraphrased injections)
+        agentic_eval_args = default_agentic_defense.evaluate_text_payload(args_str)
+        agentic_eval_ctx = default_agentic_defense.evaluate_text_payload(context_preview)
+        combined_violations = agentic_eval_args.violations + agentic_eval_ctx.violations
+        for v in combined_violations:
+            adversary_evidence.append(f"Agentic Defense: {v}")
+        if agentic_eval_args.is_adversarial or agentic_eval_ctx.is_adversarial:
+            max_threat = max(agentic_eval_args.threat_score, agentic_eval_ctx.threat_score)
+            adversary_score += max_threat * 0.50
+
+        # Semantic goal alignment verification
+        if task_contract and task_contract.intent:
+            alignment, hijack_reason = default_agentic_defense.evaluate_goal_alignment(
+                task_contract.intent, tool_name, arguments
+            )
+            if hijack_reason:
+                adversary_evidence.append(hijack_reason)
+                adversary_score += 0.40
+            elif alignment < 0.35:
+                adversary_evidence.append(f"Low semantic goal alignment ({alignment:.2f}) with declared intent")
+                adversary_score += 0.20
 
         if any(sink in tool_name.lower() for sink in ["send", "email", "post", "shell", "exec", "write"]):
             if taint_sources:

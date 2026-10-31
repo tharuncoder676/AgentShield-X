@@ -16,7 +16,17 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 
-DEFAULT_SECRET_KEY = "agentshield-x-attestation-master-secret-key-32b"
+import os
+import logging
+
+logger = logging.getLogger("shield_core.attestation")
+
+
+def get_attestation_secret() -> str:
+    secret = os.getenv("SHIELD_ATTESTATION_SECRET") or os.getenv("ATTESTATION_SECRET")
+    if not secret:
+        return secrets.token_hex(32)
+    return secret
 
 
 @dataclass
@@ -48,8 +58,9 @@ class A2ACapabilityToken:
 
 
 class A2AAttestationEngine:
-    def __init__(self, secret_key: str = DEFAULT_SECRET_KEY):
-        self.secret_key = secret_key.encode("utf-8")
+    def __init__(self, secret_key: Optional[str] = None):
+        key = secret_key if secret_key is not None else get_attestation_secret()
+        self.secret_key = key.encode("utf-8")
         self._tokens: Dict[str, A2ACapabilityToken] = {}
         self._revocation_list: set[str] = set()
 

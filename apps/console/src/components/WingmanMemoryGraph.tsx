@@ -32,7 +32,7 @@ export const WingmanMemoryGraph: React.FC = () => {
     ctx.scale(dpr, dpr);
 
     const nodes: Node[] = [];
-    const colors = ["#00e5ff", "#38bdf8", "#10b981", "#818cf8"];
+    const colors = ["#c084fc", "#a855f7", "#e879f9", "#818cf8"];
 
     for (let i = 0; i < 24; i++) {
       nodes.push({

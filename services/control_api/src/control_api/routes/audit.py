@@ -3,7 +3,6 @@ AgentShield-X Cryptographic Audit Log Router
 Provides append-only, SHA-256 hash-chained decision audit inspection and chain validation.
 """
 
-from __future__ import annotations
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status

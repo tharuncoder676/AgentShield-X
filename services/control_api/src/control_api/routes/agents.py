@@ -4,7 +4,6 @@ Enables operators to register autonomous agents, configure allowed tools and
 blast radius parameters, inspect security scores, and trigger instant kill-switches.
 """
 
-from __future__ import annotations
 
 import uuid
 from typing import List, Optional

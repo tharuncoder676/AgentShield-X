@@ -3,7 +3,6 @@ AgentShield-X Swarm Defense & A2A Attenuation Router
 Simulates multi-agent swarms, tracks cross-agent taint flow, and verifies delegation constraints.
 """
 
-from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query

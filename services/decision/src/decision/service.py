@@ -106,8 +106,8 @@ class DecisionService:
         for r_list in results:
             reasons.extend(r_list)
 
-        # 1. Honeytool touches
-        if any(r.detector == "honey" for r in honey_r):
+        # 1. Honeytool touches (exclude timeouts or internal errors from triggering false kill_session)
+        if any(r.detector == "honey" and not r.code.startswith("DETECTOR_") for r in honey_r):
             risk_breakdown.honey = 1.0
 
         # 2. Injection & rules

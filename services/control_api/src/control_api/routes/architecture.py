@@ -3,7 +3,6 @@ AgentShield-X Architecture Explorer Endpoints
 Provides real-time system topology, latency statistics, and subsystem health status.
 """
 
-from __future__ import annotations
 
 import json
 import os

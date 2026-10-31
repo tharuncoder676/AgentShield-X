@@ -3,7 +3,6 @@ AgentShield-X Real Data Onboarding Status Verification
 Non-Negotiable Rule: Completion is detected strictly from real data, not a manual checkbox.
 """
 
-from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 

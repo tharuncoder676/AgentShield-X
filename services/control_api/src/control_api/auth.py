@@ -3,7 +3,6 @@ AgentShield-X User Authentication & Session Security
 Implements PBKDF2-HMAC-SHA256 password hashing and JWT claims signing.
 """
 
-from __future__ import annotations
 
 import hashlib
 import os
@@ -12,7 +11,19 @@ import time
 from typing import Any, Dict, Optional
 import jwt
 
-JWT_SECRET = os.getenv("SHIELD_JWT_SECRET", "agentshield_local_jwt_secret_phase2_uniquekey")
+import logging
+
+logger = logging.getLogger("control_api.auth")
+
+_configured_secret = os.getenv("SHIELD_JWT_SECRET") or os.getenv("JWT_SECRET")
+if not _configured_secret:
+    if os.getenv("ENVIRONMENT", "development").lower() in ("production", "prod"):
+        raise RuntimeError("FATAL: JWT_SECRET or SHIELD_JWT_SECRET environment variable MUST be set in production mode.")
+    logger.warning("SECURITY WARNING: No JWT_SECRET configured. Generating secure ephemeral 256-bit secret for this runtime session.")
+    JWT_SECRET = secrets.token_hex(32)
+else:
+    JWT_SECRET = _configured_secret
+
 JWT_ALGORITHM = "HS256"
 TOKEN_EXPIRY_SECONDS = 86400 * 7  # 7 days
 

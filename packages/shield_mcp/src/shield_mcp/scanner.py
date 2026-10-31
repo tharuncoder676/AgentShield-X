@@ -51,7 +51,20 @@ POISON_PATTERNS = [
 ]
 
 # Zero-width / invisible unicode characters often used for steganographic injection
-INVISIBLE_CHARS_REGEX = re.compile(r"[\u200B-\u200D\uFEFF\u202A-\u202E]")
+# Note: permits valid Unicode emoji ZWJ sequences (e.g. 👨‍👩‍👧‍👦) without false positives
+INVISIBLE_CHARS_REGEX = re.compile(r"[\u200B\u200C\uFEFF\u202A-\u202E\u2060-\u2069]")
+
+
+def _has_adversarial_hidden_chars(text: str) -> bool:
+    if not text:
+        return False
+    # Check for actual hidden characters (zero-width space, non-joiner, BOM, bidi overrides)
+    if re.search(r"[\u200B\u200C\uFEFF\u202A-\u202E\u2060-\u2069]", text):
+        return True
+    # If \u200D (ZWJ) is present adjacent to alphanumeric ASCII text, it is an adversarial evasion attempt
+    if re.search(r"[a-zA-Z0-9]\u200D|\u200D[a-zA-Z0-9]", text):
+        return True
+    return False
 
 
 class ToolPoisoningScanner:
@@ -76,8 +89,8 @@ class ToolPoisoningScanner:
 
         reasons: List[str] = []
 
-        # 1. Scan description for invisible unicode injection
-        if INVISIBLE_CHARS_REGEX.search(desc):
+        # 1. Scan description for invisible unicode injection (ignoring benign emoji ZWJ sequences)
+        if _has_adversarial_hidden_chars(desc):
             reasons.append(
                 f"Tool '{name}': Detected invisible/zero-width unicode characters in description (steganographic injection)."
             )
@@ -90,6 +103,14 @@ class ToolPoisoningScanner:
                 reasons.append(
                     f"Tool '{name}': Poisoning pattern [{code}] detected in description: '{snippet}'"
                 )
+
+        # 3. Multi-agent cognitive analysis for subtle, indirect injections in tool description
+        from shield_core.agentic_defense import default_agentic_defense
+        cog_res = default_agentic_defense.evaluate_text_payload(desc)
+        if cog_res.is_adversarial and cog_res.threat_score >= 0.65:
+            reasons.append(
+                f"Tool '{name}': Cognitive defense detected indirect instruction injection: {'; '.join(cog_res.violations[:2])}"
+            )
 
         # 3. Recursively scan inputSchema for injected defaults or descriptions
         schema_reasons = self._scan_schema(name, schema)

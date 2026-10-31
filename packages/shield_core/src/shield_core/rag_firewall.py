@@ -11,6 +11,7 @@ import secrets
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
+from shield_core.agentic_defense import default_agentic_defense
 
 
 INJECTION_PATTERNS = [
@@ -54,6 +55,7 @@ class RAGFirewallEngine:
         violations = []
         sanitized = text
 
+        # 1. Direct and heuristic pattern redaction
         for pattern, score, label in self._compiled:
             matches = pattern.findall(sanitized)
             if matches:
@@ -62,16 +64,35 @@ class RAGFirewallEngine:
                 # Remove malicious sentence
                 sanitized = pattern.sub("[REDACTED_BY_AGENTSHIELD_RAG_FIREWALL]", sanitized)
 
+        # 2. Cognitive agentic evaluation on full text (catches paraphrased, indirect, and zero-keyword injections)
+        orig_agentic = default_agentic_defense.evaluate_text_payload(text)
+        if orig_agentic.is_adversarial:
+            max_threat = max(max_threat, orig_agentic.threat_score)
+            for v in orig_agentic.violations:
+                if f"INDIRECT_INJECTION: {v}" not in violations:
+                    violations.append(f"INDIRECT_INJECTION: {v}")
+
+        # 3. Re-evaluate sanitized text if modified
+        if sanitized != text:
+            agentic_res = default_agentic_defense.evaluate_text_payload(sanitized)
+            if agentic_res.is_adversarial:
+                max_threat = max(max_threat, agentic_res.threat_score)
+                for v in agentic_res.violations:
+                    if f"INDIRECT_INJECTION: {v}" not in violations:
+                        violations.append(f"INDIRECT_INJECTION: {v}")
+
         if max_threat >= self.drop_threshold:
             decision = "DROP"
             sanitized = "[DROPPED: Malicious instruction injection detected in retrieved document chunk]"
         elif max_threat >= self.sanitize_threshold:
             decision = "SANITIZE"
+            if sanitized == text:
+                sanitized = "[REDACTED_BY_AGENTSHIELD_RAG_FIREWALL: Indirect prompt injection neutralized]"
         else:
             decision = "PASS"
             sanitized = text
 
-        duration_ms = round((time.time() - start_time) * 1000 + 1.2, 2)
+        duration_ms = max(0.01, round((time.time() - start_time) * 1000, 2))
 
         result = InspectedChunk(
             chunk_id=cid,
@@ -88,6 +109,63 @@ class RAGFirewallEngine:
 
     def inspect_retrieval_batch(self, chunks: List[str]) -> List[InspectedChunk]:
         return [self.inspect_chunk(c) for c in chunks]
+
+    def filter_chroma_query_results(self, query_results: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Adapts and filters query results returned from ChromaDB collection.query().
+        Filters or sanitizes documents, maintaining list shape.
+        """
+        if "documents" not in query_results:
+            return query_results
+        filtered_docs = []
+        for doc_list in query_results.get("documents", []):
+            inner_docs = []
+            for doc in doc_list:
+                if not isinstance(doc, str):
+                    inner_docs.append(doc)
+                    continue
+                res = self.inspect_chunk(doc)
+                if res.decision != "DROP":
+                    inner_docs.append(res.sanitized_text)
+            filtered_docs.append(inner_docs)
+        query_results["documents"] = filtered_docs
+        return query_results
+
+    def filter_pinecone_matches(self, matches: List[Dict[str, Any]], text_key: str = "text") -> List[Dict[str, Any]]:
+        """
+        Adapts and filters vector match dictionaries returned from Pinecone index.query().
+        Excludes matches marked DROP and sanitizes metadata text.
+        """
+        clean_matches = []
+        for match in matches:
+            metadata = match.get("metadata", {})
+            text = metadata.get(text_key, "")
+            if text and isinstance(text, str):
+                res = self.inspect_chunk(text, chunk_id=match.get("id"))
+                if res.decision == "DROP":
+                    continue
+                metadata[text_key] = res.sanitized_text
+            clean_matches.append(match)
+        return clean_matches
+
+    def filter_pgvector_records(self, records: List[Dict[str, Any]], text_column: str = "content") -> List[Dict[str, Any]]:
+        """
+        Adapts and filters records returned from PostgreSQL pgvector queries.
+        Excludes records marked DROP and sanitizes the target text column.
+        """
+        clean_records = []
+        for rec in records:
+            text = rec.get(text_column, "")
+            if text and isinstance(text, str):
+                res = self.inspect_chunk(text, chunk_id=str(rec.get("id", "")))
+                if res.decision == "DROP":
+                    continue
+                rec_copy = dict(rec)
+                rec_copy[text_column] = res.sanitized_text
+                clean_records.append(rec_copy)
+            else:
+                clean_records.append(rec)
+        return clean_records
 
     def get_inspection_history(self, limit: int = 50) -> List[Dict[str, Any]]:
         return [c.to_dict() for c in reversed(self._history[-limit:])]

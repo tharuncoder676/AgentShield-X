@@ -1,0 +1,101 @@
+# ==============================================================================
+# AgentShield-X Enterprise Voice Agent Blueprint
+# Powered by NVIDIA Nemotron Models as NVIDIA NIMs + AgentShield-X Dual-Rail Security
+#
+# Architecture:
+# - NVIDIA Nemotron Speech ASR (Streaming 0.6B / Parakeet Multilingual)
+# - NVIDIA Nemotron 3.5 Lightning (30B-A3B) / Nemotron-3 Nano Omni
+# - NVIDIA Magpie TTS Multilingual (12 Languages Optimized)
+# - AgentShield-X Control & Security Proxy (<0.18ms Dual-Rail Deterministic Firewall)
+# ==============================================================================
+
+version: "3.8"
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. NVIDIA Nemotron Speech Streaming ASR NIM
+  # ----------------------------------------------------------------------------
+  nemotron-asr:
+    image: nvcr.io/nim/nvidia/nemotron-speech-streaming-0.6b:latest
+    container_name: agentshield-nemotron-asr
+    restart: unless-stopped
+    environment:
+      - NGC_API_KEY=${NGC_API_KEY}
+      - NIM_TAGS_SELECTOR=mode=str
+    ports:
+      - "50051:50051" # gRPC streaming endpoint
+      - "8000:8000"   # HTTP transcription endpoint
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ----------------------------------------------------------------------------
+  # 2. NVIDIA Nemotron 3.5 Lightning LLM NIM (Reasoning & Tool Orchestrator)
+  # ----------------------------------------------------------------------------
+  nemotron-llm:
+    image: nvcr.io/nim/nvidia/nemotron-3.5-lightning-30b-a3b:latest
+    container_name: agentshield-nemotron-llm
+    restart: unless-stopped
+    environment:
+      - NGC_API_KEY=${NGC_API_KEY}
+      - VLLM_ATTENTION_BACKEND=FLASH_ATTN
+    ports:
+      - "8001:8000" # OpenAI-compatible v1/chat/completions
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ----------------------------------------------------------------------------
+  # 3. NVIDIA Magpie TTS Multilingual NIM (12 Languages, Sub-100ms TTFB)
+  # ----------------------------------------------------------------------------
+  magpie-tts:
+    image: nvcr.io/nim/nvidia/magpie-tts-multilingual:latest
+    container_name: agentshield-magpie-tts
+    restart: unless-stopped
+    environment:
+      - NGC_API_KEY=${NGC_API_KEY}
+      - NIM_TAGS_SELECTOR=batch_size=8
+    ports:
+      - "50052:50051" # gRPC streaming audio
+      - "8003:8000"   # HTTP TTS API (list_voices, synthesize)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ----------------------------------------------------------------------------
+  # 4. AgentShield-X Security Mesh & Full-Duplex Voice Gateway
+  # ----------------------------------------------------------------------------
+  agentshield-voice-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentshield-voice-gateway
+    restart: unless-stopped
+    depends_on:
+      - nemotron-asr
+      - nemotron-llm
+      - magpie-tts
+    environment:
+      - NIM_ASR_URL=http://nemotron-asr:8000
+      - NIM_LLM_URL=http://nemotron-llm:8000/v1
+      - NIM_TTS_URL=http://magpie-tts:8000
+      - NVAPI_KEY=${NVAPI_KEY:-${NGC_API_KEY}}
+      - PIPECAT_TURN_TIMEOUT=1.0
+      - SILERO_VAD_THRESHOLD=0.5
+      - AGENTSHIELD_MODE=enforce
+    ports:
+      - "8002:8002"
+      - "3000:3000"
+

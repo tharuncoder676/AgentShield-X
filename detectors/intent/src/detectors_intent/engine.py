@@ -8,8 +8,9 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from shield_core.models import Reason, ToolCallEvent
+from shield_core.agentic_defense import default_agentic_defense
 
 DEFAULT_MODEL_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "ml", "models", "intent_scorer.json")
@@ -35,15 +36,24 @@ class IntentConsistencyScorer:
             except Exception:
                 pass
 
-    def compute_alignment_score(self, goal: str, tool_name: str) -> float:
-        """Computes alignment score between goal and proposed tool [0.0 - 1.0]."""
+    def compute_alignment_score(
+        self,
+        goal: str,
+        tool_name: str,
+        arguments: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[float, Optional[str]]:
+        """Computes alignment score between goal and proposed tool [0.0 - 1.0] and returns (score, reason)."""
         if not goal or not tool_name:
-            return 1.0  # Cannot evaluate if no goal bound
+            return 1.0, None  # Cannot evaluate if no goal bound
 
         goal_lower = goal.lower()
         tool_lower = tool_name.lower()
+        args = arguments or {}
 
-        # Check keyword affinities
+        # 1. Evaluate cognitive semantic alignment (catches privilege divergence and hijacking)
+        agentic_align, hijack_reason = default_agentic_defense.evaluate_goal_alignment(goal, tool_name, args)
+
+        # 2. Check keyword affinities if defined in affinity_map
         matches = 0
         checks = 0
         for keyword, associated_tools in self.affinity_map.items():
@@ -52,11 +62,15 @@ class IntentConsistencyScorer:
                 if any(t in tool_lower for t in associated_tools):
                     matches += 1
 
-        if checks == 0:
-            # Fallback direct string overlap
-            return 0.85
+        if checks > 0:
+            affinity_score = matches / checks
+            # If explicit keyword affinity failed and semantic check flagged hijacking, lower score
+            if affinity_score < self.threshold or hijack_reason:
+                return min(affinity_score, agentic_align), hijack_reason
+            return (affinity_score * 0.5) + (agentic_align * 0.5), None
 
-        return matches / checks
+        # When no static keywords match, NEVER default to blind trust (0.85); rely on semantic projection
+        return agentic_align, hijack_reason
 
     def evaluate(self, event: ToolCallEvent, declared_goal: Optional[str] = None) -> List[Reason]:
         reasons: List[Reason] = []
@@ -64,12 +78,13 @@ class IntentConsistencyScorer:
         if not goal:
             return reasons
 
-        alignment = self.compute_alignment_score(goal, event.tool.name)
-        if alignment < self.threshold:
+        alignment, hijack_reason = self.compute_alignment_score(goal, event.tool.name, event.arguments)
+        if alignment < self.threshold or hijack_reason:
+            evidence = hijack_reason or f"Proposed tool '{event.tool.name}' has low alignment ({alignment:.2f}) with declared goal: '{goal}'"
             reasons.append(
                 Reason(
                     code="INTENT_MISMATCH_GOAL_HIJACK",
-                    evidence=f"Proposed tool '{event.tool.name}' has low alignment ({alignment:.2f}) with declared goal: '{goal}'",
+                    evidence=evidence,
                     detector="intent",
                 )
             )

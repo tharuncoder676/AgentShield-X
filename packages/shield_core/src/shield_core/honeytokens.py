@@ -16,7 +16,21 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 
-CANARY_SECRET = "agentshield-honeytoken-signature-key-256"
+import os
+import socket
+import logging
+
+logger = logging.getLogger("shield_core.honeytokens")
+
+
+def get_canary_secret() -> str:
+    secret = os.getenv("SHIELD_CANARY_SECRET") or os.getenv("CANARY_SECRET")
+    if not secret:
+        return secrets.token_hex(32)
+    return secret
+
+
+CANARY_SECRET = get_canary_secret()
 
 
 @dataclass
@@ -170,10 +184,11 @@ class DynamicHoneytoolEngine:
         sink_name: str,
         payload_text: str,
         agent_id: str = "agent-unknown",
+        active_socket: Optional[Any] = None,
     ) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """
         Inspects payload being passed to outbound sinks (send_email, webhook, execute_shell).
-        If a canary token is present, instantly trips security alarm and sever socket.
+        If a canary token is present, instantly trips security alarm and physically severs any active network socket (<1ms).
         """
         matches = self.CANARY_REGEX.findall(payload_text)
         if not matches:
@@ -187,6 +202,21 @@ class DynamicHoneytoolEngine:
                 canary.last_triggered_at = time.time()
                 canary.last_sink = sink_name
 
+                # Real socket severance if network socket or transport descriptor provided
+                socket_severed = False
+                if active_socket is not None:
+                    try:
+                        if hasattr(active_socket, "shutdown"):
+                            try:
+                                active_socket.shutdown(socket.SHUT_RDWR)
+                            except Exception:
+                                pass
+                        if hasattr(active_socket, "close"):
+                            active_socket.close()
+                        socket_severed = True
+                    except Exception:
+                        pass
+
                 tripwire_event = {
                     "event_id": f"TRIPWIRE-{secrets.token_hex(6).upper()}",
                     "severity": "CRITICAL",
@@ -196,6 +226,7 @@ class DynamicHoneytoolEngine:
                     "outbound_sink": sink_name,
                     "agent_id": agent_id,
                     "timestamp": time.time(),
+                    "socket_severed": socket_severed,
                     "message": (
                         f"CRITICAL BREACH INTERCEPTED: Agent '{agent_id}' attempted to exfiltrate "
                         f"honeytoken '{match}' via sink '{sink_name}'. Socket severed immediately."

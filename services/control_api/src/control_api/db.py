@@ -13,6 +13,8 @@ import sqlite3
 import threading
 import uuid
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
+load_dotenv()
 
 try:
     from shield_core.crypto import compute_audit_hash, verify_audit_chain
@@ -89,6 +91,18 @@ class Database:
             conn.execute("PRAGMA synchronous = NORMAL")
             self._local.conn = conn
         return self._local.conn
+
+    def get_pg_connection(self):
+        """Returns active Supabase PostgreSQL connection if configured."""
+        db_url = os.environ.get("DATABASE_URL")
+        if not db_url or not db_url.startswith("postgresql://"):
+            return None
+        try:
+            import psycopg2
+            from psycopg2.extras import RealDictCursor
+            return psycopg2.connect(db_url, cursor_factory=RealDictCursor, connect_timeout=5)
+        except Exception:
+            return None
 
     def _init_schema(self) -> None:
         conn = self.get_connection()

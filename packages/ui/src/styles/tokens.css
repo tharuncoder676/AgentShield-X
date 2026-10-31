@@ -3,52 +3,60 @@
 :root {
   color-scheme: dark light;
 
-  /* Default Dark Mode (Security Operations Room) */
-  --bg: #060a12;
-  --panel: #0e1624;
-  --line: #1d2a3f;
-  --fg: #e8eef7;
-  --mut: #93a4bd;
-  --ok: #4fd1e8;
-  --bad: #ff5a4f;
+  /* Cyber-Purple Dominant Dark Theme (Next-Gen AI Security Operations Deck) */
+  --bg: #090614;
+  --panel: #130d24;
+  --line: #291c44;
+  --fg: #f3effc;
+  --mut: #a99dc0;
+  --ok: #c084fc;
+  --bad: #ff4d6d;
   --warn: #f5b84a;
+  --purple: #a855f7;
+  --purple-glow: rgba(168, 85, 247, 0.35);
 }
 
-/* Explicit Light Theme */
+/* Explicit Light Theme (Subtle Orchid-Tinted Clean Workspace) */
 :root.light,
 [data-theme="light"] {
-  --bg: #f3f6fa;
+  --bg: #f8f6fc;
   --panel: #ffffff;
-  --line: #cfd9e6;
-  --fg: #0a1424;
-  --mut: #4c5c74;
-  --ok: #0b7a96;
+  --line: #e3dcf0;
+  --fg: #150f24;
+  --mut: #685b80;
+  --ok: #9333ea;
   --bad: #c3281d;
   --warn: #a86a00;
+  --purple: #9333ea;
+  --purple-glow: rgba(147, 51, 234, 0.2);
 }
 
 /* OS Light Theme Fallback */
 @media (prefers-color-scheme: light) {
   :root:not(.dark):not([data-theme="dark"]) {
-    --bg: #f3f6fa;
+    --bg: #f8f6fc;
     --panel: #ffffff;
-    --line: #cfd9e6;
-    --fg: #0a1424;
-    --mut: #4c5c74;
-    --ok: #0b7a96;
+    --line: #e3dcf0;
+    --fg: #150f24;
+    --mut: #685b80;
+    --ok: #9333ea;
     --bad: #c3281d;
     --warn: #a86a00;
+    --purple: #9333ea;
+    --purple-glow: rgba(147, 51, 234, 0.2);
   }
 }
 
 :root.dark,
 [data-theme="dark"] {
-  --bg: #060a12;
-  --panel: #0e1624;
-  --line: #1d2a3f;
-  --fg: #e8eef7;
-  --mut: #93a4bd;
-  --ok: #4fd1e8;
-  --bad: #ff5a4f;
+  --bg: #090614;
+  --panel: #130d24;
+  --line: #291c44;
+  --fg: #f3effc;
+  --mut: #a99dc0;
+  --ok: #c084fc;
+  --bad: #ff4d6d;
   --warn: #f5b84a;
+  --purple: #a855f7;
+  --purple-glow: rgba(168, 85, 247, 0.35);
 }

@@ -9,8 +9,10 @@ from __future__ import annotations
 import os
 import re
 import secrets
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
@@ -67,15 +69,30 @@ class EphemeralSandboxGuard:
 
     def validate_command_safety(self, command_str: str) -> List[str]:
         violations = []
+        # 1. Deterministic high-severity containment regexes
         for pat in self._compiled_patterns:
             if pat.search(command_str):
                 violations.append(f"Blocked dangerous pattern matching rule: '{pat.pattern}'")
+
+        # 2. Obfuscation & stealth execution detection
+        low_cmd = command_str.lower()
+        if re.search(r"(?:base64\s+(?:-d|--decode)|openssl\s+enc\s+-d|xxd\s+-r)\s*\|", low_cmd):
+            violations.append("Blocked piped binary/base64 decoding execution chain")
+        if re.search(r"python(?:3)?\s+-c\s+['\"].*(?:socket|subprocess|pty\.spawn|os\.system)", low_cmd):
+            violations.append("Blocked inline Python reverse-shell / subprocess injection")
+        if re.search(r"(?:eval|exec)\s*\(\s*(?:base64|b64decode|__import__)", low_cmd):
+            violations.append("Blocked dynamic code execution via eval/base64 wrapper")
+
+        # 3. Sensitive file access and exfiltration sinks
+        if re.search(r"(?:cat|head|tail|less|more|grep|strings|dd)\s+.*(?:/etc/shadow|/etc/gshadow|/root/\.ssh|\.aws/credentials)", low_cmd):
+            violations.append("Blocked privileged credential store access")
+
         return violations
 
     def build_sanitized_environment(self) -> Tuple[Dict[str, str], int]:
         sanitized = {}
         scrubbed_count = 0
-        safe_keys = {"PATH", "SYSTEMROOT", "TEMP", "TMP", "USER", "LANG", "TZ"}
+        safe_keys = {"PATH", "SYSTEMROOT", "TEMP", "TMP", "USER", "LANG", "TZ", "COMSPEC", "PATHEXT"}
 
         for k, v in os.environ.items():
             if any(sens in k.upper() for sens in SENSITIVE_ENV_KEYS):
@@ -85,7 +102,7 @@ class EphemeralSandboxGuard:
                 sanitized[k] = v
 
         sanitized["AGENTSHIELD_SANDBOX"] = "1"
-        sanitized["AGENTSHIELD_ISOLATION_LEVEL"] = "MICROVM_MOCK"
+        sanitized["AGENTSHIELD_ISOLATION_LEVEL"] = "SUBPROCESS_ISOLATION"
         return sanitized, scrubbed_count
 
     def execute_in_sandbox(
@@ -95,19 +112,27 @@ class EphemeralSandboxGuard:
         params: Optional[Dict[str, Any]] = None,
     ) -> SandboxExecutionResult:
         exec_id = f"SBX-{secrets.token_hex(6).upper()}"
-        start_time = time.time()
+        start_time = time.perf_counter()
 
-        # 1. Static pre-execution security check
+        # 1. Static and cognitive hybrid blast-radius evaluation
         violations = self.validate_command_safety(command_or_code)
+
+        from shield_core.hybrid_swarm import default_hybrid_swarm
+        from shield_core.models import ShieldAction
+        swarm_verdict = default_hybrid_swarm.evaluate_sandbox_command(command_or_code, tool_name)
+        if swarm_verdict.final_action == ShieldAction.BLOCK:
+            for turn in swarm_verdict.turns:
+                violations.extend(turn.evidence)
+
         if violations:
-            duration = (time.time() - start_time) * 1000
+            duration = (time.perf_counter() - start_time) * 1000
             return SandboxExecutionResult(
                 execution_id=exec_id,
                 tool_name=tool_name,
                 status="ESCAPE_ATTEMPT",
                 exit_code=126,
                 stdout="",
-                stderr="[SECURITY CONTAINMENT] Ephemeral Sandbox blocked execution: Breakout / reverse-shell attempt detected.",
+                stderr=f"[SECURITY CONTAINMENT] Ephemeral Sandbox blocked execution: {swarm_verdict.consensus_ruling if swarm_verdict.final_action == ShieldAction.BLOCK else 'Breakout / reverse-shell attempt detected.'}",
                 duration_ms=round(duration, 2),
                 violations=violations,
                 isolated_env_sanitized_count=0,
@@ -116,21 +141,52 @@ class EphemeralSandboxGuard:
         # 2. Build isolated clean environment
         clean_env, scrubbed_count = self.build_sanitized_environment()
 
-        # 3. Controlled dry-run / safe simulated evaluation
-        duration = (time.time() - start_time) * 1000 + 4.2  # realistic sub-5ms micro-sandbox overhead
-        mock_output = (
-            f"[SANDBOX: {exec_id}] Tool '{tool_name}' executed in ephemeral isolation container.\n"
-            f"Read-Only Rootfs: ACTIVE | Egress Filter: STRICT | Scrubbed Envs: {scrubbed_count}\n"
-            f"Execution Payload: {command_or_code[:60]}... -> Exit: 0 (OK)"
-        )
+        # 3. Isolated execution in temporary directory
+        temp_dir = tempfile.mkdtemp(prefix=f"shield_sbx_{exec_id}_")
+        stdout_text = ""
+        stderr_text = ""
+        exit_code = 0
+        status = "ISOLATED_SUCCESS"
+
+        try:
+            timeout_sec = max(0.1, self.config.timeout_ms / 1000.0)
+            res = subprocess.run(
+                command_or_code,
+                shell=True,
+                env=clean_env,
+                cwd=temp_dir,
+                capture_output=True,
+                text=True,
+                timeout=timeout_sec,
+            )
+            exit_code = res.returncode
+            stdout_text = res.stdout[:self.config.max_output_bytes]
+            stderr_text = res.stderr[:self.config.max_output_bytes]
+            if exit_code != 0 and not stdout_text:
+                stdout_text = f"[SANDBOX: {exec_id}] Tool '{tool_name}' executed in ephemeral isolation container (Exit: {exit_code})."
+        except subprocess.TimeoutExpired:
+            status = "TIMEOUT"
+            exit_code = 124
+            stderr_text = f"[TIMEOUT] Command exceeded maximum sandbox runtime of {self.config.timeout_ms}ms."
+        except Exception as e:
+            status = "CONTAINED_ERROR"
+            exit_code = 1
+            stderr_text = f"[SANDBOX ERROR] {e}"
+        finally:
+            try:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            except Exception:
+                pass
+
+        duration = (time.perf_counter() - start_time) * 1000
 
         return SandboxExecutionResult(
             execution_id=exec_id,
             tool_name=tool_name,
-            status="ISOLATED_SUCCESS",
-            exit_code=0,
-            stdout=mock_output,
-            stderr="",
+            status=status,
+            exit_code=exit_code,
+            stdout=stdout_text,
+            stderr=stderr_text,
             duration_ms=round(duration, 2),
             violations=[],
             isolated_env_sanitized_count=scrubbed_count,

@@ -4,8 +4,6 @@ Exposes endpoints for MCP server registration, tool-definition pinning,
 rug-pull detection alerts, and inspection telemetry.
 """
 
-from __future__ import annotations
-
 import json
 import uuid
 from typing import Any, Dict, List, Optional
@@ -117,7 +115,7 @@ def create_server(
 
 @router.get("/pins", response_model=List[MCPPinDTO])
 def list_pins(
-    server_id: Optional[str] = Query(None),
+    server_id: Optional[str] = None,
     project_id: Optional[str] = "default",
     current_user: UserDTO = Depends(get_current_user),
 ) -> List[MCPPinDTO]:

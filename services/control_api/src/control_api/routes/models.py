@@ -3,7 +3,6 @@ AgentShield-X Detectors, Model Registry & Thresholds Router
 Provides health, latency benchmarks, and threshold tuning for all 5 ML models and rule detectors.
 """
 
-from __future__ import annotations
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, status

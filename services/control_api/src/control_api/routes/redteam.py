@@ -3,7 +3,6 @@ AgentShield-X Red-Team Attack Swarm Router
 Runs autonomous adversarial probing campaigns with payload mutation and empirical catch-rate calculation.
 """
 
-from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query

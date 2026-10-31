@@ -25,6 +25,14 @@ import {
   KeyRound,
   Database,
   TrendingUp,
+  Dna,
+  Globe,
+  Film,
+  Swords,
+  BarChart3,
+  Code2,
+  Award,
+  GitFork,
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
@@ -76,8 +84,20 @@ export const AppShell: React.FC<AppShellProps> = ({
     { id: "debate", label: "Debate Judge", icon: <Scale size={16} /> },
     { id: "redteam", label: "Red-Team Swarm", icon: <Crosshair size={16} /> },
     { id: "autopolicy", label: "AutoPolicy", icon: <Sparkles size={16} /> },
-    { id: "attestation", label: "A2A Attestation", icon: <KeyRound size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-cyan-400/20 text-cyan-400 font-mono font-bold">ZTA</span> },
+    { id: "attestation", label: "A2A Attestation", icon: <KeyRound size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">ZTA</span> },
     { id: "immunity", label: "Immunity & Drift", icon: <TrendingUp size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-emerald-400/20 text-emerald-400 font-mono font-bold">92%</span> },
+    { id: "genome", label: "Agent Genome", icon: <Dna size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-400 font-mono font-bold">DNA</span> },
+    { id: "federation", label: "Federation Mesh", icon: <Globe size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-300 font-mono font-bold">MESH</span> },
+    { id: "forensics", label: "Attack Forensics", icon: <Film size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-300 font-mono font-bold">REPLAY</span> },
+    { id: "sim-lab", label: "Simulation Lab", icon: <Swords size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-300 font-mono font-bold">WAR GAME</span> },
+    { id: "executive", label: "Executive SOC", icon: <BarChart3 size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SOC</span> },
+    { id: "executive", label: "Executive SOC", icon: <BarChart3 size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SOC</span> },
+    { id: "rbac", label: "RBAC & SSO", icon: <Users size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SSO</span> },
+    { id: "connectors", label: "Universal SDK", icon: <Code2 size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SDK</span> },
+    { id: "compliance", label: "Compliance & Trust", icon: <Award size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">100%</span> },
+    { id: "canary", label: "A/B Canary Policies", icon: <GitFork size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">A/B</span> },
+    { id: "chains", label: "Neuro-Symbolic DAG", icon: <Network size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">DAG</span> },
+    { id: "forecasting", label: "Predictive Radar", icon: <TrendingUp size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">24H</span> },
     { id: "rag-firewall", label: "RAG Firewall", icon: <Database size={16} /> },
     { id: "incidents", label: "Incidents", icon: <AlertTriangle size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-bad/20 text-bad font-mono">3</span> },
     { id: "sessions", label: "Sessions & Replay", icon: <History size={16} /> },
@@ -120,21 +140,20 @@ export const AppShell: React.FC<AppShellProps> = ({
 
           {/* Logo / Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded border border-cyan-400/60 bg-black flex items-center justify-center overflow-hidden shadow-[0_0_10px_rgba(0,240,255,0.35)] relative">
-              <img
-                src="/cli-theme.jpeg"
-                alt="AgentShield-X Logo"
-                className="w-full h-full object-cover scale-150"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
-              <Shield size={16} className="text-cyan-400 absolute inset-0 m-auto -z-10" />
-            </div>
+            <img
+              src="/logo-square.png"
+              alt="AgentShield-X"
+              className="w-7 h-7 rounded-lg border border-purple-500/40 object-cover shadow-sm shadow-purple-500/20"
+            />
             <div className="flex flex-col">
-              <span className="font-chakra font-bold text-sm tracking-wider uppercase text-fg leading-none flex items-center gap-1">
-                <span>Agent</span><span className="text-cyan-400">Shield</span><span className="text-purple-400">-X</span>
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-chakra font-bold text-sm tracking-wider uppercase text-fg leading-none flex items-center gap-1">
+                  <span>Agent</span><span className="text-purple-400">Shield</span><span className="text-fuchsia-400">-X</span>
+                </span>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  v1.0.0
+                </span>
+              </div>
               <span className="text-[10px] text-mut font-chakra leading-tight mt-0.5">
                 {orgName} / {projectName}
               </span>

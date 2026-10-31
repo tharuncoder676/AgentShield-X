@@ -3,7 +3,6 @@ AgentShield-X Metering, Subscription & Stripe Billing Router
 Provides tool-call usage metering, tier limits enforcement, subscription upgrades, and invoices.
 """
 
-from __future__ import annotations
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status

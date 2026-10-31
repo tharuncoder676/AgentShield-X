@@ -3,7 +3,6 @@ AgentShield-X Honeytools & Decoys Router
 Provides active deception management, decoy tool registration, and trap trigger forensics.
 """
 
-from __future__ import annotations
 
 import uuid
 from typing import List, Optional

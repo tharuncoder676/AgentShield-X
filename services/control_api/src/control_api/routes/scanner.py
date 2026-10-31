@@ -4,7 +4,6 @@ Exposes static AST analysis endpoints for analyzing agent repositories,
 discovering tool definitions, calculating blast radius, and synchronizing scan telemetry with the Web UI.
 """
 
-from __future__ import annotations
 
 import os
 from pathlib import Path

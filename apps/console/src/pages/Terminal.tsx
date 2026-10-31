@@ -1030,9 +1030,9 @@ View live drift charts at /immunity`,
         </button>
         <button
           onClick={() => handleCommand("connect claude")}
-          className="px-2.5 py-1 rounded border border-[#58a6ff]/40 bg-panel text-[#58a6ff] hover:border-[#58a6ff] transition-colors flex items-center gap-1.5"
+          className="px-2.5 py-1 rounded border border-[#a855f7]/40 bg-panel text-[#a855f7] hover:border-[#a855f7] transition-colors flex items-center gap-1.5"
         >
-          <Cable size={10} className="text-[#58a6ff]" />
+          <Cable size={10} className="text-[#a855f7]" />
           <span>connect claude</span>
         </button>
         <button
@@ -1077,7 +1077,7 @@ View live drift charts at /immunity`,
           {lines.map((line) => (
             <div key={line.id} className="leading-relaxed">
               {line.type === "banner" && (
-                <pre className="text-[#58a6ff] font-bold whitespace-pre-wrap">{line.text}</pre>
+                <pre className="text-[#a855f7] font-bold whitespace-pre-wrap">{line.text}</pre>
               )}
               {line.type === "input" && (
                 <div className="text-zinc-100 font-bold flex items-center gap-2">
@@ -1086,7 +1086,7 @@ View live drift charts at /immunity`,
                 </div>
               )}
               {line.type === "system" && (
-                <div className="text-[#58a6ff] italic pl-2 border-l border-[#58a6ff]/40 py-0.5">{line.text}</div>
+                <div className="text-[#a855f7] italic pl-2 border-l border-[#a855f7]/40 py-0.5">{line.text}</div>
               )}
               {line.type === "output" && (
                 <pre className="text-zinc-200 whitespace-pre-wrap pl-3 border-l-2 border-[#238636] py-1 bg-[#0d1117]/60 rounded-r font-mono text-[12px] leading-relaxed">
@@ -1103,7 +1103,7 @@ View live drift charts at /immunity`,
 
           {isRunning && (
             <div className="flex items-center gap-2 text-zinc-300 font-mono py-1">
-              <span className="w-2 h-2 rounded-full bg-[#58a6ff] animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-[#a855f7] animate-ping" />
               <span className="text-zinc-400">Executing against AgentShield-X deterministic kernel...</span>
             </div>
           )}
@@ -1127,7 +1127,7 @@ View live drift charts at /immunity`,
                   onClick={() => selectSuggestion(item.label)}
                   className="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#21262d] flex items-center justify-between text-xs transition-colors group cursor-pointer"
                 >
-                  <span className="font-mono text-[#58a6ff] group-hover:text-cyan-300 font-semibold">
+                  <span className="font-mono text-[#a855f7] group-hover:text-cyan-300 font-semibold">
                     {item.label}
                   </span>
                   <span className="text-zinc-400 text-[11px] truncate max-w-[340px]">
@@ -1141,13 +1141,13 @@ View live drift charts at /immunity`,
           {/* Directory & Branch prompt breadcrumb */}
           <div className="text-xs font-mono text-zinc-400 flex items-center gap-2 select-none px-1">
             <span className="text-zinc-100 font-semibold">~/agentshield-x</span>
-            <span className="text-[#58a6ff] bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 rounded text-[10px]">
+            <span className="text-[#a855f7] bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 rounded text-[10px]">
               [⎇ main]
             </span>
           </div>
 
           {/* Framed Rounded Rectangular Input Box */}
-          <div className="flex items-center gap-2 rounded-lg border border-[#30363d] bg-[#090d13] px-3.5 py-2.5 shadow-inner focus-within:border-[#58a6ff] focus-within:ring-1 focus-within:ring-[#58a6ff] transition-all">
+          <div className="flex items-center gap-2 rounded-lg border border-[#30363d] bg-[#090d13] px-3.5 py-2.5 shadow-inner focus-within:border-[#a855f7] focus-within:ring-1 focus-within:ring-[#a855f7] transition-all">
             <span className="text-zinc-400 font-bold select-none text-sm">&gt;</span>
             <span className="text-zinc-200 animate-pulse select-none font-bold text-sm">█</span>
             <input
@@ -1170,7 +1170,7 @@ View live drift charts at /immunity`,
               <button
                 onClick={() => handleCommand(input)}
                 disabled={!input.trim()}
-                className="px-2.5 py-1 rounded bg-[#1f6feb]/20 border border-[#1f6feb]/50 text-[#58a6ff] hover:bg-[#1f6feb] hover:text-white font-mono text-xs transition-all disabled:opacity-25 disabled:pointer-events-none"
+                className="px-2.5 py-1 rounded bg-[#1f6feb]/20 border border-[#1f6feb]/50 text-[#a855f7] hover:bg-[#1f6feb] hover:text-white font-mono text-xs transition-all disabled:opacity-25 disabled:pointer-events-none"
               >
                 ↵ Run
               </button>

@@ -3,7 +3,6 @@ AgentShield-X Sessions & Replay Simulator Router
 Provides multi-turn session inspection, state replay, and policy dry-run simulation.
 """
 
-from __future__ import annotations
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status

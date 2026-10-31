@@ -354,7 +354,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                       onChange={(e) =>
                         setForm({ ...form, speakOnLoad: e.target.checked })
                       }
-                      className="accent-[#00e5ff]"
+                      className="accent-[#a855f7]"
                     />
                     <span className="text-white font-chakra">
                       Speak Greeting on Startup
@@ -368,7 +368,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                       onChange={(e) =>
                         setForm({ ...form, soundEffects: e.target.checked })
                       }
-                      className="accent-[#00e5ff]"
+                      className="accent-[#a855f7]"
                     />
                     <span className="text-white font-chakra">
                       Sound Effects & Audio Feedback
@@ -594,7 +594,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                     onChange={(e) =>
                       setForm({ ...form, speechRate: parseFloat(e.target.value) })
                     }
-                    className="w-full accent-[#00e5ff]"
+                    className="w-full accent-[#a855f7]"
                   />
                 </div>
 
@@ -612,7 +612,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                     onChange={(e) =>
                       setForm({ ...form, speechPitch: parseFloat(e.target.value) })
                     }
-                    className="w-full accent-[#00e5ff]"
+                    className="w-full accent-[#a855f7]"
                   />
                 </div>
               </div>
@@ -625,7 +625,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                     onChange={(e) =>
                       setForm({ ...form, spacebarTrigger: e.target.checked })
                     }
-                    className="accent-[#00e5ff]"
+                    className="accent-[#a855f7]"
                   />
                   <span className="text-white font-chakra">
                     Hold Spacebar to Talk (Push-to-Talk)
@@ -712,7 +712,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                               },
                             })
                           }
-                          className="mt-1 accent-[#00e5ff]"
+                          className="mt-1 accent-[#a855f7]"
                         />
                         <div>
                           <div className="text-xs font-chakra font-bold text-white uppercase">
@@ -745,7 +745,7 @@ export const WingmanConfigModal: React.FC<WingmanConfigModalProps> = ({
                             updated[idx].enabled = e.target.checked;
                             setForm({ ...form, activeAgents: updated });
                           }}
-                          className="accent-[#00e5ff]"
+                          className="accent-[#a855f7]"
                         />
                         <div>
                           <div className="text-xs font-chakra font-bold text-white uppercase flex items-center gap-2">

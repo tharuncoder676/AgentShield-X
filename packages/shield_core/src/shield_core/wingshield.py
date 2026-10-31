@@ -180,8 +180,136 @@ def query_ollama(prompt: str, model: str = "wingshield-x", timeout: int = 35) ->
     return None
 
 
+class AcousticClapDetector:
+    """
+    Real-time acoustic transient handclap detector using PyAudio.
+    Monitors laptop microphone stream for high-energy RMS spikes (>3800) characteristic of handclaps.
+    """
+    def __init__(self, on_clap_callback, energy_threshold: int = 3800, debounce_sec: float = 1.2):
+        self.on_clap_callback = on_clap_callback
+        self.energy_threshold = energy_threshold
+        self.debounce_sec = debounce_sec
+        self.last_clap_time = 0.0
+        self.running = False
+        self.thread: Optional[threading.Thread] = None
+
+    def start(self) -> bool:
+        if self.running:
+            return True
+        try:
+            import pyaudio
+            self.running = True
+            self.thread = threading.Thread(target=self._listen_loop, daemon=True)
+            self.thread.start()
+            return True
+        except Exception:
+            return False
+
+    def stop(self) -> None:
+        self.running = False
+
+    def _listen_loop(self) -> None:
+        try:
+            import pyaudio
+            p = pyaudio.PyAudio()
+            stream = p.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=16000,
+                input=True,
+                frames_per_buffer=512,
+            )
+        except Exception:
+            return
+
+        ambient_rms = 400.0
+        try:
+            import audioop
+            has_audioop = True
+        except Exception:
+            has_audioop = False
+
+        while self.running:
+            try:
+                # Suppress clap triggers while SAPI TTS is actively speaking aloud
+                if time.time() < _last_speak_until:
+                    time.sleep(0.05)
+                    continue
+
+                data = stream.read(512, exception_on_overflow=False)
+                if not data:
+                    time.sleep(0.01)
+                    continue
+
+                if has_audioop:
+                    try:
+                        rms = audioop.rms(data, 2)
+                    except Exception:
+                        rms = 0
+                else:
+                    count = len(data) // 2
+                    import struct
+                    shorts = struct.unpack(f"<{count}h", data)
+                    sum_sq = sum(s * s for s in shorts)
+                    import math
+                    rms = math.sqrt(sum_sq / max(1, count))
+
+                # Update ambient background noise floor slowly
+                if rms < 1500:
+                    ambient_rms = ambient_rms * 0.95 + rms * 0.05
+
+                now = time.time()
+                # Handclap signature: sharp transient spike exceeding threshold and 2.5x ambient
+                if rms > self.energy_threshold and rms > (ambient_rms * 2.5):
+                    if (now - self.last_clap_time) > self.debounce_sec:
+                        self.last_clap_time = now
+                        threading.Thread(target=self.on_clap_callback, daemon=True).start()
+            except Exception:
+                time.sleep(0.05)
+
+        try:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+        except Exception:
+            pass
+
+
+
+def ensure_interactive_desktop():
+    """Attaches thread to user's physical interactive screen (WinSta0\\Default)."""
+    if platform.system() == "Windows":
+        try:
+            import win32service, win32con
+            h_desk = win32service.OpenDesktop("Default", 0, False, win32con.GENERIC_ALL)
+            h_desk.SetThreadDesktop()
+        except Exception:
+            pass
+
+
 class ComputerAutomation:
     """Controls computer desktop applications, system utilities, and web navigation."""
+
+    @staticmethod
+    def _get_interactive_startupinfo() -> Optional[subprocess.STARTUPINFO]:
+        """Forces child windows to display visibly on the user's physical monitor."""
+        if platform.system() == "Windows":
+            try:
+                si = subprocess.STARTUPINFO()
+                si.lpDesktop = r"WinSta0\Default"
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                si.wShowWindow = 1
+                return si
+            except Exception:
+                pass
+        return None
+
+    @staticmethod
+    def spawn_process(args, shell: bool = False, creationflags: int = 0):
+        """Spawns processes directly onto the user's interactive physical desktop."""
+        ensure_interactive_desktop()
+        si = ComputerAutomation._get_interactive_startupinfo()
+        return subprocess.Popen(args, shell=shell, startupinfo=si, creationflags=creationflags)
 
     @staticmethod
     def get_chrome_path() -> Optional[str]:
@@ -226,7 +354,7 @@ class ComputerAutomation:
         repo_root = Path(__file__).resolve().parents[4]
         cmd_str = f'cmd.exe /c start "Wingshield Copilot - AgentShield-X" cmd.exe /k "cd /d \"{repo_root}\" && title Wingshield Copilot - AgentShield-X && python -m shield_core.cli wakeup"'
         try:
-            subprocess.Popen(cmd_str, shell=True)
+            ComputerAutomation.spawn_process(cmd_str, shell=True)
             return True, "Launching Wingshield Copilot terminal window."
         except Exception as e:
             return False, f"Could not launch Wingshield terminal: {e}"
@@ -237,7 +365,7 @@ class ComputerAutomation:
         repo_root = Path(__file__).resolve().parents[4]
         cmd_str = f'cmd.exe /c start "AgentShield-X Security CLI" cmd.exe /k "cd /d \"{repo_root}\" && title AgentShield-X Security CLI && python -m shield_core.cli"'
         try:
-            subprocess.Popen(cmd_str, shell=True)
+            ComputerAutomation.spawn_process(cmd_str, shell=True)
             return True, "Launching original AgentShield-X CLI terminal window."
         except Exception as e:
             return False, f"Could not launch AgentShield CLI: {e}"
@@ -245,27 +373,29 @@ class ComputerAutomation:
     @staticmethod
     def open_url(url: str) -> bool:
         """
-        Reliably opens a URL in user's default browser with Windows fast-path.
-        Exact replica of OpenJarvis core utils open_browser implementation.
+        Reliably opens a URL in user's default browser with multiple fallback strategies.
         """
+        ensure_interactive_desktop()
+        success = False
+        try:
+            success = webbrowser.open(url)
+        except Exception:
+            pass
+
         if platform.system() == "Windows":
             try:
-                # OpenJarvis canonical pattern: empty title argument after ``start``
-                # ensures Windows shell treats url as protocol/URL rather than window title.
-                subprocess.run(["cmd", "/c", "start", "", url], check=False)
-                return True
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "", url], shell=True)
+                success = True
             except Exception:
                 pass
-            try:
-                if hasattr(os, "startfile"):
-                    os.startfile(url)
-                    return True
-            except Exception:
-                pass
-        try:
-            return webbrowser.open(url)
-        except Exception:
-            return False
+            if not success:
+                try:
+                    if hasattr(os, "startfile"):
+                        os.startfile(url)
+                        success = True
+                except Exception:
+                    pass
+        return success
 
     @staticmethod
     def open_app(app_name: str) -> Tuple[bool, str]:
@@ -298,14 +428,18 @@ class ComputerAutomation:
                     ComputerAutomation.open_url(search_url)
                     return True, f"Searching YouTube for: '{query}'."
 
-            # Direct YouTube Homepage using canonical OpenJarvis browser launcher
-            ComputerAutomation.open_url("https://www.youtube.com")
+            # Direct YouTube Homepage
             chrome_exe = ComputerAutomation.get_chrome_path()
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "https://www.youtube.com"])
+                    ComputerAutomation.spawn_process([chrome_exe, "https://www.youtube.com"])
                 except Exception:
                     pass
+            try:
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "", "https://www.youtube.com"], shell=True)
+            except Exception:
+                pass
+            ComputerAutomation.open_url("https://www.youtube.com")
             return True, "Opening YouTube in default browser."
 
         # Google Chrome
@@ -314,17 +448,15 @@ class ComputerAutomation:
             launched = False
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "--new-window", "https://www.google.com"])
+                    ComputerAutomation.spawn_process([chrome_exe, "--new-window", "https://www.google.com"])
                     launched = True
                 except Exception:
                     pass
-            if not launched:
-                try:
-                    if hasattr(os, "startfile"):
-                        os.startfile("https://www.google.com")
-                        launched = True
-                except Exception:
-                    pass
+            try:
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "chrome", "https://www.google.com"], shell=True)
+                launched = True
+            except Exception:
+                pass
             if not launched:
                 ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google Chrome."
@@ -335,7 +467,7 @@ class ComputerAutomation:
             launched = False
             if edge_exe and os.path.isfile(edge_exe):
                 try:
-                    subprocess.Popen([edge_exe, "--new-window", "https://www.bing.com"])
+                    ComputerAutomation.spawn_process([edge_exe, "--new-window", "https://www.bing.com"])
                     launched = True
                 except Exception:
                     pass
@@ -349,7 +481,7 @@ class ComputerAutomation:
             launched = False
             if chrome_exe and os.path.isfile(chrome_exe):
                 try:
-                    subprocess.Popen([chrome_exe, "--new-window", "https://www.google.com"])
+                    ComputerAutomation.spawn_process([chrome_exe, "--new-window", "https://www.google.com"])
                     launched = True
                 except Exception:
                     pass
@@ -357,22 +489,22 @@ class ComputerAutomation:
                 ComputerAutomation.open_url("https://www.google.com")
             return True, "Opening Google."
 
-# VS Code / Workspace (OpenJarvis clean execution without cmd quote-mangling)
+        # VS Code / Workspace
         elif any(k in app_low for k in ("vs code", "vscode", "code", "visual studio code")):
             repo_path = Path(__file__).resolve().parents[4]
-            try:
-                subprocess.Popen(["cmd", "/c", "code", str(repo_path)])
-                return True, "Launching Visual Studio Code in current workspace."
-            except Exception:
-                pass
             vscode_bin = ComputerAutomation.get_vscode_path()
             if vscode_bin and os.path.isfile(vscode_bin):
                 try:
-                    subprocess.Popen([vscode_bin, str(repo_path)])
-                    return True, "Launching Visual Studio Code."
+                    ComputerAutomation.spawn_process([vscode_bin, str(repo_path)])
+                    return True, "Launching Visual Studio Code in current workspace."
                 except Exception:
                     pass
-            return True, "Launching Visual Studio Code in current workspace."
+            try:
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "code", str(repo_path)], shell=True)
+                return True, "Launching Visual Studio Code in current workspace."
+            except Exception:
+                pass
+            return True, "Launching Visual Studio Code."
 
         # AgentShield Wakeup / Wingshield Copilot Terminal
         elif "wakeup" in app_low or "wingshield" in app_low or app_low in ("agentshield wakeup", "wake up", "wake"):
@@ -395,7 +527,7 @@ class ComputerAutomation:
         # WhatsApp
         elif "whatsapp" in app_low:
             try:
-                subprocess.Popen(["cmd", "/c", "start", "whatsapp:"], shell=True)
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "whatsapp:"], shell=True)
             except Exception:
                 pass
             ComputerAutomation.open_url("https://web.whatsapp.com")
@@ -409,30 +541,30 @@ class ComputerAutomation:
         # Cursor IDE
         elif "cursor" in app_low:
             try:
-                subprocess.Popen(["cursor", "."], shell=True)
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "cursor", "."], shell=True)
                 return True, "Launching Cursor IDE in current workspace."
             except Exception:
                 vscode_bin = ComputerAutomation.get_vscode_path()
                 if vscode_bin:
-                    subprocess.Popen([vscode_bin, "."])
+                    ComputerAutomation.spawn_process([vscode_bin, "."])
                     return True, "Launching Code editor."
-                subprocess.Popen(["code", "."], shell=True)
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "code", "."], shell=True)
                 return True, "Launching Code editor."
 
         # Notepad
         elif "notepad" in app_low or "text editor" in app_low:
-            subprocess.Popen(["notepad.exe"])
+            ComputerAutomation.spawn_process(["notepad.exe"])
             return True, "Opening Notepad."
 
         # Calculator
         elif "calc" in app_low or "calculator" in app_low:
-            subprocess.Popen(["calc.exe"])
+            ComputerAutomation.spawn_process(["calc.exe"])
             return True, "Opening Calculator."
 
         # Calendar
         elif "calendar" in app_low:
             try:
-                subprocess.Popen(["cmd", "/c", "start", "outlookcal:"], shell=True)
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "outlookcal:"], shell=True)
             except Exception:
                 pass
             ComputerAutomation.open_url("https://calendar.google.com")
@@ -440,38 +572,38 @@ class ComputerAutomation:
 
         # Windows Settings
         elif "setting" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "ms-settings:"], shell=True)
+            ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "ms-settings:"], shell=True)
             return True, "Opening Windows Settings."
 
         # Task Manager
         elif "task manager" in app_low or "process" in app_low:
-            subprocess.Popen(["taskmgr.exe"])
+            ComputerAutomation.spawn_process(["taskmgr.exe"])
             return True, "Launching Windows Task Manager."
 
         # File Explorer
         elif "explorer" in app_low or "file" in app_low or "folder" in app_low:
-            subprocess.Popen(["explorer.exe", "."])
+            ComputerAutomation.spawn_process(["explorer.exe", "."])
             return True, "Opening File Explorer in current workspace."
 
         # Terminal / CMD / PowerShell
         elif "terminal" in app_low or "cmd" in app_low or "command prompt" in app_low:
-            subprocess.Popen(["cmd.exe", "/k", "title AgentShield-X Wingshield Terminal"], creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0)
+            ComputerAutomation.spawn_process(["cmd.exe", "/k", "title AgentShield-X Wingshield Terminal"], creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == "nt" else 0)
             return True, "Spawning a new dedicated Command Prompt window."
 
         # Paint
         elif "paint" in app_low:
-            subprocess.Popen(["mspaint.exe"])
+            ComputerAutomation.spawn_process(["mspaint.exe"])
             return True, "Opening Paint."
 
         # Camera
         elif "camera" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "microsoft.windows.camera:"], shell=True)
+            ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "microsoft.windows.camera:"], shell=True)
             return True, "Opening Windows Camera."
 
         # Spotify
         elif "spotify" in app_low:
             try:
-                subprocess.Popen(["cmd", "/c", "start", "spotify:"], shell=True)
+                ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "spotify:"], shell=True)
             except Exception:
                 pass
             ComputerAutomation.open_url("https://open.spotify.com")
@@ -479,13 +611,13 @@ class ComputerAutomation:
 
         # Microsoft Office (Word, Excel, PowerPoint)
         elif "word" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "winword"], shell=True)
+            ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "winword"], shell=True)
             return True, "Opening Microsoft Word."
         elif "excel" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "excel"], shell=True)
+            ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "excel"], shell=True)
             return True, "Opening Microsoft Excel."
         elif "powerpoint" in app_low or "ppt" in app_low:
-            subprocess.Popen(["cmd", "/c", "start", "powerpnt"], shell=True)
+            ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "powerpnt"], shell=True)
             return True, "Opening Microsoft PowerPoint."
 
         # Web Console
@@ -493,9 +625,27 @@ class ComputerAutomation:
             ComputerAutomation.open_url("http://localhost:3000")
             return True, "Opening AgentShield-X Web Console at http://localhost:3000."
 
+        # Check User Environment Folders & Desktop Projects
+        try:
+            from shield_core.environment import UserEnvironmentIntelligence
+            folder = UserEnvironmentIntelligence.find_folder(app_low)
+            if folder and folder.exists():
+                return UserEnvironmentIntelligence.open_folder(app_low)
+        except Exception:
+            pass
+
+        # Check Full Installed Applications Catalog (Start Menu & System Software)
+        try:
+            from shield_core.environment import UserEnvironmentIntelligence
+            ok, msg = UserEnvironmentIntelligence.launch_app(app_low)
+            if ok:
+                return True, msg
+        except Exception:
+            pass
+
         # Generic Windows Launch Fallback
         try:
-            subprocess.Popen(["cmd", "/c", "start", "", app_name], shell=True)
+            ComputerAutomation.spawn_process(["cmd.exe", "/c", "start", "", app_name], shell=True)
             return True, f"Attempting to launch {app_name}."
         except Exception as e:
             return False, f"Could not launch {app_name}: {e}"
@@ -511,26 +661,53 @@ class ComputerAutomation:
     @staticmethod
     def take_screenshot() -> str:
         """Captures a full screenshot of the primary monitor and saves to Desktop."""
-        desktop = Path.home() / "Desktop"
+        home = Path.home()
+        desktop = home / "OneDrive" / "Desktop"
+        if not desktop.exists():
+            desktop = home / "Desktop"
+        desktop.mkdir(parents=True, exist_ok=True)
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         target_path = desktop / f"Wingshield_Screenshot_{timestamp}.png"
-        
-        ps_script = (
-            f"Add-Type -AssemblyName System.Windows.Forms; "
-            f"Add-Type -AssemblyName System.Drawing; "
-            f"$screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; "
-            f"$bitmap = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height; "
-            f"$graphics = [System.Drawing.Graphics]::FromImage($bitmap); "
-            f"$graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size); "
-            f"$bitmap.Save('{str(target_path)}', [System.Drawing.Imaging.ImageFormat]::Png); "
-            f"$graphics.Dispose(); $bitmap.Dispose();"
-        )
+        target_str = str(target_path).replace("\\", "/")
+
+        # Strategy 1: Fast Native PIL ImageGrab
         try:
-            subprocess.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, timeout=10)
-            if target_path.exists():
-                subprocess.Popen(["cmd", "/c", "start", str(target_path)], shell=True)
+            from PIL import ImageGrab
+            img = ImageGrab.grab(all_screens=True)
+            img.save(str(target_path))
+            if target_path.exists() and target_path.stat().st_size > 1000:
+                subprocess.Popen(["cmd", "/c", "start", "", str(target_path)], shell=True)
                 return f"Screenshot saved to Desktop: {target_path.name}"
-            return "Screenshot captured."
+        except Exception:
+            pass
+
+        # Strategy 2: Robust Base64 Encoded PowerShell GDI+ CopyFromScreen
+        ps_script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+$gfx = [System.Drawing.Graphics]::FromImage($bmp)
+$gfx.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+$bmp.Save('{target_str}', [System.Drawing.Imaging.ImageFormat]::Png)
+$gfx.Dispose()
+$bmp.Dispose()
+"""
+        try:
+            import base64
+            encoded = base64.b64encode(ps_script.encode("utf-16le")).decode("utf-8")
+            subprocess.run(["powershell", "-NoProfile", "-EncodedCommand", encoded], capture_output=True, timeout=10)
+            if target_path.exists() and target_path.stat().st_size > 100:
+                subprocess.Popen(["cmd", "/c", "start", "", str(target_path)], shell=True)
+                return f"Screenshot saved to Desktop: {target_path.name}"
+        except Exception:
+            pass
+
+        # Strategy 3: Native Windows Screen Snip Overlay Protocol
+        try:
+            subprocess.Popen(["cmd", "/c", "start", "ms-screenclip:"], shell=True)
+            return "Launched Windows Screen Snip tool."
         except Exception as e:
             return f"Failed to capture screenshot: {e}"
 
@@ -770,9 +947,14 @@ class WingshieldTraceStore:
 
     def _init_db(self) -> None:
         with self._lock:
-            conn = sqlite3.connect(self._db_path, check_same_thread=False)
             try:
-                conn.execute("PRAGMA journal_mode=WAL")
+                conn = sqlite3.connect(self._db_path, check_same_thread=False)
+            except Exception:
+                self._db_path = ":memory:"
+                conn = sqlite3.connect(self._db_path, check_same_thread=False)
+            try:
+                if self._db_path != ":memory:":
+                    conn.execute("PRAGMA journal_mode=WAL")
                 cur = conn.cursor()
                 cur.execute("PRAGMA table_info(traces)")
                 cols = {row[1] for row in cur.fetchall()}
@@ -1139,6 +1321,31 @@ class WingshieldCopilotEngine:
         self.last_active_time = time.time()
         self.trace_store = WingshieldTraceStore()
         self.scheduler = WingshieldScheduler()
+        self.clap_stage = 0
+        self._last_clap_trigger_time = 0.0
+        self.clap_detector: Optional[AcousticClapDetector] = None
+
+    def handle_clap_event(self) -> None:
+        """
+        Dual-stage acoustic/voice clap event handler:
+        Stage 0: 1st clap wakes up AgentShield-X original CLI & greets Tharun.
+        Stage 1: 2nd clap (or one more clap at original CLI) wakes up Wingshield Copilot & greets Tharun.
+        """
+        now = time.time()
+        if (now - self._last_clap_trigger_time) < 1.5:
+            return
+        self._last_clap_trigger_time = now
+
+        if self.clap_stage == 0:
+            self.clap_stage = 1
+            print("\n\033[1;36m[!] Acoustic Handclap Detected! Initializing AgentShield-X Security CLI...\033[0m")
+            speak(f"Hello {self.recipient}! AgentShield-X security terminal initialized and online.", wait=False)
+            ComputerAutomation.open_agentshield_cli_terminal()
+        else:
+            self.clap_stage = 0
+            print("\n\033[1;32m[!] Second Handclap Detected! Launching Wingshield Copilot...\033[0m")
+            speak(f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?", wait=False)
+            ComputerAutomation.open_wingshield_terminal()
 
     def greet_user(self) -> None:
         """Speaks aloud and outputs the user's requested greeting."""
@@ -1279,6 +1486,93 @@ class WingshieldCopilotEngine:
             speak("Locking workstation.", wait=False)
             result_msg = ComputerAutomation.lock_computer()
             return result_msg, False
+
+        # System Hardware Controls: Volume & Brightness
+        if any(k in low for k in ("volume up", "increase volume", "louder", "turn up volume", "raise volume")):
+            from shield_core.environment import SystemControlEngine
+            msg = SystemControlEngine.volume_up()
+            speak(msg, wait=False)
+            return msg, False
+
+        if any(k in low for k in ("volume down", "decrease volume", "lower volume", "quieter", "soften volume")):
+            from shield_core.environment import SystemControlEngine
+            msg = SystemControlEngine.volume_down()
+            speak(msg, wait=False)
+            return msg, False
+
+        if any(k in low for k in ("mute volume", "mute sound", "unmute volume", "unmute sound", "mute", "unmute", "toggle mute")):
+            from shield_core.environment import SystemControlEngine
+            msg = SystemControlEngine.volume_mute_toggle()
+            speak(msg, wait=False)
+            return msg, False
+
+        if "brightness" in low:
+            from shield_core.environment import SystemControlEngine
+            pct_match = re.search(r"(\d+)", low)
+            pct = int(pct_match.group(1)) if pct_match else (80 if "increase" in low or "up" in low else 40)
+            msg = SystemControlEngine.set_brightness(pct)
+            speak(msg, wait=False)
+            return msg, False
+
+        # System Clipboard Controls
+        if any(k in low for k in ("read clipboard", "get clipboard", "what is on clipboard", "what's on clipboard", "clipboard content")):
+            from shield_core.environment import SystemControlEngine
+            content = SystemControlEngine.get_clipboard()
+            speak("Here is your current clipboard content.", wait=False)
+            return f"Clipboard: {content}", False
+
+        if low.startswith("copy to clipboard ") or low.startswith("copy "):
+            from shield_core.environment import SystemControlEngine
+            text_to_copy = re.sub(r"^(copy to clipboard|copy)\s+", "", cmd, flags=re.IGNORECASE).strip()
+            msg = SystemControlEngine.set_clipboard(text_to_copy)
+            speak(msg, wait=False)
+            return f"{msg}: '{text_to_copy}'", False
+
+        # User Folder Intelligence
+        if any(k in low for k in ("list folders", "my folders", "what folders do i have", "show folders", "show all folders")):
+            from shield_core.environment import UserEnvironmentIntelligence
+            folders = UserEnvironmentIntelligence.get_known_folders()
+            lines = [f"AgentShield-X Environment Index ({len(folders)} folders & desktop projects):"]
+            for name, path in sorted(folders.items())[:25]:
+                lines.append(f"  * {name.title().ljust(22)}: {path}")
+            msg = "\n".join(lines)
+            speak(f"I have indexed {len(folders)} user folders and projects across your computer, Tharun.", wait=False)
+            return msg, False
+
+        # List files in a specific folder
+        if any(k in low for k in ("list files in ", "what is in ", "what's in ", "show files in ", "files in ")):
+            from shield_core.environment import UserEnvironmentIntelligence
+            folder_q = re.sub(r"^(list files in|what is in|what's in|show files in|files in)\s+", "", low).strip()
+            folder_q = re.sub(r"\s+(folder|directory)$", "", folder_q).strip()
+            ok, msg = UserEnvironmentIntelligence.list_folder_contents(folder_q)
+            speak(f"Here are the contents of your {folder_q} folder.", wait=False)
+            return msg, False
+
+        # Find / Search Files
+        if any(low.startswith(p) for p in ("find file ", "search file ", "search for file ", "find files ", "search files ")):
+            from shield_core.environment import UserEnvironmentIntelligence
+            file_q = re.sub(r"^(find file|search file|search for file|find files|search files)\s+", "", low).strip()
+            ok, msg = UserEnvironmentIntelligence.find_files(file_q)
+            speak(f"Found files matching {file_q}.", wait=False)
+            return msg, False
+
+        # Installed Applications Catalog
+        if any(k in low for k in ("list apps", "my apps", "what apps do i have", "installed apps", "show apps")):
+            from shield_core.environment import UserEnvironmentIntelligence
+            apps = UserEnvironmentIntelligence.get_installed_apps()
+            lines = [f"Discovered {len(apps)} installed applications on your computer:"]
+            for name in sorted(list(apps.keys()))[:30]:
+                lines.append(f"  * {name.title()}")
+            msg = "\n".join(lines)
+            speak(f"I found {len(apps)} installed applications on your PC, Tharun.", wait=False)
+            return msg, False
+
+        # Universal System CLI & PowerShell Command Execution ("do anything I say")
+        if any(low.startswith(p) for p in ("run ", "exec ", "execute ", "powershell ", "cmd ")) or low in ("ipconfig", "dir", "whoami", "systeminfo", "hostname", "netstat", "tasklist"):
+            from shield_core.environment import SystemControlEngine
+            res = SystemControlEngine.run_arbitrary_command(cmd)
+            speak("Command execution completed.", wait=False)
+            return f"Terminal Execution Output:\n{res}", False
 
         # 6. Desktop Automation: Open Applications (flexible prefix & direct app names)
         direct_apps = {
@@ -1625,10 +1919,23 @@ class WingshieldCopilotEngine:
             or any(w in clean_text for w in ("wake up", "wake up agentshield", "agentshield wakeup", "agent shield wakeup", "wingshield wakeup"))
         )
 
+        # Clap Triggers (Dual Stage: 1st clap -> AgentShield CLI, 2nd clap -> Wingshield Copilot)
+        is_clap = (
+            clean_text in ("clap", "claps", "double clap", "clap clap", "wake cli", "hand clap", "handclap")
+            or "clap" in clean_text
+            or clean_stream in ("clap", "claps", "doubleclap", "clapclap")
+        )
+        if is_clap:
+            self.handle_clap_event()
+            return
+
         is_cli_trigger = (
             not is_wake
             and (
-                clean_text in ("agentshield", "open agentshield", "launch agentshield", "agentshield cli", "agent shield", "agent shield cli", "shield cli", "cli terminal", "cli")
+                clean_text in (
+                    "agentshield", "open agentshield", "launch agentshield", "agentshield cli",
+                    "agent shield", "agent shield cli", "shield cli", "cli terminal", "cli"
+                )
                 or clean_stream in ("agentshield", "openagentshield", "agentshieldcli")
             )
         )
@@ -1724,9 +2031,14 @@ class WingshieldCopilotEngine:
         return None
 
     def listen_wakeword_loop(self) -> None:
-        """Continuously listens in background for wake word 'agentshield wakeup' / 'wakeup'."""
-        print("\033[38;2;56;189;248m[+] Wingshield Background Wake-Word Listener Active...\033[0m")
-        print("\033[38;2;139;148;158mSay 'Agentshield wakeup' for Wingshield Copilot, or 'Agentshield' for AgentShield-X CLI.\033[0m")
+        """Continuously listens in background for wake word 'agentshield wakeup' / 'wakeup' and acoustic handclaps."""
+        print("\033[38;2;56;189;248m[+] Wingshield Background Wake-Word & Acoustic Clap Listener Active...\033[0m")
+        print("\033[38;2;139;148;158mClap hands to wake up AgentShield-X CLI (1st clap) or Wingshield Copilot (2nd clap).\033[0m")
+
+        # 0. Start Real-Time Acoustic Transient Clap Detector (PyAudio raw microphone monitor)
+        self.clap_detector = AcousticClapDetector(on_clap_callback=self.handle_clap_event)
+        if self.clap_detector.start():
+            print("\033[38;2;63;185;80m[+] Acoustic Clap Transient Detector online (Real-time handclap microphone monitor).\033[0m")
 
         # 1. Start Windows Native SAPI SpeechRecognitionEngine in background if available
         sre_active = False
@@ -1740,9 +2052,10 @@ class WingshieldCopilotEngine:
                     "agentshield wakeup", "agent shield wakeup", "agentshield wake up", "agent shield wake up",
                     "wingshield wakeup", "wingshield wake up", "wingshield", "wakeup", "wake up", "wake",
                     "shield wakeup", "shield wake up",
-                    # Original CLI triggers
+                    # Original CLI & Acoustic triggers
                     "agentshield", "agent shield", "agentshield cli", "agent shield cli",
                     "shield cli", "cli terminal", "cli",
+                    "clap", "claps", "double clap", "clap clap",
                     # Direct App Launchers
                     "open youtube", "youtube", "play youtube", "watch youtube",
                     "open chrome", "chrome", "launch chrome", "google chrome",

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "nemo-relay-instrument-calls": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-relay-instrument-calls/SKILL.md",
+      "computedHash": "eaa9a7e2d0e1bee996fb2992795fd7c7a90de7ae33497a9e5c672a0a960c01b4"
+    },
+    "nemotron-policy-generator": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-policy-generator/SKILL.md",
+      "computedHash": "d29f030fd4636f48aec48aefbe3605553753d7d91ee22c24ef066e1eca1be53f"
+    },
+    "nemotron-speech": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-speech/SKILL.md",
+      "computedHash": "bf444165dacb50c79fec0d882a628bb1a84ddd79df51924911efaa57e03ca45c"
+    },
+    "nemotron-voice-agent-builder": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-voice-agent-builder/SKILL.md",
+      "computedHash": "fbc1006c010225290133d8622b20603b2bd7835e02d7153af748506501a6a3e2"
+    },
+    "rag-blueprint": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-blueprint/SKILL.md",
+      "computedHash": "4621085caf70c1ab91cf321dcd97ed432e44150565c30f9b2d87bbb4a2b62dfe"
+    }
+  }
+}

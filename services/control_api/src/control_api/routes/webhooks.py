@@ -3,7 +3,6 @@ AgentShield-X Webhooks API Route
 Manages registration, testing, and telemetry history for Slack, Discord, PagerDuty, and SIEM webhooks.
 """
 
-from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException

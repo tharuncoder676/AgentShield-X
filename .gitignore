@@ -66,3 +66,21 @@ results/*.png
 results/*.svg
 *.db-wal
 *.db-shm
+*.db
+*.sqlite
+*.sqlite3
+
+# Binaries & Media Assets
+agentshield-film/
+OpenJarvis-main/
+apps/console/public/downloads/*.exe
+apps/console/public/downloads/*.dmg
+apps/console/public/downloads/*.AppImage
+apps/console/public/downloads/*.zip
+apps/console/public/downloads/*.tar.gz
+apps/console/public/*.mp4
+*.mp4
+*.spec
+gemini-code-*
+*.ppt
+

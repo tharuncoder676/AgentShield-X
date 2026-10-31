@@ -32,6 +32,27 @@ import { Attestation } from "./pages/Attestation";
 import { Immunity } from "./pages/Immunity";
 import { RAGFirewall } from "./pages/RAGFirewall";
 import { WingmanCommandCenter } from "./pages/WingmanCommandCenter";
+import { Genome } from "./pages/Genome";
+import { Federation } from "./pages/Federation";
+import { Forensics } from "./pages/Forensics";
+import { SimLab } from "./pages/SimLab";
+import { Executive } from "./pages/Executive";
+import { RBAC } from "./pages/RBAC";
+import { Connectors } from "./pages/Connectors";
+import { Compliance } from "./pages/Compliance";
+import { Canary } from "./pages/Canary";
+import { NeuroSymbolic } from "./pages/NeuroSymbolic";
+import { Forecasting } from "./pages/Forecasting";
+import { ShadowAgents } from "./pages/ShadowAgents";
+import { StreamingDefense } from "./pages/StreamingDefense";
+import { IaCPolicies } from "./pages/IaCPolicies";
+import { RuleBuilder } from "./pages/RuleBuilder";
+import { Marketplace } from "./pages/Marketplace";
+import { Academy } from "./pages/Academy";
+import { ThreatIntel } from "./pages/ThreatIntel";
+import { Plugins } from "./pages/Plugins";
+import { Benchmark } from "./pages/Benchmark";
+import { Landing } from "./pages/Landing";
 import { Panel } from "@agentshield/ui";
 
 // Protected Route Guard
@@ -86,6 +107,10 @@ export const App: React.FC = () => {
       <AuthProvider>
         <StreamProvider>
           <Routes>
+            {/* Public Landing & Brand Showcase */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/landing" element={<Landing />} />
+
             {/* Public Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -112,15 +137,12 @@ export const App: React.FC = () => {
 
             {/* Authenticated Console Routes */}
             <Route
-              path="/"
               element={
                 <ProtectedRoute>
                   <ConsoleLayout />
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="/command-center" replace />} />
-              <Route path="command-center" element={<Navigate to="/command-center" replace />} />
               <Route path="overview" element={<Overview />} />
               <Route path="terminal" element={<Terminal />} />
               <Route path="live" element={<LiveFeed />} />
@@ -131,6 +153,26 @@ export const App: React.FC = () => {
               <Route path="autopolicy" element={<AutoPolicy />} />
               <Route path="attestation" element={<Attestation />} />
               <Route path="immunity" element={<Immunity />} />
+              <Route path="genome" element={<Genome />} />
+              <Route path="federation" element={<Federation />} />
+              <Route path="forensics" element={<Forensics />} />
+              <Route path="sim-lab" element={<SimLab />} />
+              <Route path="executive" element={<Executive />} />
+              <Route path="rbac" element={<RBAC />} />
+              <Route path="connectors" element={<Connectors />} />
+              <Route path="compliance" element={<Compliance />} />
+              <Route path="canary" element={<Canary />} />
+              <Route path="chains" element={<NeuroSymbolic />} />
+              <Route path="forecasting" element={<Forecasting />} />
+              <Route path="shadow" element={<ShadowAgents />} />
+              <Route path="streaming" element={<StreamingDefense />} />
+              <Route path="iac" element={<IaCPolicies />} />
+              <Route path="rule-builder" element={<RuleBuilder />} />
+              <Route path="marketplace" element={<Marketplace />} />
+              <Route path="academy" element={<Academy />} />
+              <Route path="threats" element={<ThreatIntel />} />
+              <Route path="plugins" element={<Plugins />} />
+              <Route path="benchmark" element={<Benchmark />} />
               <Route path="rag-firewall" element={<RAGFirewall />} />
               <Route path="settings/keys" element={<ApiKeys />} />
 

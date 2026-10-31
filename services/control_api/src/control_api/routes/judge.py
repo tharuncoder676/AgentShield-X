@@ -3,7 +3,6 @@ AgentShield-X Multi-Agent Debate Judge Router
 Runs autonomous 3-agent consensus debates for ambiguous or high-risk tool invocations.
 """
 
-from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query

@@ -1,0 +1,70 @@
+{
+  "name": "@agentshield/desktop",
+  "productName": "AgentShield-X",
+  "version": "1.0.0",
+  "description": "Deterministic Runtime Armor & AI Agent Security Super App",
+  "author": "Tharunkumar.S <tharunkumar.s@agentshield.dev>",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win --x64",
+    "dist:mac": "electron-builder --mac --universal",
+    "dist:linux": "electron-builder --linux AppImage deb"
+  },
+  "build": {
+    "appId": "com.agentshield.desktop",
+    "productName": "AgentShield-X",
+    "copyright": "Copyright © 2026 Tharunkumar.S - AgentShield-X Labs",
+    "directories": {
+      "output": "dist-electron",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "../console/dist/**/*"
+    ],
+    "extraMetadata": {
+      "main": "src/main.cjs"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AgentShield-X"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.developer-tools",
+      "darkModeSupport": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon-512.png",
+      "category": "Development"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}
+

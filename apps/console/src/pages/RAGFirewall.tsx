@@ -254,35 +254,37 @@ export const RAGFirewall: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header & Architect Attribution */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-line">
+      {/* Header & Architect Attribution - AgentShield-X Style */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#120a24]/80 border border-purple-500/20 backdrop-blur-xl shadow-[0_0_30px_rgba(168,85,247,0.12)]">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-chakra font-bold tracking-wider uppercase text-fg flex items-center gap-2">
-              <Database className="text-cyan-400" size={22} />
-              Enterprise RAG Infrastructure & Memory Firewall
-            </h1>
-            <span className="px-2 py-0.5 text-[10px] font-chakra font-bold rounded-sm bg-cyan-400/20 text-cyan-400 border border-cyan-400/40">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-2.5 py-0.5 text-[10px] font-chakra font-bold rounded bg-purple-950/80 text-purple-300 border border-purple-500/40 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               FEATURE 4: HARDENED RAG SUITE
             </span>
+            <span className="text-purple-400/50">&bull;</span>
+            <span className="text-xs text-purple-300/80 font-mono">Pre-Context Firewall</span>
           </div>
-          <p className="text-xs text-mut font-chakra mt-1">
+          <h1 className="text-2xl sm:text-3xl font-chakra font-bold tracking-wider uppercase bg-gradient-to-r from-white via-purple-100 to-purple-400 bg-clip-text text-transparent flex items-center gap-2.5">
+            <Database className="text-purple-400" size={24} />
+            Enterprise RAG Infrastructure & Memory Firewall
+          </h1>
+          <p className="text-xs text-purple-200/70 font-chakra mt-1 max-w-2xl">
             Complete vector retrieval pipeline with multi-hop recursive taint tracking, cryptographic citation binding, JIT masking, and homoglyph normalization.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="text-[11px] font-mono px-3 py-1.5 rounded border border-cyan-500/30 bg-black/40 text-cyan-300 flex items-center gap-2">
-            <Award size={14} className="text-cyan-400" />
+          <div className="text-[11px] font-mono px-3.5 py-2 rounded-lg border border-purple-500/30 bg-[#160d2e]/80 text-purple-300 flex items-center gap-2 backdrop-blur-xl">
+            <Award size={14} className="text-fuchsia-400" />
             <span>ARCHITECT: <strong className="text-white">Tharunkumar.S</strong></span>
           </div>
 
           <button
             onClick={fetchDocs}
             disabled={docsLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-chakra uppercase font-bold border border-line rounded-sm hover:border-cyan-400/60 hover:text-cyan-400 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-chakra uppercase font-bold border border-purple-500/30 bg-[#160d2e]/80 text-purple-200 hover:text-white hover:border-purple-400 rounded-lg transition-all backdrop-blur-xl"
           >
-            <RefreshCw size={12} className={cn(docsLoading && "animate-spin")} />
+            <RefreshCw size={13} className={cn(docsLoading && "animate-spin")} />
             Refresh
           </button>
         </div>
@@ -295,8 +297,8 @@ export const RAGFirewall: React.FC = () => {
           className={cn(
             "px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1.5",
             activeTab === "showcase"
-              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-              : "text-mut hover:text-fg hover:bg-line/20"
+              ? "bg-purple-950/70 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+              : "text-purple-300/60 hover:text-white hover:bg-purple-950/30"
           )}
         >
           <Sparkles size={14} />
@@ -307,8 +309,8 @@ export const RAGFirewall: React.FC = () => {
           className={cn(
             "px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1.5",
             activeTab === "multihop"
-              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-              : "text-mut hover:text-fg hover:bg-line/20"
+              ? "bg-purple-950/70 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+              : "text-purple-300/60 hover:text-white hover:bg-purple-950/30"
           )}
         >
           <GitBranch size={14} />
@@ -319,8 +321,8 @@ export const RAGFirewall: React.FC = () => {
           className={cn(
             "px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1.5",
             activeTab === "attestation"
-              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-              : "text-mut hover:text-fg hover:bg-line/20"
+              ? "bg-purple-950/70 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+              : "text-purple-300/60 hover:text-white hover:bg-purple-950/30"
           )}
         >
           <Fingerprint size={14} />
@@ -331,8 +333,8 @@ export const RAGFirewall: React.FC = () => {
           className={cn(
             "px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1.5",
             activeTab === "hardening"
-              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-              : "text-mut hover:text-fg hover:bg-line/20"
+              ? "bg-purple-950/70 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+              : "text-purple-300/60 hover:text-white hover:bg-purple-950/30"
           )}
         >
           <KeyRound size={14} />
@@ -343,8 +345,8 @@ export const RAGFirewall: React.FC = () => {
           className={cn(
             "px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1.5",
             activeTab === "docs"
-              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40"
-              : "text-mut hover:text-fg hover:bg-line/20"
+              ? "bg-purple-950/70 text-purple-200 border border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+              : "text-purple-300/60 hover:text-white hover:bg-purple-950/30"
           )}
         >
           <BookOpen size={14} />
@@ -356,9 +358,9 @@ export const RAGFirewall: React.FC = () => {
       {activeTab === "showcase" && (
         <div className="space-y-6">
           {/* Workability Showcase Banner */}
-          <div className="bg-gradient-to-r from-blue-950/40 via-purple-950/20 to-black p-5 rounded border border-cyan-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="bg-[#120a24]/85 p-6 rounded-2xl border border-purple-500/25 backdrop-blur-xl shadow-[0_0_30px_rgba(168,85,247,0.12)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="text-cyan-300 font-chakra font-bold text-sm flex items-center gap-2">
+              <div className="text-purple-300 font-chakra font-bold text-sm flex items-center gap-2">
                 <Flame size={16} className="text-amber-400" />
                 Side-by-Side RAG Attack & Defense Workability Proof
               </div>
@@ -369,7 +371,7 @@ export const RAGFirewall: React.FC = () => {
             <button
               onClick={handleRunLiveWorkabilityProof}
               disabled={simLoading}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-chakra font-bold text-xs uppercase tracking-wider rounded shadow-[0_0_15px_rgba(0,240,255,0.4)] disabled:opacity-50 transition-all shrink-0 flex items-center gap-2"
+              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 hover:from-purple-500 hover:to-fuchsia-600 text-white font-chakra font-bold text-xs uppercase tracking-wider rounded-lg shadow-[0_0_20px_rgba(168,85,247,0.45)] border border-purple-400/40 disabled:opacity-50 transition-all shrink-0 flex items-center gap-2"
             >
               <Zap size={14} className={cn(simLoading && "animate-bounce")} />
               {simLoading ? "Simulating Dual Pipelines..." : "Run Live Attack Simulation"}
@@ -380,7 +382,7 @@ export const RAGFirewall: React.FC = () => {
           {sideBySide && (
             <div className="space-y-3 animate-fadeIn">
               <div className="flex items-center justify-between px-2 text-xs font-mono">
-                <span className="text-cyan-300 font-bold">Tested Query: &quot;{sideBySide.query}&quot;</span>
+                <span className="text-purple-300 font-bold">Tested Query: &quot;{sideBySide.query}&quot;</span>
                 <span className="text-ok font-bold">Mitigation Latency: {sideBySide.workability_proof.firewall_latency_ms}ms</span>
               </div>
 
@@ -426,7 +428,7 @@ export const RAGFirewall: React.FC = () => {
 
                   <div>
                     <span className="text-[10px] font-chakra uppercase text-mut block">Firewall Interception:</span>
-                    <div className="p-2 rounded bg-black/60 border border-ok/30 text-xs font-mono text-cyan-300 mt-1 flex items-center justify-between">
+                    <div className="p-2 rounded bg-black/60 border border-ok/30 text-xs font-mono text-purple-300 mt-1 flex items-center justify-between">
                       <span>Violation Flagged: DIRECT_INSTRUCTION_OVERRIDE</span>
                       <span className="text-ok font-bold">Action: DROP CHUNK</span>
                     </div>
@@ -444,7 +446,7 @@ export const RAGFirewall: React.FC = () => {
           )}
 
           {/* Interactive RAG Search Engine */}
-          <Panel title="Interactive Semantic RAG Query Simulator" className="border-cyan-500/30">
+          <Panel title="Interactive Semantic RAG Query Simulator" className="border-purple-500/30">
             <form onSubmit={handleRunRAGQuery} className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
@@ -452,12 +454,12 @@ export const RAGFirewall: React.FC = () => {
                   value={queryInput}
                   onChange={(e) => setQueryInput(e.target.value)}
                   placeholder="Ask a question against enterprise knowledge base (e.g., 'What are the remote work benefits?')"
-                  className="flex-1 bg-black/50 border border-line rounded px-3 py-2 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                  className="flex-1 bg-black/50 border border-line rounded px-3 py-2 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
                 />
                 <button
                   type="submit"
                   disabled={queryLoading}
-                  className="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-chakra font-bold text-xs uppercase tracking-wider rounded disabled:opacity-50 transition-all flex items-center gap-2 shrink-0"
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 hover:from-purple-500 hover:to-fuchsia-600 text-white font-chakra font-bold text-xs uppercase tracking-wider rounded-lg shadow-[0_0_20px_rgba(168,85,247,0.45)] border border-purple-400/40 disabled:opacity-50 transition-all flex items-center gap-2 shrink-0"
                 >
                   <Search size={14} className={cn(queryLoading && "animate-spin")} />
                   {queryLoading ? "Searching..." : "Query RAG"}
@@ -483,7 +485,7 @@ export const RAGFirewall: React.FC = () => {
             {queryResult && (
               <div className="mt-4 p-4 rounded border border-line bg-black/50 space-y-3 animate-fadeIn">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-cyan-300 font-bold">RAG Retrieval Execution</span>
+                  <span className="text-purple-300 font-bold">RAG Retrieval Execution</span>
                   <span className="text-mut">Latency: {queryResult.latency_ms}ms</span>
                 </div>
 
@@ -494,7 +496,7 @@ export const RAGFirewall: React.FC = () => {
                       <div key={i} className="p-2.5 rounded bg-black/70 border border-line text-xs font-mono space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-white">{c.doc_title} ({c.chunk_id})</span>
-                          <span className="text-cyan-400 text-[10px]">SHA-256: {c.sha256_hash}</span>
+                          <span className="text-purple-400 text-[10px]">SHA-256: {c.sha256_hash}</span>
                         </div>
                         <p className="text-mut text-[11px]">{c.text}</p>
                       </div>
@@ -504,7 +506,7 @@ export const RAGFirewall: React.FC = () => {
 
                 <div>
                   <span className="text-[10px] uppercase font-chakra text-mut block">Synthesized Agent Generation:</span>
-                  <div className="p-3 rounded bg-black/80 border border-cyan-400/40 text-xs font-mono text-cyan-300 whitespace-pre-wrap mt-1">
+                  <div className="p-3 rounded bg-black/80 border border-purple-400/40 text-xs font-mono text-purple-300 whitespace-pre-wrap mt-1">
                     {queryResult.generated_answer}
                   </div>
                 </div>
@@ -517,11 +519,11 @@ export const RAGFirewall: React.FC = () => {
       {/* TAB 2: MULTI-HOP RECURSIVE TAINT TRACKER */}
       {activeTab === "multihop" && (
         <div className="space-y-4">
-          <Panel title="Multi-Hop Recursive Retrieval Taint Tracker" className="border-cyan-500/30">
+          <Panel title="Multi-Hop Recursive Retrieval Taint Tracker" className="border-purple-500/30">
             <div className="space-y-4">
-              <div className="p-4 rounded border border-cyan-500/30 bg-black/40 text-xs font-mono space-y-2">
-                <div className="font-chakra font-bold text-sm text-cyan-300 flex items-center gap-2">
-                  <GitBranch size={16} className="text-cyan-400" />
+              <div className="p-4 rounded border border-purple-500/30 bg-black/40 text-xs font-mono space-y-2">
+                <div className="font-chakra font-bold text-sm text-purple-300 flex items-center gap-2">
+                  <GitBranch size={16} className="text-purple-400" />
                   Iterative RAG Causal Taint Graph
                 </div>
                 <p className="text-mut text-[11px] leading-relaxed">
@@ -539,7 +541,7 @@ export const RAGFirewall: React.FC = () => {
               {multiHopResult && (
                 <div className="p-4 rounded border border-line bg-black/60 space-y-3 animate-fadeIn">
                   <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-cyan-300 font-bold">Session ID: {multiHopResult.session_id}</span>
+                    <span className="text-purple-300 font-bold">Session ID: {multiHopResult.session_id}</span>
                     <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold border", multiHopResult.loop_terminated ? "bg-bad/20 text-bad border-bad/50" : "bg-ok/20 text-ok border-ok/50")}>
                       Status: {multiHopResult.final_verdict}
                     </span>
@@ -554,7 +556,7 @@ export const RAGFirewall: React.FC = () => {
                             Taint: {(h.taint_score * 100).toFixed(0)}%
                           </span>
                         </div>
-                        <div className="text-[11px] text-mut">Causal Origin: <strong className="text-cyan-300">{h.taint_origin}</strong></div>
+                        <div className="text-[11px] text-mut">Causal Origin: <strong className="text-purple-300">{h.taint_origin}</strong></div>
                         <div className="text-[11px] text-mut">Decision: <strong className={cn(h.decision === "TERMINATE_RECURSION" ? "text-bad" : "text-ok")}>{h.decision}</strong></div>
                       </div>
                     ))}
@@ -569,11 +571,11 @@ export const RAGFirewall: React.FC = () => {
       {/* TAB 3: CRYPTOGRAPHIC CITATION ATTESTATION */}
       {activeTab === "attestation" && (
         <div className="space-y-4">
-          <Panel title="Cryptographic Citation Attestation (SHA-256 Merkle Binding)" className="border-cyan-500/30">
+          <Panel title="Cryptographic Citation Attestation (SHA-256 Merkle Binding)" className="border-purple-500/30">
             <form onSubmit={handleRunCitationAttestation} className="space-y-4">
-              <div className="p-4 rounded border border-cyan-500/30 bg-black/40 text-xs font-mono space-y-2">
-                <div className="font-chakra font-bold text-sm text-cyan-300 flex items-center gap-2">
-                  <Fingerprint size={16} className="text-cyan-400" />
+              <div className="p-4 rounded border border-purple-500/30 bg-black/40 text-xs font-mono space-y-2">
+                <div className="font-chakra font-bold text-sm text-purple-300 flex items-center gap-2">
+                  <Fingerprint size={16} className="text-purple-400" />
                   Anti-Hallucination & Policy Binding Proof
                 </div>
                 <p className="text-mut text-[11px] leading-relaxed">
@@ -589,7 +591,7 @@ export const RAGFirewall: React.FC = () => {
                   type="text"
                   value={attestClaim}
                   onChange={(e) => setAttestClaim(e.target.value)}
-                  className="w-full bg-black/50 border border-line rounded px-3 py-2 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                  className="w-full bg-black/50 border border-line rounded px-3 py-2 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
                 />
               </div>
 
@@ -601,7 +603,7 @@ export const RAGFirewall: React.FC = () => {
                   value={attestChunkText}
                   onChange={(e) => setAttestChunkText(e.target.value)}
                   rows={3}
-                  className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                  className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
                 />
               </div>
 
@@ -617,7 +619,7 @@ export const RAGFirewall: React.FC = () => {
             {attestResult && (
               <div className="mt-4 p-4 rounded border border-line bg-black/60 space-y-2 text-xs font-mono animate-fadeIn">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-cyan-300">Attestation Verdict:</span>
+                  <span className="font-bold text-purple-300">Attestation Verdict:</span>
                   <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold border", attestResult.all_citations_verified ? "bg-ok/20 text-ok border-ok/50" : "bg-bad/20 text-bad border-bad/50")}>
                     {attestResult.attestation_status}
                   </span>
@@ -625,7 +627,7 @@ export const RAGFirewall: React.FC = () => {
                 {attestResult.proofs?.map((p: any, i: number) => (
                   <div key={i} className="p-2.5 rounded bg-black/80 border border-line mt-2 space-y-1">
                     <div className="text-white font-bold">{p.claim_text}</div>
-                    <div className="text-cyan-400 text-[10px]">Chunk SHA-256 Hash: {p.chunk_sha256}</div>
+                    <div className="text-purple-400 text-[10px]">Chunk SHA-256 Hash: {p.chunk_sha256}</div>
                     <div className="text-ok text-[10px]">Verification: {p.status}</div>
                   </div>
                 ))}
@@ -648,7 +650,7 @@ export const RAGFirewall: React.FC = () => {
                 value={unicodeInput}
                 onChange={(e) => setUnicodeInput(e.target.value)}
                 rows={4}
-                className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
               />
               <button
                 type="submit"
@@ -662,7 +664,7 @@ export const RAGFirewall: React.FC = () => {
             {normResult && (
               <div className="mt-3 p-3 rounded bg-black/60 border border-line text-xs font-mono space-y-2">
                 <div className="text-ok font-bold">Normalized Clean Text:</div>
-                <div className="p-2 rounded bg-black border border-line text-cyan-300">{normResult.normalized_text}</div>
+                <div className="p-2 rounded bg-black border border-line text-purple-300">{normResult.normalized_text}</div>
                 {normResult.violations_detected?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-bad uppercase block">Violations Neutralized:</span>
@@ -687,7 +689,7 @@ export const RAGFirewall: React.FC = () => {
                 value={maskInput}
                 onChange={(e) => setMaskInput(e.target.value)}
                 rows={4}
-                className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
               />
               <button
                 type="submit"
@@ -701,7 +703,7 @@ export const RAGFirewall: React.FC = () => {
             {maskResult && (
               <div className="mt-3 p-3 rounded bg-black/60 border border-line text-xs font-mono space-y-2">
                 <div className="text-ok font-bold">Masked Context (Fed to LLM):</div>
-                <div className="p-2 rounded bg-black border border-line text-cyan-300">{maskResult.masked_text}</div>
+                <div className="p-2 rounded bg-black border border-line text-purple-300">{maskResult.masked_text}</div>
                 <div>
                   <span className="text-[10px] text-mut uppercase block">Redacted Vault Entities:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -721,7 +723,7 @@ export const RAGFirewall: React.FC = () => {
       {/* TAB 5: VECTOR KNOWLEDGE BASE EXPLORER */}
       {activeTab === "docs" && (
         <div className="space-y-4">
-          <Panel title="Add Knowledge Base Document" className="border-cyan-500/30">
+          <Panel title="Add Knowledge Base Document" className="border-purple-500/30">
             <form onSubmit={handleAddDocument} className="space-y-3">
               <div>
                 <label className="text-xs font-chakra font-bold uppercase text-fg block mb-1">Title</label>
@@ -730,7 +732,7 @@ export const RAGFirewall: React.FC = () => {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g., Q1 Product Release Notes"
-                  className="w-full bg-black/50 border border-line rounded px-3 py-2 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                  className="w-full bg-black/50 border border-line rounded px-3 py-2 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
                   required
                 />
               </div>
@@ -741,7 +743,7 @@ export const RAGFirewall: React.FC = () => {
                   onChange={(e) => setNewContent(e.target.value)}
                   rows={4}
                   placeholder="Enter document text to be chunked into semantic vector store..."
-                  className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-cyan-400"
+                  className="w-full bg-black/50 border border-line rounded p-3 text-xs font-mono text-fg focus:outline-none focus:border-purple-400"
                   required
                 />
               </div>
@@ -771,7 +773,7 @@ export const RAGFirewall: React.FC = () => {
                   {docs.map((d, i) => (
                     <tr key={i} className="hover:bg-line/10 transition-colors">
                       <td className="py-2.5 px-3 font-bold text-white">{d.title}</td>
-                      <td className="py-2.5 px-3 text-cyan-300">{d.doc_id}</td>
+                      <td className="py-2.5 px-3 text-purple-300">{d.doc_id}</td>
                       <td className="py-2.5 px-3 text-mut">{d.chunks_count || 1}</td>
                       <td className="py-2.5 px-3">
                         {d.has_poison ? (

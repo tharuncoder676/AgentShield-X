@@ -3,8 +3,6 @@ AgentShield-X AutoPolicy & Self-Healing Router
 Synthesizes deterministic OPA Rego policies and TaskContracts from scan findings or runtime incidents.
 """
 
-from __future__ import annotations
-
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -98,7 +96,7 @@ def synthesize_from_incident(
 @router.get("/proposals")
 def list_proposals(
     project_id: str = Query(default="default"),
-    status: Optional[str] = Query(default=None),
+    status: Optional[str] = None,
     current_user: UserDTO = Depends(get_current_user),
 ) -> List[Dict[str, Any]]:
     """Lists generated policy proposals for human review and 1-click apply."""

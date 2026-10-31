@@ -1,6 +1,6 @@
 {
   "name": "agentshield-x-monorepo",
-  "version": "1.0.0",
+  "version": "2.4.0",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -10,7 +10,11 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "storybook": "npm --workspace=packages/ui run storybook",
-    "build:ui": "npm --workspace=packages/ui run build"
+    "build:ui": "npm --workspace=packages/ui run build",
+    "desktop": "npm --workspace=@agentshield/desktop run dev",
+    "desktop:dist:win": "npm --workspace=@agentshield/desktop run dist:win",
+    "desktop:dist:mac": "npm --workspace=@agentshield/desktop run dist:mac",
+    "desktop:dist:linux": "npm --workspace=@agentshield/desktop run dist:linux"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

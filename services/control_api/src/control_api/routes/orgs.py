@@ -2,7 +2,6 @@
 AgentShield-X Organizations, Projects, and Scoped API Keys Router
 """
 
-from __future__ import annotations
 
 import datetime
 import hashlib

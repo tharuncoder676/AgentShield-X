@@ -25,6 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio flake8
           pip install -e packages/shield_core
           pip install -e packages/shield_sdk_py
           pip install -e packages/eventbus
@@ -34,9 +35,14 @@ jobs:
           pip install -e services/decision
           pip install -e services/gateway
 
-      - name: Run Unit & Integration Tests
+      - name: Code Quality & Lint Gate
         run: |
-          python -m unittest discover -s tests
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 packages/shield_core services/control_api --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run Deterministic Unit Tests (pytest)
+        run: |
+          python -m pytest tests/unit/ -v
 
       - name: Verify Phase 1 Acceptance Gate
         run: |

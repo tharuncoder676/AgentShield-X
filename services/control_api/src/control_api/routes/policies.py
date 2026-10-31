@@ -3,7 +3,6 @@ AgentShield-X Policy Management & Simulation Router
 Provides Rego/YAML policy authoring, validation, dry-run simulation against recent traffic, and rollback.
 """
 
-from __future__ import annotations
 
 import uuid
 from typing import List, Optional

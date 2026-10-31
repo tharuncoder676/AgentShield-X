@@ -1,0 +1,114 @@
+{
+  "name": "agentshield-x-vscode",
+  "displayName": "AgentShield-X: Autonomous AI Agent Security",
+  "description": "Deterministic sub-millisecond runtime protection, AST security linting, MCP schema pinning, and canary honeytool injection for AI agents.",
+  "version": "1.0.0",
+  "publisher": "agentshield-labs",
+  "author": {
+    "name": "Tharunkumar.S",
+    "url": "https://github.com/tharuncoder676/AgentShield-X"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tharuncoder676/AgentShield-X"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Security",
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ai agents",
+    "prompt injection",
+    "mcp",
+    "model context protocol",
+    "langchain",
+    "crewai",
+    "security"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onLanguage:json",
+    "onLanguage:yaml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agentshield.scanWorkspace",
+        "title": "AgentShield-X: Scan Workspace for Agentic Vulnerabilities",
+        "category": "AgentShield-X"
+      },
+      {
+        "command": "agentshield.insertHoneytool",
+        "title": "AgentShield-X: Insert Active Canary Honeytool Trap",
+        "category": "AgentShield-X"
+      },
+      {
+        "command": "agentshield.auditMcp",
+        "title": "AgentShield-X: Audit MCP Server Schemas & Pins",
+        "category": "AgentShield-X"
+      },
+      {
+        "command": "agentshield.openConsole",
+        "title": "AgentShield-X: Open Cyberpunk Web Console",
+        "category": "AgentShield-X"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "agentshield-sidebar",
+          "title": "AgentShield-X Security",
+          "icon": "resources/shield-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "agentshield-sidebar": [
+        {
+          "id": "agentshield.explorer",
+          "name": "Agent Defense & MCP Attestation",
+          "type": "tree"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AgentShield-X",
+      "properties": {
+        "agentshield.apiEndpoint": {
+          "type": "string",
+          "default": "http://127.0.0.1:8002",
+          "description": "AgentShield-X Local Control API Endpoint"
+        },
+        "agentshield.autoLintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically run security AST analysis on file save"
+        },
+        "agentshield.enforceSandboxWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight unattenuated shell execution and unpinned MCP schemas as errors"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.4.0"
+  }
+}
+

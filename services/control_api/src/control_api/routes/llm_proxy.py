@@ -5,7 +5,6 @@ Drop-in reverse-proxy compatible with:
 - Anthropic Claude API format (/v1/messages) for Anthropic SDK and Claude Code
 """
 
-from __future__ import annotations
 
 import json
 import time
