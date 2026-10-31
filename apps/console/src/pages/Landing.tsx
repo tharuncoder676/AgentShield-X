@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  Github,
+  Star,
   Shield,
   Terminal,
   Cpu,
@@ -53,6 +55,27 @@ import { ApiKeyPortalModal } from "../components/ApiKeyPortalModal";
 import { Key } from "lucide-react";
 
 export const Landing: React.FC = () => {
+
+  const handleDirectDownload = (filename: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const directUrl = `/downloads/${filename}`;
+    const link = document.createElement("a");
+    link.href = directUrl;
+    link.setAttribute("download", filename);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try {
+        document.body.removeChild(link);
+      } catch {}
+    }, 1000);
+  };
+
   // Navigation & Interactive states
   const [activeTab, setActiveTab] = useState<"shield" | "code" | "voice">("shield");
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
@@ -479,11 +502,27 @@ export const Landing: React.FC = () => {
             </a>
             <a href="#ide-cli" className="hidden xl:inline-block hover:text-white transition-colors">Code & CLI</a>
             <a href="#benchmark" className="hover:text-white transition-colors">Benchmark</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#downloads" className="hover:text-white transition-colors">Downloads</a>
           </nav>
 
           {/* Action Header Buttons: Compact, Clean, Never Overlaps */}
           <div className="flex items-center space-x-2 sm:space-x-3 whitespace-nowrap shrink-0">
+            {/* Highly Visible GitHub Star Button */}
+            <a
+              href="https://github.com/tharuncoder676/AgentShield-X"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-1.5 px-3 py-1.5 sm:py-2 rounded-xl border border-zinc-800 bg-[#0d0e11] hover:bg-[#181329] text-white hover:border-[#a855f7]/70 text-xs font-semibold transition-all group shrink-0"
+              title="Star AgentShield-X on GitHub"
+            >
+              <Github className="w-3.5 h-3.5 text-zinc-300 group-hover:text-white" />
+              <span className="hidden sm:inline">Star</span>
+              <span className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[10px] font-mono">
+                <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+                <span>GitHub</span>
+              </span>
+            </a>
             <button
               onClick={() => {
                 const hasKey = localStorage.getItem("agentshield_api_key");
@@ -570,11 +609,11 @@ export const Landing: React.FC = () => {
                 Benchmark
               </a>
               <a
-                href="#pricing"
+                href="#features"
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2 px-3 rounded-lg hover:bg-zinc-800/50 hover:text-white transition-colors"
               >
-                Pricing
+                Features
               </a>
 
               <div className="pt-3 border-t border-zinc-800/80 flex flex-col space-y-2">
@@ -616,10 +655,24 @@ export const Landing: React.FC = () => {
           
           {/* Left Column: Headline & Action Triggers */}
           <div className="lg:col-span-6 text-left z-10">
-            {/* Top Eyebrow Pill */}
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full border border-[#a855f7]/40 bg-[#120a24]/90 backdrop-blur-md text-[#a855f7] text-xs font-mono mb-6">
-              <span className="w-2 h-2 rounded-full bg-[#a855f7] animate-pulse" />
-              <span>DETERMINISTIC RUNTIME ARMOR · 0.85MS SLA</span>
+            {/* Top Eyebrow Pill + GitHub Star CTA */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <a
+                href="https://github.com/tharuncoder676/AgentShield-X"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full border border-[#a855f7]/60 bg-[#120a24] hover:bg-[#1f0f3d] text-[#c084fc] hover:text-white text-xs font-mono shadow-md shadow-[#a855f7]/20 transition-all group"
+              >
+                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 animate-pulse" />
+                <span className="font-semibold">Star us on GitHub</span>
+                <span className="text-[10px] bg-purple-900/60 px-1.5 py-0.2 rounded border border-purple-500/30">v2.4.0</span>
+                <ArrowRight className="w-3 h-3 text-[#a855f7] group-hover:translate-x-0.5 transition-transform" />
+              </a>
+
+              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full border border-zinc-800 bg-[#0d0e11] text-[#a9a9aa] text-xs font-mono">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>&lt;0.18MS DUAL-RAIL SLA</span>
+              </div>
             </div>
 
             {/* Main Headline: Matching Super App Cadence */}
@@ -635,10 +688,13 @@ export const Landing: React.FC = () => {
               AI agents that work while you don't worry. A native desktop workspace with deterministic runtime armor. Live coding threads with sub-millisecond guardrails you trust instead of watch.
             </p>
 
-            {/* Pricing / Plan Pill */}
-            <div className="text-sm font-semibold text-white mb-8 flex items-center space-x-3">
-              <span>Pro, $29/month</span>
-              <span className="text-xs font-mono text-[#a855f7] bg-[#1a1228] px-2.5 py-0.5 rounded border border-[#a855f7]/30">Open-Source Core MIT</span>
+            {/* Open Source Zero-Friction Pill */}
+            <div className="text-sm font-semibold text-white mb-8 flex flex-wrap items-center gap-3">
+              <span className="text-xs font-mono text-[#22c55e] bg-[#0c2016] px-2.5 py-1 rounded border border-[#22c55e]/40 font-bold flex items-center space-x-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-ping" />
+                <span>100% FREE & OPEN SOURCE</span>
+              </span>
+              <span className="text-xs font-mono text-[#a855f7] bg-[#1a1228] px-2.5 py-1 rounded border border-[#a855f7]/30">MIT Licensed</span>
               <span className="text-xs font-mono text-[#a9a9aa]">by Tharunkumar.S</span>
             </div>
 
@@ -652,8 +708,19 @@ export const Landing: React.FC = () => {
                     ? "/downloads/AgentShield-X-1.0.0.AppImage"
                     : "/downloads/AgentShield-X-1.0.0-universal.dmg"
                 }
+                onClick={(e) => {
+                  const targetFile =
+                    detectedOS === "windows"
+                      ? "AgentShield-X-Setup-1.0.0.exe"
+                      : detectedOS === "linux"
+                      ? "AgentShield-X-1.0.0.AppImage"
+                      : "AgentShield-X-1.0.0-universal.dmg";
+                  handleDirectDownload(targetFile, e);
+                }}
+                target="_blank"
+                rel="noopener noreferrer"
                 download
-                className="px-7 py-3.5 rounded-full bg-white text-black font-sans font-bold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_35px_rgba(168,85,247,0.65),0_0_15px_rgba(192,132,252,0.4)] hover:scale-[1.02] transition-all flex items-center space-x-2 border border-purple-200"
+                className="px-7 py-3.5 rounded-full bg-white text-black font-sans font-bold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_35px_rgba(168,85,247,0.65),0_0_15px_rgba(192,132,252,0.4)] hover:scale-[1.02] transition-all flex items-center space-x-2 border border-purple-200 cursor-pointer"
               >
                 <Download className="w-4 h-4 text-[#a855f7]" />
                 <span>
@@ -1097,6 +1164,9 @@ export const Landing: React.FC = () => {
             <p className="text-xs text-[#a9a9aa] mb-4">Apple Silicon (M1/M2/M3/M4) & Intel x86_64 Universal .dmg</p>
             <a
               href="/downloads/AgentShield-X-1.0.0-universal.dmg"
+              onClick={(e) => handleDirectDownload("AgentShield-X-1.0.0-universal.dmg", e)}
+              target="_blank"
+              rel="noopener noreferrer"
               download
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
@@ -1129,6 +1199,9 @@ export const Landing: React.FC = () => {
             <p className="text-xs text-[#a9a9aa] mb-4">Windows 10/11 64-bit Installer & Portable .exe</p>
             <a
               href="/downloads/AgentShield-X-Setup-1.0.0.exe"
+              onClick={(e) => handleDirectDownload("AgentShield-X-Setup-1.0.0.exe", e)}
+              target="_blank"
+              rel="noopener noreferrer"
               download
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
@@ -1161,6 +1234,9 @@ export const Landing: React.FC = () => {
             <p className="text-xs text-[#a9a9aa] mb-4">Universal .AppImage, Debian .deb, and Arch tar.gz</p>
             <a
               href="/downloads/AgentShield-X-1.0.0.AppImage"
+              onClick={(e) => handleDirectDownload("AgentShield-X-1.0.0.AppImage", e)}
+              target="_blank"
+              rel="noopener noreferrer"
               download
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
@@ -2017,144 +2093,150 @@ export const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* =========================================================================
-          PRICING MATRIX: TRANSPARENT DEVELOPER TIERS (Style)
+            {/* =========================================================================
+          AGENTSHIELD-X ALL 20 MODULES & ENTERPRISE CAPABILITIES SHOWCASE (#features)
           ========================================================================= */}
-      <section id="pricing" className="relative z-10 py-20 px-4 sm:px-6 max-w-7xl mx-auto">
-        <div className="text-center max-w-3xl mx-auto mb-14">
+      <section id="features" className="relative z-10 py-24 px-4 sm:px-6 max-w-7xl mx-auto border-t border-[#1f1638]">
+        <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full border border-[#a855f7]/40 bg-[#120a24] text-[#a855f7] text-xs font-mono uppercase tracking-wider mb-4">
-            <span>TRANSPARENT PRICING</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-pulse" />
+            <span>20 SHIPPED ENTERPRISE DEFENSE MODULES</span>
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-            Simple, Transparent Pricing
+            Universal AI Agent Security Capabilities
           </h2>
-          <p className="text-[#a9a9aa] text-base leading-relaxed mb-6">
-            Start free with our open-source MIT engine. Upgrade when your team deploys multi-agent swarms.
+          <p className="text-[#a9a9aa] text-base leading-relaxed">
+            Engineered from ground up with sub-0.18ms deterministic AST sentinels, Markov behavioral genomes, immutable attack flight recording, and full-duplex NVIDIA Nemotron voice blueprints.
           </p>
+        </div>
 
-          {/* Monthly / Annual Toggle */}
-          <div className="inline-flex items-center p-1 rounded-full border border-[#2a2d34] bg-[#0d0e11]">
-            <button
-              type="button"
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                billingCycle === "monthly" ? "bg-[#a855f7] text-white font-bold" : "text-[#a9a9aa]"
-              }`}
-            >
-              Monthly Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillingCycle("annual")}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-                billingCycle === "annual" ? "bg-[#a855f7] text-white font-bold" : "text-[#a9a9aa]"
-              }`}
-            >
-              <span>Annual Billing</span>
-              <span className="text-[10px] bg-[#22c55e] text-black px-1.5 py-0.2 rounded-full font-bold">SAVE 20%</span>
-            </button>
+        {/* 20-Module Capabilities Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /scan · /rules</div>
+            <h3 className="text-lg font-bold text-white mb-2">Dual-Rail AST Sentinel</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Deterministic sub-0.18ms AST inspection and 16-stage cognitive zero-keyword normalizer that strips Unicode homoglyphs and hidden encodings.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /stream</div>
+            <h3 className="text-lg font-bold text-white mb-2">Streaming Token Kill Switch</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              64.2-microsecond sliding-window token interceptor that evaluates streaming LLM generation and aborts execution mid-stream on injection.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Workflow className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /chains · /dag</div>
+            <h3 className="text-lg font-bold text-white mb-2">Neuro-Symbolic DAGs</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Temporal logic (LTL) evaluation over multi-turn tool execution graphs to catch multi-step exfiltration chains (Read -&gt; Encode -&gt; Sink).
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /genome</div>
+            <h3 className="text-lg font-bold text-white mb-2">Agent Genome Behavioral DNA</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Vectorized Markov behavioral fingerprinting tracking tool invocation velocity, parameter entropy, and detecting agent impersonation.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /shadow</div>
+            <h3 className="text-lg font-bold text-white mb-2">Shadow Agent Quarantine</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Passive gateway discovery detecting unmanaged shadow AI agent processes across your network, generating fingerprints, and enforcing isolation.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Play className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /forensics</div>
+            <h3 className="text-lg font-bold text-white mb-2">Attack Flight Recorder</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Immutable frame-by-frame attack playback, MITRE ATT&amp;CK for AI Agents mapping, and Merkle tree cryptographic evidence certificates.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Boxes className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /simlab · /wargame</div>
+            <h3 className="text-lg font-bold text-white mb-2">Adversarial War Game Lab</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Stress-test defenses against 20+ automated attack personas spanning 4 threat tiers (Script Kiddie to Sovereign Nation-State APTs).
+            </p>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[#0d0e11]/90 border border-zinc-800 hover:border-[#a855f7]/60 transition-all group">
+            <div className="w-10 h-10 rounded-xl bg-purple-950/50 border border-purple-500/30 flex items-center justify-center text-[#c084fc] mb-4 group-hover:scale-110 transition-transform">
+              <Volume2 className="w-5 h-5" />
+            </div>
+            <div className="text-[10px] font-mono text-[#a855f7] uppercase tracking-wider mb-1">CLI: /voice · WebSocket</div>
+            <h3 className="text-lg font-bold text-white mb-2">NVIDIA Nemotron Voice Defense</h3>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed">
+              Full-duplex conversational voice security with streaming ASR (0.6B), Nemotron 3.5 LLM (30B), Magpie multilingual TTS (12 languages), and Silero VAD.
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* Tier 1: Free Developer */}
-          <div className="p-8 rounded-3xl border border-[#1f1638] bg-[#0d0e11] flex flex-col justify-between">
-            <div>
-              <div className="text-sm font-mono text-[#a855f7] uppercase mb-2">Developer Core</div>
-              <div className="text-4xl font-bold text-white mb-2">$0</div>
-              <p className="text-xs text-[#a9a9aa] mb-6">Free forever. MIT Licensed engine running locally.</p>
-              <ul className="space-y-3 text-xs text-[#a9a9aa] mb-8">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Dual-Rail AST synchronous interceptor</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Local VS Code extension & CLI</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>1 local agent session simultaneously</span>
-                </li>
-              </ul>
+        {/* High-Impact GitHub Star & Community Banner */}
+        <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-[#120a24] via-[#0d0e11] to-[#120a24] border border-[#a855f7]/50 shadow-2xl shadow-[#a855f7]/20 flex flex-col lg:flex-row items-center justify-between gap-8 text-center lg:text-left">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-purple-500/20 text-[#c084fc] text-xs font-mono uppercase tracking-wider mb-3">
+              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+              <span>COMMUNITY DRIVEN · 100% OPEN SOURCE</span>
             </div>
-            <button
-              onClick={() => { setKeyModalTab("free"); setIsKeyModalOpen(true); }}
-              className="w-full py-3 rounded-xl border border-[#1f1638] bg-[#120a24] text-white text-xs font-bold uppercase tracking-wider text-center hover:border-[#a855f7] transition-all"
-            >
-              Claim Free API Key
-            </button>
+            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+              Help Us Secure the Autonomous AI Future. Star on GitHub!
+            </h3>
+            <p className="text-sm text-[#a9a9aa] leading-relaxed">
+              AgentShield-X is an independent open-source cybersecurity project architected by Tharunkumar.S. We never lock security behind a paywall. Star the repository, contribute detection packs, and join our global defender network.
+            </p>
           </div>
 
-          {/* Tier 2: Pro (Featured Tier) */}
-          <div className="p-8 rounded-3xl border-2 border-[#a855f7] bg-[#120a24] flex flex-col justify-between shadow-2xl shadow-[#a855f7]/20 relative">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#a855f7] text-white text-[10px] font-mono font-bold uppercase tracking-wider">
-              MOST POPULAR
-            </div>
-            <div>
-              <div className="text-sm font-mono text-[#c084fc] uppercase mb-2">Pro Builder</div>
-              <div className="text-4xl font-bold text-white mb-2">
-                {billingCycle === "annual" ? "$23" : "$29"}
-                <span className="text-sm font-normal text-[#a9a9aa]">/month</span>
-              </div>
-              <p className="text-xs text-[#a9a9aa] mb-6">For engineers running autonomous background routines.</p>
-              <ul className="space-y-3 text-xs text-[#e8eef7] mb-8">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>ShieldVoice speech-to-intent engine</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Unlimited scheduled background routines</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Active Canary Honeytokens & SIEM webhooks</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Ed25519 Swarm Zero-Trust attestation</span>
-                </li>
-              </ul>
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+            <a
+              href="https://github.com/tharuncoder676/AgentShield-X"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3.5 rounded-xl bg-white text-black font-sans font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:scale-[1.03] transition-all flex items-center space-x-2 group cursor-pointer"
+            >
+              <Github className="w-4 h-4 text-black" />
+              <span>Star on GitHub</span>
+              <span className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-900 text-[10px] font-mono font-extrabold">
+                <Star className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />
+                <span>Star</span>
+              </span>
+            </a>
+
             <button
               onClick={() => { setKeyModalTab("trial"); setIsKeyModalOpen(true); }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs font-bold uppercase tracking-wider text-center shadow-lg shadow-[#a855f7]/30 hover:opacity-95 transition-all"
+              className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white font-sans font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-[#a855f7]/25 hover:opacity-95 transition-all flex items-center space-x-2 cursor-pointer"
             >
-              Start 10-Day Free Trial
-            </button>
-          </div>
-
-          {/* Tier 3: Enterprise Swarm */}
-          <div className="p-8 rounded-3xl border border-[#1f1638] bg-[#0d0e11] flex flex-col justify-between">
-            <div>
-              <div className="text-sm font-mono text-[#a855f7] uppercase mb-2">Enterprise Swarm</div>
-              <div className="text-4xl font-bold text-white mb-2">Custom</div>
-              <p className="text-xs text-[#a9a9aa] mb-6">For teams deploying autonomous agent fleets in air-gapped clusters.</p>
-              <ul className="space-y-3 text-xs text-[#a9a9aa] mb-8">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Air-gapped on-premises VPC deployment</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Custom hardware acceleration & eBPF hooks</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>SOC 2 Type II, HIPAA, and ISO 27001 audit packs</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-[#22c55e]" />
-                  <span>Dedicated security engineer & 99.99% uptime SLA</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => { setKeyModalTab("purchase"); setIsKeyModalOpen(true); }}
-              className="w-full py-3 rounded-xl border border-[#1f1638] bg-[#120a24] text-white text-xs font-bold uppercase tracking-wider text-center hover:border-[#a855f7] transition-all"
-            >
-              Purchase Enterprise Key
+              <Zap className="w-4 h-4" />
+              <span>Get Free API Key</span>
             </button>
           </div>
         </div>
@@ -2239,7 +2321,8 @@ export const Landing: React.FC = () => {
             <a href="#shieldvoice" className="hover:text-white transition-colors">ShieldVoice</a>
             <a href="#shieldwing" className="hover:text-white transition-colors text-[#c084fc]">ShieldWing</a>
             <a href="#benchmark" className="hover:text-white transition-colors">Benchmark</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#downloads" className="hover:text-white transition-colors">Downloads</a>
             <a
               href="https://github.com/tharuncoder676/AgentShield-X"
               target="_blank"

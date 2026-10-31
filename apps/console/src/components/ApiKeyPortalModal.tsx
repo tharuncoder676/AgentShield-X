@@ -26,6 +26,8 @@ export interface ApiKeyPortalModalProps {
   onSuccess?: (key: string, tier: string) => void;
 }
 
+const getApiBase = () => (typeof window !== "undefined" && window.location.port === "3000" ? "" : "http://localhost:8002");
+
 export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
   isOpen,
   onClose,
@@ -81,7 +83,7 @@ export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://localhost:8002/v1/license/trial", {
+      const res = await fetch(`${getApiBase()}/v1/license/trial`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name: name || "Developer" }),
@@ -137,7 +139,7 @@ export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://localhost:8002/v1/license/free", {
+      const res = await fetch(`${getApiBase()}/v1/license/free`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -185,7 +187,7 @@ export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://localhost:8002/v1/license/purchase", {
+      const res = await fetch(`${getApiBase()}/v1/license/purchase`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, plan: selectedPlan, billing_cycle: billingCycle }),
@@ -234,7 +236,7 @@ export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
     setErrorMsg("");
 
     try {
-      const res = await fetch("http://localhost:8002/v1/license/verify", {
+      const res = await fetch(`${getApiBase()}/v1/license/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: cleanKey }),
@@ -333,17 +335,7 @@ export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
                 <span>Community Free</span>
               </button>
 
-              <button
-                onClick={() => { setActiveTab("purchase"); setErrorMsg(""); }}
-                className={`flex-1 py-2 px-3 rounded-lg flex items-center justify-center space-x-1.5 transition-all ${
-                  activeTab === "purchase"
-                    ? "bg-[#a855f7] text-white shadow-md shadow-[#a855f7]/30"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Purchase Pro</span>
-              </button>
+
 
               <button
                 onClick={() => { setActiveTab("signin"); setErrorMsg(""); }}

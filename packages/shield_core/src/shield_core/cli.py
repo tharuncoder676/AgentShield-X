@@ -1783,10 +1783,16 @@ def run_interactive_repl():
     print(f"\033[38;2;63;185;80m[*] Acoustic Clap Wakeup:\033[0m \033[1;32mARMED\033[0m \033[38;2;139;148;158m(Clap hands one more time or say 'clap' to open Wingshield Copilot)\033[0m")
     print(f"\033[38;2;139;148;158m    Type any command ('open youtube', 'open chrome', 'open vs code') or press [Enter] to speak.\033[0m\n")
 
-    # Spoken greeting to Tharunkumar.S on AgentShield-X CLI entry
+    # Production-level spoken greeting on AgentShield-X CLI entry
     try:
-        from shield_core.wingshield import speak, AcousticClapDetector, ComputerAutomation
-        speak("Hello Tharun! Welcome to AgentShield-X. Ready for security analysis.", wait=False)
+        from shield_core.wingshield import speak, AcousticClapDetector, ComputerAutomation, resolve_operator_name
+        op_name = resolve_operator_name()
+        if op_name.lower() in ("tharun", "tharunkumar"):
+            speak("Welcome to AgentShield-X, Tharun. Ready for security analysis.", wait=False)
+        elif op_name.lower() not in ("operator", "security operator", "user"):
+            speak(f"Welcome to AgentShield-X, {op_name}. Ready for security analysis.", wait=False)
+        else:
+            speak("Welcome to AgentShield-X Enterprise Security Runtime. Ready for security analysis.", wait=False)
     except Exception:
         pass
 
@@ -1794,8 +1800,14 @@ def run_interactive_repl():
     def _on_cli_clap():
         print("\n\033[1;36m[!] Acoustic Handclap Detected! Opening Wingshield Copilot...\033[0m")
         try:
-            from shield_core.wingshield import speak, ComputerAutomation
-            speak("Hello Tharun! Wingshield Copilot online. How may I assist you today?", wait=False)
+            from shield_core.wingshield import speak, ComputerAutomation, resolve_operator_name
+            op_name = resolve_operator_name()
+            if op_name.lower() in ("tharun", "tharunkumar"):
+                speak("Welcome to AgentShield-X, Tharun. Wingshield Copilot online.", wait=False)
+            elif op_name.lower() not in ("operator", "security operator", "user"):
+                speak(f"Welcome to AgentShield-X, {op_name}. Wingshield Copilot online.", wait=False)
+            else:
+                speak("Welcome to AgentShield-X Enterprise Security Runtime. Wingshield Copilot online.", wait=False)
             ComputerAutomation.open_wingshield_terminal()
         except Exception:
             pass

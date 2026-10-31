@@ -8,9 +8,9 @@ from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 
 from control_api.routes.auth import router as auth_router
 from control_api.routes.orgs import router as orgs_router
@@ -150,8 +150,48 @@ def root(request: Request):
 
 
 @app.get("/health")
+@app.get("/v1/health")
+@app.head("/health")
+@app.head("/v1/health")
 def health():
     return {"status": "ok", "service": "control-api", "version": "1.0.0"}
+
+@app.get("/downloads/{filename}")
+@app.head("/downloads/{filename}")
+@app.get("/v1/downloads/{filename}")
+@app.head("/v1/downloads/{filename}")
+def download_distribution(filename: str):
+    safe_filename = os.path.basename(filename)
+    candidates = [
+        os.path.join("apps", "console", "public", "downloads", safe_filename),
+        os.path.join("apps", "console", "dist", "downloads", safe_filename),
+        os.path.join("dist", safe_filename),
+    ]
+    for target in candidates:
+        if os.path.exists(target):
+            mime = "application/octet-stream"
+            if safe_filename.endswith(".exe"):
+                mime = "application/vnd.microsoft.portable-executable"
+            elif safe_filename.endswith(".dmg"):
+                mime = "application/x-apple-diskimage"
+            elif safe_filename.endswith(".AppImage"):
+                mime = "application/x-executable"
+            elif safe_filename.endswith(".zip"):
+                mime = "application/zip"
+            elif safe_filename.endswith(".tar.gz"):
+                mime = "application/gzip"
+            return FileResponse(
+                path=target,
+                filename=safe_filename,
+                media_type=mime,
+                headers={
+                    "Content-Disposition": f'attachment; filename="{safe_filename}"',
+                    "Access-Control-Allow-Origin": "*",
+                    "Cache-Control": "public, max-age=3600"
+                }
+            )
+    raise HTTPException(status_code=404, detail=f"Distribution package '{safe_filename}' not found.")
+
 
 import asyncio
 import time

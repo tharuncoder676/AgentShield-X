@@ -1312,11 +1312,42 @@ class WingshieldDoctor:
         return "\n".join(lines)
 
 
+
+def resolve_operator_name(preferred: str = None) -> str:
+    """Dynamically resolves the active operator name with production fallback."""
+    import os
+    if preferred and preferred.strip() and preferred not in ("Tharun", "User"):
+        return preferred.strip()
+    env_name = os.getenv("SHIELDWING_RECIPIENT") or os.getenv("AGENTSHIELD_OPERATOR")
+    if env_name and env_name.strip():
+        return env_name.strip()
+    try:
+        from shield_core.cli import CLIConfig
+        cfg = CLIConfig.load()
+        if cfg.get("user_name"):
+            return cfg["user_name"]
+        if cfg.get("email") and "@" in cfg["email"]:
+            return cfg["email"].split("@")[0].capitalize()
+    except Exception:
+        pass
+    return preferred or "Security Operator"
+
+SHIELDWING_PRODUCTION_SYSTEM_PROMPT = os.getenv("SHIELDWING_SYSTEM_PROMPT") or (
+    "You are ShieldWing, the enterprise AI Security Sentinel and Autonomous Defense Copilot for AgentShield-X, accelerated by NVIDIA NIM.\n"
+    "You operate as an integrated multi-agent security council:\n"
+    "1. SOC Threat Analyst Agent: Inspects live agent tool calls, prompt injection attacks, and high-entropy secrets.\n"
+    "2. Policy Architect Agent: Synthesizes least-privilege Open Policy Agent (OPA) Rego guardrails with strict syntax.\n"
+    "3. AST Blast-Radius Auditor Agent: Analyzes tool definitions, sensitive sinks, and exfiltration vectors.\n"
+    "4. Multi-Turn Forensics Agent: Reconstructs taint propagation and identifies causal root-causes of incidents.\n\n"
+    "Maintain an elite, professional, production-grade security officer demeanor at all times. "
+    "Always greet operators with courtesy, authority, and precision."
+)
+
 class WingshieldCopilotEngine:
     """Main Wingshield Copilot conversational & automation engine."""
 
-    def __init__(self, greeting_recipient: str = "Tharun"):
-        self.recipient = greeting_recipient
+    def __init__(self, greeting_recipient: str = None):
+        self.recipient = resolve_operator_name(greeting_recipient)
         self.is_active = True
         self.last_active_time = time.time()
         self.trace_store = WingshieldTraceStore()
@@ -1348,8 +1379,13 @@ class WingshieldCopilotEngine:
             ComputerAutomation.open_wingshield_terminal()
 
     def greet_user(self) -> None:
-        """Speaks aloud and outputs the user's requested greeting."""
-        spoken_msg = f"Hello {self.recipient}! Wingshield Copilot online. How may I assist you today?"
+        """Speaks aloud and outputs production-level enterprise greeting."""
+        if self.recipient and self.recipient.lower() in ("tharun", "tharunkumar"):
+            spoken_msg = "Welcome to AgentShield-X, Tharun. ShieldWing Copilot is online and ready for security operations."
+        elif self.recipient and self.recipient.lower() not in ("operator", "security operator", "user"):
+            spoken_msg = f"Welcome to AgentShield-X, {self.recipient}. ShieldWing Copilot is online and standing by."
+        else:
+            spoken_msg = "Welcome to AgentShield-X Enterprise Security Runtime. ShieldWing Copilot is online and standing by."
         speak(spoken_msg, wait=False)
 
     def print_hud_banner(self) -> None:
@@ -1891,7 +1927,7 @@ class WingshieldCopilotEngine:
             return ollama_reply, False
 
         # 18. General Conversational Fallback
-        fallback = f"Command '{cmd}' received. Wingshield Copilot is ready to open apps, run security scans, or execute computer tasks for you, Tharun."
+        fallback = f"Command '{cmd}' received. Wingshield Copilot is online and ready to execute desktop automation, security scans, or tool containment."
         speak(fallback, wait=False)
         return fallback, False
 

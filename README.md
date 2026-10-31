@@ -2,6 +2,11 @@
 
 <div align="center">
 
+<p align="center">
+  <img src="apps/console/public/logo.png" width="180" alt="AgentShield-X Official Logo" />
+</p>
+
+[![GitHub Stars](https://img.shields.io/github/stars/tharuncoder676/AgentShield-X?style=for-the-badge&color=F59E0B&logo=github)](https://github.com/tharuncoder676/AgentShield-X/stargazers)
 [![Version: v2.4.0](https://img.shields.io/badge/Release-v2.4.0%20(Purple%20Edition)-8B5CF6?style=for-the-badge&logo=shield)](https://github.com/tharuncoder676/AgentShield-X/releases)
 [![Guardrail Latency](https://img.shields.io/badge/Dual--Rail%20SLA-%3C0.18ms-06B6D4?style=for-the-badge&logo=lightning)](results/summary.json)
 [![AgentShield-Bench](https://img.shields.io/badge/AgentShield--Bench-%231%20Ranked%20(99.4%25)-A855F7?style=for-the-badge&logo=target)](docs/research/AgentShieldX_Research_Paper.md)
