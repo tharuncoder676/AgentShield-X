@@ -462,67 +462,67 @@ export const Landing: React.FC = () => {
           STICKY TOP NAVIGATION (Uncollapsible, Spacious, Premium Layout)
           ========================================================================= */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#08090b]/95 border-b border-[#1f1638]/90">
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Brand Logo Lockup: Strictly Single Line, Never Wraps */}
-          <div className="flex items-center space-x-2.5 whitespace-nowrap shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-2.5 whitespace-nowrap shrink-0">
             <Link to="/" className="flex items-center space-x-2 sm:space-x-2.5 group">
               <img
                 src="/logo-square.png"
                 alt="AgentShield-X Logo"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-[#a855f7]/40 shadow-md shadow-[#a855f7]/20 object-cover group-hover:border-[#a855f7] transition-all"
+                className="w-8 h-8 rounded-xl border border-[#a855f7]/40 shadow-md shadow-[#a855f7]/20 object-cover group-hover:border-[#a855f7] transition-all shrink-0"
               />
-              <span className="font-chakra font-bold text-lg sm:text-2xl tracking-wider text-white whitespace-nowrap">
+              <span className="font-chakra font-bold text-lg sm:text-xl tracking-wider text-white whitespace-nowrap">
                 AgentShield<span className="text-[#a855f7]">-X</span>
               </span>
-              <span className="hidden sm:inline-block text-[10px] font-mono font-bold text-[#a855f7] bg-[#120a24] border border-[#a855f7]/40 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="hidden md:inline-block text-[10px] font-mono font-bold text-[#a855f7] bg-[#120a24] border border-[#a855f7]/40 px-2 py-0.5 rounded-full uppercase tracking-wider">
                 v2.4.0
               </span>
             </Link>
           </div>
 
           {/* Desktop Navigation Links:
-              - Centered with generous breathing room
-              - Shows all 7 links cleanly on xl (1280px+)
+              - Perfectly spaced with graceful responsive breakpoints
               - Core links on lg (1024px+)
-              - Never overlaps or touches action buttons!
+              - Expanded on xl (1280px+)
+              - Full on 2xl (1536px+)
+              - Zero overflow, zero clipping!
           */}
-          <nav className="hidden lg:flex items-center justify-center gap-3.5 xl:gap-5 2xl:gap-7 font-sans text-xs xl:text-sm text-[#a9a9aa] whitespace-nowrap">
+          <nav className="hidden lg:flex items-center justify-center gap-3.5 xl:gap-5 2xl:gap-6 font-sans text-xs xl:text-sm text-[#a9a9aa] whitespace-nowrap shrink min-w-0">
             <a href="#modes" className="hover:text-white transition-colors">Modes</a>
-            <a href="#byoa" className="hidden xl:inline-block hover:text-white transition-colors">Integrations</a>
-            <a href="#shieldwing" className="hover:text-white transition-colors flex items-center space-x-1.5">
+            <a href="#byoa" className="hidden 2xl:inline-block hover:text-white transition-colors">Integrations</a>
+            <a href="#shieldwing" className="hover:text-white transition-colors flex items-center space-x-1">
               <span>ShieldWing</span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 TEAM
               </span>
             </a>
-            <a href="#shieldvoice" className="hover:text-white transition-colors flex items-center space-x-1.5">
+            <a href="#shieldvoice" className="hover:text-white transition-colors flex items-center space-x-1">
               <span>ShieldVoice</span>
               <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-pulse" />
             </a>
-            <a href="#ide-cli" className="hidden xl:inline-block hover:text-white transition-colors">Code & CLI</a>
-            <a href="#benchmark" className="hover:text-white transition-colors">Benchmark</a>
+            <a href="#ide-cli" className="hidden 2xl:inline-block hover:text-white transition-colors">Code & CLI</a>
+            <a href="#benchmark" className="hidden xl:inline-block hover:text-white transition-colors">Benchmark</a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#downloads" className="hover:text-white transition-colors">Downloads</a>
           </nav>
 
-          {/* Action Header Buttons: Compact, Clean, Never Overlaps */}
-          <div className="flex items-center space-x-2 sm:space-x-3 whitespace-nowrap shrink-0">
-            {/* Highly Visible GitHub Star Button */}
+          {/* Action Header Buttons: Compact, Clean, Never Overflows */}
+          <div className="flex items-center space-x-1.5 sm:space-x-2.5 whitespace-nowrap shrink-0">
+            {/* Highly Visible, Sleek GitHub Star Button */}
             <a
               href="https://github.com/tharuncoder676/AgentShield-X"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-1.5 px-3 py-1.5 sm:py-2 rounded-xl border border-zinc-800 bg-[#0d0e11] hover:bg-[#181329] text-white hover:border-[#a855f7]/70 text-xs font-semibold transition-all group shrink-0"
+              className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/40 bg-[#120a24]/90 hover:bg-[#1f0f3d] text-white hover:border-[#a855f7] text-xs font-semibold shadow-sm shadow-purple-900/30 transition-all group shrink-0"
               title="Star AgentShield-X on GitHub"
             >
               <Github className="w-3.5 h-3.5 text-zinc-300 group-hover:text-white" />
               <span className="hidden sm:inline">Star</span>
-              <span className="flex items-center space-x-1 px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/40 text-[10px] font-mono">
-                <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-                <span>GitHub</span>
-              </span>
+              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
             </a>
+
+            {/* Console Sign-in Button */}
             <button
               onClick={() => {
                 const hasKey = localStorage.getItem("agentshield_api_key");
@@ -533,17 +533,18 @@ export const Landing: React.FC = () => {
                   setIsKeyModalOpen(true);
                 }
               }}
-              className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 sm:py-2 rounded-xl border border-zinc-800 bg-[#0d0e11] text-[#a9a9aa] hover:text-white hover:border-[#a855f7]/60 text-xs font-semibold transition-all whitespace-nowrap shrink-0"
+              className="hidden sm:flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-zinc-800 bg-[#0d0e11] text-[#a9a9aa] hover:text-white hover:border-[#a855f7]/60 text-xs font-semibold transition-all whitespace-nowrap shrink-0"
             >
               <Key className="w-3.5 h-3.5 text-[#a855f7]" />
-              <span className="hidden xl:inline">Console / Sign In</span>
-              <span className="xl:hidden">Console</span>
+              <span>Console</span>
             </button>
+
+            {/* High-Impact Get API Key Button */}
             <button
               onClick={() => { setKeyModalTab("trial"); setIsKeyModalOpen(true); }}
-              className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs font-bold shadow-lg shadow-[#a855f7]/25 hover:opacity-95 transition-all flex items-center space-x-1.5 whitespace-nowrap shrink-0"
+              className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs font-bold shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all flex items-center space-x-1.5 whitespace-nowrap shrink-0"
             >
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 fill-current" />
               <span>Get API Key</span>
             </button>
 
@@ -615,6 +616,13 @@ export const Landing: React.FC = () => {
               >
                 Features
               </a>
+              <a
+                href="#downloads"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 px-3 rounded-lg hover:bg-zinc-800/50 hover:text-white transition-colors"
+              >
+                Downloads
+              </a>
 
               <div className="pt-3 border-t border-zinc-800/80 flex flex-col space-y-2">
                 <button
@@ -636,10 +644,11 @@ export const Landing: React.FC = () => {
                   href="https://github.com/tharuncoder676/AgentShield-X"
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full py-2 px-4 rounded-xl border border-zinc-800 bg-[#0d0e11] text-zinc-400 text-xs font-mono flex items-center justify-center space-x-1.5"
+                  className="w-full py-2 px-4 rounded-xl border border-purple-500/40 bg-[#120a24] text-white text-xs font-mono flex items-center justify-center space-x-2"
                 >
-                  <span className="text-[#a855f7]">★</span>
-                  <span>12.4k GitHub Stars</span>
+                  <Github className="w-3.5 h-3.5 text-zinc-300" />
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <span>Star on GitHub</span>
                 </a>
               </div>
             </div>
