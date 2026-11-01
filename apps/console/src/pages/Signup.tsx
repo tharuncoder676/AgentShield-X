@@ -7,7 +7,7 @@ import { OAuthModal } from "../components/OAuthModal";
 
 export const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { signup, loginWithGoogle } = useAuth();
+  const { signup, loginWithGoogle, loginWithApple } = useAuth();
   
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,6 +17,20 @@ export const Signup: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeOAuthProvider, setActiveOAuthProvider] = useState<"google" | "apple" | null>(null);
+
+    const handleAppleSignUp = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await loginWithApple();
+      navigate("/security-challenge");
+    } catch (err: any) {
+      console.warn("Apple signup fallback:", err);
+      setActiveOAuthProvider("apple");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignUp = async () => {
     setError(null);
@@ -164,7 +178,7 @@ export const Signup: React.FC = () => {
           {/* Continue with Apple: Crisp Vector Apple Silhouette */}
           <button
             type="button"
-            onClick={() => setActiveOAuthProvider("apple")}
+            onClick={handleAppleSignUp}
             className="w-full py-3.5 px-4 rounded-full border border-zinc-700/80 bg-[#121318] hover:bg-[#191b22] hover:border-zinc-500 text-white font-medium text-sm flex items-center justify-center space-x-3 transition-all shadow-sm group cursor-pointer"
           >
             <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 170 170">

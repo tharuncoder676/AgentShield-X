@@ -8,7 +8,7 @@ import { supabase, signInWithProvider } from "../lib/supabase";
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,15 +89,25 @@ export const Login: React.FC = () => {
         return;
       } catch (err: any) {
         console.warn("Firebase Google login fallback:", err);
+        setActiveOAuthProvider("google");
+        return;
       } finally {
         setLoading(false);
       }
     }
-    // 1. Try real Supabase OAuth redirect
-    const res = await signInWithProvider(provider);
-    if (!res.success) {
-      // 2. Open interactive authentic Account Chooser modal
-      setActiveOAuthProvider(provider);
+    if (provider === "apple") {
+      setLoading(true);
+      try {
+        await loginWithApple();
+        navigate("/security-challenge");
+        return;
+      } catch (err: any) {
+        console.warn("Firebase Apple login fallback:", err);
+        setActiveOAuthProvider("apple");
+        return;
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
