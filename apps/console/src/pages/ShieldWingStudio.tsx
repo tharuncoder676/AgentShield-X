@@ -1217,7 +1217,13 @@ All deterministic outputs verified against AgentShield-X safety policies with su
           
           {/* TAB 1: CHAT VIEW */}
           {activeTab === "chat" && (
-            <div className="flex-1 flex flex-col overflow-y-auto px-4 pb-48 pt-6">
+            <div
+              className="flex-1 flex flex-col overflow-y-auto px-4 pb-52 pt-6 relative"
+              style={{
+                backgroundImage: "radial-gradient(rgba(168, 85, 247, 0.12) 1px, transparent 1px)",
+                backgroundSize: "24px 24px"
+              }}
+            >
               
               {/* STARTER CARD: Matching the uploaded mockup in rich purple */}
               {messages.length === 0 && (
@@ -2369,183 +2375,174 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                 </div>
               )}
 
-              {/* TOP ATTACHED BANNER: "(X) (GitHub) (Slack) (+300) Let Wingman run apps for you [Connect] [x]" */}
-              {showAppsBanner && (
-                <div className="p-2.5 px-4 rounded-2xl bg-[#130b24]/95 border border-purple-500/35 shadow-2xl shadow-purple-950/60 backdrop-blur-md flex items-center justify-between text-xs animate-fadeIn">
-                  
-                  {/* Left: Icons cluster + text */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center -space-x-1.5">
-                      <div
-                        onClick={() => toggleQuickAppConnect("twitter", "Twitter / X")}
-                        className="relative w-6 h-6 rounded-full bg-black border border-purple-500/40 flex items-center justify-center font-bold text-[10px] text-white hover:scale-110 transition-transform cursor-pointer"
-                        title="Twitter / X Connector - Click to toggle connect"
-                      >
-                        𝕏
-                        {connectedAppsMap["twitter"] && (
-                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-black" />
-                        )}
+              {/* UNIFIED DOCKED CARD: Emergent Wingman Architecture in Cyberpunk Purple */}
+              <div className="rounded-2xl bg-[#100820]/95 border border-purple-500/35 shadow-2xl shadow-purple-950/70 backdrop-blur-xl overflow-hidden transition-all">
+                
+                {/* DOCKED TOP BANNER: (X) (Gmail) (+230) Let Wingman run apps for you [Connect] [x] */}
+                {showAppsBanner && (
+                  <div className="p-2.5 px-4 bg-[#160b30]/95 border-b border-purple-500/25 flex items-center justify-between text-xs animate-fadeIn">
+                    
+                    {/* Left: Overlapping icons + prompt text */}
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex items-center -space-x-1.5">
+                        <div
+                          onClick={() => toggleQuickAppConnect("twitter", "Twitter / X")}
+                          className="relative w-5 h-5 rounded-full bg-black border border-purple-500/40 flex items-center justify-center font-bold text-[9px] text-white hover:scale-110 transition-transform cursor-pointer"
+                          title="Twitter / X Connector"
+                        >
+                          𝕏
+                        </div>
+                        <div
+                          onClick={() => toggleQuickAppConnect("gmail", "Gmail")}
+                          className="relative w-5 h-5 rounded-full bg-white border border-purple-500/40 flex items-center justify-center font-bold text-[9px] text-red-500 hover:scale-110 transition-transform cursor-pointer"
+                          title="Gmail Connector"
+                        >
+                          M
+                        </div>
+                        <div
+                          onClick={() => setActiveTab("tools")}
+                          className="px-1.5 py-0.2 rounded-full bg-purple-950/90 border border-purple-500/60 font-mono text-[9px] font-bold text-purple-200 hover:scale-105 transition-transform cursor-pointer"
+                          title="Click to view all 312 Universal Connectors"
+                        >
+                          +230
+                        </div>
                       </div>
-                      <div
-                        onClick={() => toggleQuickAppConnect("github", "GitHub")}
-                        className="relative w-6 h-6 rounded-full bg-[#1e1335] border border-purple-500/40 flex items-center justify-center font-bold text-[10px] text-white hover:scale-110 transition-transform cursor-pointer"
-                        title="GitHub Connector (tharuncoder676/AgentShield-X) - Click to toggle connect"
-                      >
-                        <FileCode size={12} className="text-purple-300" />
-                        {connectedAppsMap["github"] && (
-                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-black" />
-                        )}
-                      </div>
-                      <div
-                        onClick={() => toggleQuickAppConnect("slack", "Slack")}
-                        className="relative w-6 h-6 rounded-full bg-[#2d1245] border border-purple-500/40 flex items-center justify-center font-bold text-[10px] text-white hover:scale-110 transition-transform cursor-pointer"
-                        title="Slack Connector - Click to toggle connect"
-                      >
-                        <MessageSquare size={12} className="text-emerald-400" />
-                        {connectedAppsMap["slack"] && (
-                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-black" />
-                        )}
-                      </div>
-                      <div
-                        onClick={() => setActiveTab("tools")}
-                        className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/50 font-mono text-[10px] font-bold text-purple-200 hover:scale-105 transition-transform cursor-pointer"
-                        title="Click to view all 312 Universal Connectors"
-                      >
-                        +230
-                      </div>
+
+                      <span className="font-semibold text-white tracking-wide text-xs">
+                        Let {agentName} run apps for you
+                      </span>
                     </div>
 
-                    <span className="font-semibold text-white tracking-wide text-xs">
-                      Let {agentName} run apps for you
-                    </span>
-                  </div>
-
-                  {/* Right: Connect button + Dismiss */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowQuickConnectPopover((prev) => !prev)}
-                      className="px-4 py-1 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-600/40 cursor-pointer flex items-center gap-1"
-                    >
-                      <Zap size={11} className="fill-white" />
-                      <span>Connect</span>
-                    </button>
-                    <button
-                      onClick={() => setShowAppsBanner(false)}
-                      className="p-1 text-slate-400 hover:text-white rounded transition-colors"
-                      title="Dismiss banner"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ATTACHED FILES PREVIEW BAR */}
-              {attachedFiles.length > 0 && (
-                <div className="p-2 px-3 rounded-xl bg-[#120824]/90 border border-purple-500/30 flex items-center gap-2 overflow-x-auto text-xs animate-fadeIn">
-                  <div className="flex items-center gap-1.5 text-purple-300 font-semibold text-[11px] shrink-0">
-                    <Paperclip size={13} />
-                    <span>Attached ({attachedFiles.length}):</span>
-                  </div>
-                  {attachedFiles.map((file, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-purple-400/30 text-purple-200 text-[11px] font-mono shrink-0 shadow-sm"
-                    >
-                      <FileCode size={11} className="text-purple-400" />
-                      <span className="max-w-[130px] truncate">{file.name}</span>
-                      <span className="text-[10px] opacity-60">({Math.max(1, Math.round(file.size / 1024))}KB)</span>
+                    {/* Right: Connect button + Dismiss */}
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => removeAttachedFile(i)}
-                        className="text-purple-400 hover:text-red-400 ml-1 cursor-pointer"
-                        title="Remove attached file"
+                        onClick={() => setShowQuickConnectPopover((prev) => !prev)}
+                        className="px-3.5 py-1 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-600/40 cursor-pointer flex items-center gap-1"
                       >
-                        <X size={11} />
+                        <Zap size={11} className="fill-white" />
+                        <span>Connect</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAppsBanner(false)}
+                        className="p-1 text-purple-300/60 hover:text-white rounded transition-colors cursor-pointer"
+                        title="Dismiss banner"
+                      >
+                        <X size={14} />
                       </button>
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* ATTACHED FILES PREVIEW BAR */}
+                {attachedFiles.length > 0 && (
+                  <div className="p-2 px-3.5 bg-[#120824]/90 border-b border-purple-500/20 flex items-center gap-2 overflow-x-auto text-xs animate-fadeIn">
+                    <div className="flex items-center gap-1.5 text-purple-300 font-semibold text-[11px] shrink-0">
+                      <Paperclip size={13} />
+                      <span>Attached ({attachedFiles.length}):</span>
+                    </div>
+                    {attachedFiles.map((file, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-purple-400/30 text-purple-200 text-[11px] font-mono shrink-0 shadow-sm"
+                      >
+                        <FileCode size={11} className="text-purple-400" />
+                        <span className="max-w-[130px] truncate">{file.name}</span>
+                        <span className="text-[10px] opacity-60">({Math.max(1, Math.round(file.size / 1024))}KB)</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachedFile(i)}
+                          className="text-purple-400 hover:text-red-400 ml-1 cursor-pointer"
+                          title="Remove attached file"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* LOWER INPUT ROW: + % [Reply to Wingman...] [Mic] [Send] */}
+                <div className="p-3 px-4 flex items-center gap-3">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    multiple
+                    className="hidden"
+                  />
+
+                  {/* Left: Plus (+) for Add Files and Percent (%) for Tools */}
+                  <div className="flex items-center gap-1 text-purple-300/80">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-1.5 hover:text-white rounded-lg hover:bg-purple-900/40 text-purple-300 transition-colors cursor-pointer flex items-center"
+                      title="Add files, code, logs, or documents"
+                    >
+                      <Plus size={16} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPercentPopover((prev) => !prev)}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        showPercentPopover
+                          ? "bg-purple-600 text-white shadow-md shadow-purple-600/50"
+                          : "hover:text-purple-200 hover:bg-purple-900/40 text-purple-300"
+                      }`}
+                      title="Insert Tool, Variable, or Prompt Skill"
+                    >
+                      <Percent size={14} />
+                    </button>
+                  </div>
+
+                  {/* Input Text Box */}
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder={attachedFiles.length > 0 ? "Ask a question about the attached file(s)..." : `Reply to ${agentName}...`}
+                    className="flex-1 bg-transparent text-xs text-white placeholder-purple-300/40 focus:outline-none"
+                  />
+
+                  {/* Right: Mic Button + Send Button */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleVoiceToggle}
+                      className={`p-2 rounded-full transition-all cursor-pointer ${
+                        isRecording
+                          ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse"
+                          : "text-purple-300/70 hover:text-white hover:bg-white/5"
+                      }`}
+                      title={isRecording ? "Stop voice listening" : "Click to speak with Wingman"}
+                    >
+                      <Mic size={15} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSendMessage()}
+                      disabled={!inputValue.trim() && attachedFiles.length === 0}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        inputValue.trim() || attachedFiles.length > 0
+                          ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-600/40 hover:opacity-90 cursor-pointer"
+                          : "bg-white/5 text-slate-600 cursor-not-allowed"
+                      }`}
+                    >
+                      <Send size={14} className="ml-0.5" />
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              {/* MAIN INPUT CONTAINER: Purple Cyberpunk Box with Add Files Button */}
-              <div className="p-2.5 px-4 rounded-2xl bg-[#100820]/95 border border-purple-500/35 shadow-2xl shadow-purple-950/60 backdrop-blur-md flex items-center gap-3">
-                
-                {/* Hidden File Upload Input for 'Add Files' */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  multiple
-                  className="hidden"
-                />
-
-                {/* Left: Plus (+) for Add Files and Percent (%) for Tools */}
-                <div className="flex items-center gap-1 text-purple-300/80">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-1.5 hover:text-white rounded-lg hover:bg-purple-900/40 text-purple-300 transition-colors cursor-pointer flex items-center"
-                    title="Add files, code, logs, or documents"
-                  >
-                    <Plus size={16} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPercentPopover((prev) => !prev)}
-                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                      showPercentPopover
-                        ? "bg-purple-600 text-white shadow-md shadow-purple-600/50"
-                        : "hover:text-purple-200 hover:bg-purple-900/40 text-purple-300"
-                    }`}
-                    title="Insert Tool, Variable, or Prompt Skill"
-                  >
-                    <Percent size={14} />
-                  </button>
-                </div>
-
-                {/* Input Text Box */}
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder={attachedFiles.length > 0 ? "Ask a question about the attached file(s)..." : `Reply to ${agentName} (NVIDIA Nemotron active)...`}
-                  className="flex-1 bg-transparent text-xs text-white placeholder-purple-300/40 focus:outline-none"
-                />
-
-                {/* Right: Mic Button + Send Button */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleVoiceToggle}
-                    className={`p-2 rounded-full transition-all cursor-pointer ${
-                      isRecording
-                        ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse"
-                        : "text-purple-300/70 hover:text-white hover:bg-white/5"
-                    }`}
-                    title={isRecording ? "Stop voice listening" : "Click to speak with Wingman"}
-                  >
-                    <Mic size={15} />
-                  </button>
-
-                  <button
-                    onClick={() => handleSendMessage()}
-                    disabled={!inputValue.trim() && attachedFiles.length === 0}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                      inputValue.trim() || attachedFiles.length > 0
-                        ? "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-600/40 hover:opacity-90 cursor-pointer"
-                        : "bg-white/5 text-slate-600 cursor-not-allowed"
-                    }`}
-                  >
-                    <Send size={14} className="ml-0.5" />
-                  </button>
-                </div>
               </div>
 
               {/* QUICK PROMPT PILLS */}

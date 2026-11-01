@@ -89,8 +89,9 @@ apps/console/public/downloads/*.dmg
 apps/console/public/downloads/*.AppImage
 apps/console/public/downloads/*.zip
 apps/console/public/downloads/*.tar.gz
-apps/console/public/*.mp4
 *.mp4
+!apps/console/public/landing_page_video.mp4
+!apps/console/public/landing_page_video_vertical.mp4
 *.spec
 gemini-code-*
 *.ppt
