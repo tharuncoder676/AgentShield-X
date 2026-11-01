@@ -615,7 +615,7 @@ export const Demo: React.FC = () => {
                       Decision ID: {liveResult.decision_id || "live_dec_001"}
                     </span>
                     <a
-                      href="http://127.0.0.1:5173/incidents"
+                      href={((import.meta as any).env?.VITE_CONSOLE_URL || "") + "/incidents"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 bg-panel border border-ok text-ok hover:bg-ok hover:text-bg font-chakra font-bold text-xs uppercase rounded-sm flex items-center gap-1.5 transition-colors"

@@ -22,6 +22,10 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      "/api": {
+        target: "http://127.0.0.1:8002",
+        changeOrigin: true,
+      },
       "/downloads": {
         target: "http://127.0.0.1:8002",
         changeOrigin: true,

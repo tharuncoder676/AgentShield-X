@@ -122,6 +122,10 @@ export const Terminal: React.FC = () => {
           { id: `sys-${Date.now()}`, type: "system", text: `[*] Interfacing with Universal Connector Suite for '${target.toUpperCase()}'...`, timestamp: new Date().toLocaleTimeString() },
         ]);
 
+        const gwEndpoint = typeof window !== "undefined"
+          ? (window.location.origin.includes("localhost:3000") ? "http://localhost:8002/v1" : `${window.location.origin}/v1`)
+          : "http://localhost:8002/v1";
+
         try {
           const res = await fetch("/v1/mcp/connectors/setup", {
             method: "POST",
@@ -142,8 +146,8 @@ Message:           ${data.message || JSON.stringify(data.results || data, null, 
 
 Active Native Security Protocol:
   - Transport:     stdio (Model Context Protocol JSON-RPC 2.0)
-  - Remote SSE:    http://localhost:8002/v1/mcp/sse
-  - Gateway Proxy: http://localhost:8002/v1 (OpenAI & Anthropic SDKs)
+  - Remote SSE:    ${gwEndpoint}/mcp/sse
+  - Gateway Proxy: ${gwEndpoint} (OpenAI & Anthropic SDKs)
   - Latency:       <3.5ms Deterministic AST Enforcement
 
 Mounted AgentShield-X Security Tools:
@@ -173,7 +177,7 @@ Configure your client JSON config:
     }
   }
 }
-Universal SDK Gateway: http://localhost:8002/v1`,
+Universal SDK Gateway: ${gwEndpoint}`,
               timestamp: new Date().toLocaleTimeString(),
             },
           ]);

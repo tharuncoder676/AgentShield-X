@@ -61,7 +61,7 @@ export const SiteHeader: React.FC = () => {
             <ExternalLink size={12} />
           </a>
           <a
-            href="http://localhost:5173"
+            href={(import.meta as any).env?.VITE_CONSOLE_URL || "/"}
             className="px-3.5 py-1.5 bg-ok text-bg font-chakra font-bold text-xs uppercase tracking-wider rounded-sm hover:opacity-90 flex items-center gap-1.5 shadow-sm transition-opacity"
           >
             <span>Launch Console</span>

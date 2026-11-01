@@ -121,7 +121,8 @@ export class AgentShieldClient {
   private apiKey: string | null = null;
 
   constructor(config: ClientConfig = {}) {
-    this.baseUrl = (config.baseUrl || "http://localhost:8000").replace(/\/+$/, "");
+    const defaultBase = typeof window !== "undefined" ? window.location.origin : "http://localhost:8000";
+    this.baseUrl = (config.baseUrl !== undefined ? config.baseUrl : defaultBase).replace(/\/+$/, "");
     this.token = config.token || null;
     this.apiKey = config.apiKey || null;
   }

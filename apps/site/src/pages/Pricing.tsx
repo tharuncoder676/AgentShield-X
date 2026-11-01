@@ -63,7 +63,7 @@ export const Pricing: React.FC = () => {
           </div>
 
           <a
-            href="http://localhost:5173/signup"
+            href={((import.meta as any).env?.VITE_CONSOLE_URL || "") + "/signup"}
             className="w-full py-2.5 bg-panel border border-line hover:border-ok/50 text-fg font-chakra font-bold text-xs uppercase tracking-wider rounded-sm text-center block transition-colors"
           >
             Get Started Free
@@ -120,7 +120,7 @@ export const Pricing: React.FC = () => {
           </div>
 
           <a
-            href="http://localhost:5173/signup"
+            href={((import.meta as any).env?.VITE_CONSOLE_URL || "") + "/signup"}
             className="w-full py-2.5 bg-ok text-bg font-chakra font-bold text-xs uppercase tracking-wider rounded-sm text-center block hover:opacity-90 transition-opacity"
           >
             Start 14-Day Free Trial

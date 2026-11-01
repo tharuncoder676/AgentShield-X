@@ -32,11 +32,7 @@ export interface AuthContextType {
 }
 
 const client = new AgentShieldClient({
-  baseUrl:
-    (import.meta as any).env?.VITE_API_URL ||
-    (window.location.origin.includes("localhost:3000")
-      ? "http://localhost:8002"
-      : ""),
+  baseUrl: (import.meta as any).env?.VITE_API_URL || "",
 });
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

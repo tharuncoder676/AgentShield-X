@@ -49,7 +49,7 @@ export const SiteFooter: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <a href="http://localhost:5173" className="hover:text-ok transition-colors">
+                <a href={(import.meta as any).env?.VITE_CONSOLE_URL || "/"} className="hover:text-ok transition-colors">
                   Operations Console
                 </a>
               </li>

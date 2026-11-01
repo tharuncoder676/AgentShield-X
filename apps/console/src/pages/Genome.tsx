@@ -59,7 +59,7 @@ export const Genome: React.FC = () => {
   // Fetch registered Genomes
   const fetchGenomes = async () => {
     try {
-      const res = await fetch("http://localhost:8002/api/genome/list");
+      const res = await fetch("/api/genome/list");
       if (res.ok) {
         const data = await res.json();
         setGenomes(data.genomes || []);
@@ -161,7 +161,7 @@ export const Genome: React.FC = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:8002/api/genome/inspect", {
+      const res = await fetch("/api/genome/inspect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

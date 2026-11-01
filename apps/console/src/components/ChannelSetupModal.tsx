@@ -340,7 +340,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
                 Connect your WhatsApp Business number for instant 2-way conversation and 1-click confirmation buttons.
               </p>
               <div className="p-2 rounded bg-[#141518] text-[10px] font-mono text-[#a855f7]">
-                Meta Webhook URL: <code className="text-white">http://127.0.0.1:8002/v1/shieldwing/webhooks/whatsapp</code>
+                Meta Webhook URL: <code className="text-white">{(typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:8002") + "/v1/shieldwing/webhooks/whatsapp"}</code>
               </div>
             </div>
 

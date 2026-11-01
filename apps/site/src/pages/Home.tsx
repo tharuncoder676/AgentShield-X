@@ -70,7 +70,7 @@ export const Home: React.FC = () => {
             <Layers size={15} className="text-ok" /> Explore Architecture
           </Link>
           <a
-            href="http://localhost:5173"
+            href={(import.meta as any).env?.VITE_CONSOLE_URL || "/"}
             className="px-6 py-3 bg-panel border border-line hover:border-line/80 text-mut hover:text-fg font-chakra font-bold text-sm uppercase tracking-wider rounded-sm transition-colors flex items-center gap-2"
           >
             <span>Launch Console</span>

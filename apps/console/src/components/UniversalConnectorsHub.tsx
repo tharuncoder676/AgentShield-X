@@ -418,49 +418,63 @@ export const UniversalConnectorsHub: React.FC = () => {
               Route any agent SDK through AgentShield-X by changing just the <code className="text-purple-300">base_url</code>.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => copyToClipboard("http://localhost:8002/v1", "gw-url")}
-              className="px-3.5 py-2 rounded-lg border border-purple-500/30 bg-[#160d2e] text-xs font-mono text-purple-200 hover:text-white hover:border-purple-400 flex items-center gap-2 transition-all"
-            >
-              {copiedId === "gw-url" ? <Check size={12} className="text-purple-300" /> : <Copy size={12} />}
-              <span>Copy: http://localhost:8002/v1</span>
-            </button>
-            <button
-              onClick={handleTestProxy}
-              disabled={testingProxy}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 hover:from-purple-500 hover:to-fuchsia-600 text-white font-chakra text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.35)] border border-purple-400/30 transition-all"
-            >
-              {testingProxy ? "Testing Gateway..." : "Live Gateway Probe"}
-            </button>
-          </div>
+          {(() => {
+            const currentGwUrl = typeof window !== "undefined"
+              ? (window.location.origin.includes("localhost:3000") ? "http://localhost:8002/v1" : `${window.location.origin}/v1`)
+              : "http://localhost:8002/v1";
+            return (
+              <>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => copyToClipboard(currentGwUrl, "gw-url")}
+                    className="px-3.5 py-2 rounded-lg border border-purple-500/30 bg-[#160d2e] text-xs font-mono text-purple-200 hover:text-white hover:border-purple-400 flex items-center gap-2 transition-all"
+                  >
+                    {copiedId === "gw-url" ? <Check size={12} className="text-purple-300" /> : <Copy size={12} />}
+                    <span>Copy: {currentGwUrl}</span>
+                  </button>
+                  <button
+                    onClick={handleTestProxy}
+                    disabled={testingProxy}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 via-purple-500 to-violet-600 hover:from-purple-500 hover:to-fuchsia-600 text-white font-chakra text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.35)] border border-purple-400/30 transition-all"
+                  >
+                    {testingProxy ? "Testing Gateway..." : "Live Gateway Probe"}
+                  </button>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Code Snippets for LangChain, OpenAI, and Anthropic */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <span className="text-xs font-mono text-purple-300/80 uppercase font-semibold">Python (OpenAI / LangChain / CrewAI):</span>
-            <div className="bg-[#090414] p-3.5 rounded-xl border border-purple-500/30 font-mono text-xs text-purple-200 overflow-x-auto relative group">
-              <pre>{`from openai import OpenAI
+        {(() => {
+          const currentGwUrl = typeof window !== "undefined"
+            ? (window.location.origin.includes("localhost:3000") ? "http://localhost:8002/v1" : `${window.location.origin}/v1`)
+            : "http://localhost:8002/v1";
+          return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <span className="text-xs font-mono text-purple-300/80 uppercase font-semibold">Python (OpenAI / LangChain / CrewAI):</span>
+                <div className="bg-[#090414] p-3.5 rounded-xl border border-purple-500/30 font-mono text-xs text-purple-200 overflow-x-auto relative group">
+                  <pre>{`from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://localhost:8002/v1",  # AgentShield Gateway
+    base_url="${currentGwUrl}",  # AgentShield Gateway
     api_key="your-api-key"
 )
 response = client.chat.completions.create(
     model="gpt-4o",
     messages=[{"role": "user", "content": "Query DB"}]
 )`}</pre>
-            </div>
-          </div>
+                </div>
+              </div>
 
-          <div className="space-y-1.5">
-            <span className="text-xs font-mono text-purple-300/80 uppercase font-semibold">TypeScript (@anthropic-ai/sdk / Claude):</span>
-            <div className="bg-[#090414] p-3.5 rounded-xl border border-purple-500/30 font-mono text-xs text-purple-200 overflow-x-auto relative group">
-              <pre>{`import Anthropic from "@anthropic-ai/sdk";
+              <div className="space-y-1.5">
+                <span className="text-xs font-mono text-purple-300/80 uppercase font-semibold">TypeScript (@anthropic-ai/sdk / Claude):</span>
+                <div className="bg-[#090414] p-3.5 rounded-xl border border-purple-500/30 font-mono text-xs text-purple-200 overflow-x-auto relative group">
+                  <pre>{`import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({
-  baseURL: "http://localhost:8002/v1", // AgentShield Gateway
+  baseURL: "${currentGwUrl}", // AgentShield Gateway
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
@@ -468,9 +482,11 @@ const message = await client.messages.create({
   model: "claude-3-5-sonnet-20241022",
   messages: [{ role: "user", content: "Analyze tools" }],
 });`}</pre>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {proxyTestResult && (
           <div className="p-3.5 rounded-xl bg-[#090414] border border-purple-500/40 text-xs font-mono space-y-1.5">
