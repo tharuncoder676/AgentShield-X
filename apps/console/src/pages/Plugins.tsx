@@ -44,7 +44,7 @@ export const Plugins: React.FC = () => {
 
   const fetchPlugins = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/plugins');
+      const res = await fetch('/v1/plugins');
       if (res.ok) {
         const data = await res.json();
         setPlugins(data.plugins || []);
@@ -106,7 +106,7 @@ export const Plugins: React.FC = () => {
   const handleExecute = async (cmdName: string) => {
     setExecutingCmd(cmdName);
     try {
-      const res = await fetch(`http://127.0.0.1:8002/v1/plugins/execute/${cmdName}`, {
+      const res = await fetch(`/v1/plugins/execute/${cmdName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ args: ['prod-cluster'] }),
@@ -149,7 +149,7 @@ export const Plugins: React.FC = () => {
 
   const handleRemove = async (pluginId: string) => {
     try {
-      await fetch(`http://127.0.0.1:8002/v1/plugins/${pluginId}`, { method: 'DELETE' });
+      await fetch(`/v1/plugins/${pluginId}`, { method: 'DELETE' });
     } catch {}
     setPlugins(prev => prev.filter(p => p.plugin_id !== pluginId));
   };
@@ -170,7 +170,7 @@ export const Plugins: React.FC = () => {
     };
 
     try {
-      await fetch('http://127.0.0.1:8002/v1/plugins/install', {
+      await fetch('/v1/plugins/install', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(manifest),

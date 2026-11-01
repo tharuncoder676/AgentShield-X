@@ -26,7 +26,7 @@ export interface ApiKeyPortalModalProps {
   onSuccess?: (key: string, tier: string) => void;
 }
 
-const getApiBase = () => (typeof window !== "undefined" && window.location.port === "3000" ? "" : "http://localhost:8002");
+const getApiBase = () => (typeof window !== "undefined" && "");
 
 export const ApiKeyPortalModal: React.FC<ApiKeyPortalModalProps> = ({
   isOpen,

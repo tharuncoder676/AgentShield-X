@@ -47,7 +47,7 @@ export function Connectors() {
   const fetchConnectors = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/connectors/supported");
+      const res = await fetch("/v1/connectors/supported");
       if (res.ok) {
         const json = await res.json();
         setConnectors(json);
@@ -76,7 +76,7 @@ export function Connectors() {
         parsedArgs = testToolArgs ? JSON.parse(testToolArgs) : {};
       } catch (err) {}
 
-      const res = await fetch("http://127.0.0.1:8002/v1/connectors/intercept", {
+      const res = await fetch("/v1/connectors/intercept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

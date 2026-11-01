@@ -81,7 +81,7 @@ export function Canary() {
   const fetchCanaryStatus = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/canary/status");
+      const res = await fetch("/v1/canary/status");
       if (res.ok) {
         const json = await res.json();
         setDeployment(json.deployment);
@@ -97,7 +97,7 @@ export function Canary() {
 
   const handleApplySplit = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/canary/split", {
+      const res = await fetch("/v1/canary/split", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ percentage: splitPct }),
@@ -113,7 +113,7 @@ export function Canary() {
 
   const handlePromote = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/canary/promote", { method: "POST" });
+      const res = await fetch("/v1/canary/promote", { method: "POST" });
       if (res.ok) {
         setStatusMessage("Canary policy successfully promoted to 100% production baseline!");
         await fetchCanaryStatus();
@@ -125,7 +125,7 @@ export function Canary() {
 
   const handleRollback = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/canary/rollback", {
+      const res = await fetch("/v1/canary/rollback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: "Operator triggered manual emergency rollback" }),
@@ -147,7 +147,7 @@ export function Canary() {
         parsed = JSON.parse(testArgs);
       } catch (err) {}
 
-      const res = await fetch("http://127.0.0.1:8002/v1/canary/evaluate", {
+      const res = await fetch("/v1/canary/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -58,7 +58,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
     if (!telegramToken.trim()) return;
     setTelegramTestStatus({ loading: true });
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/shieldwing/channels/telegram/test", {
+      const res = await fetch("/v1/shieldwing/channels/telegram/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bot_token: telegramToken.trim() })
@@ -92,7 +92,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
     if (!telegramChatId.trim()) return;
     setTelegramSendStatus("Sending test alert with approval buttons to your Telegram...");
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/shieldwing/channels/telegram/send", {
+      const res = await fetch("/v1/shieldwing/channels/telegram/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -119,7 +119,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
     setWaLoading(true);
     setWaSendStatus(null);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/shieldwing/channels/whatsapp/send", {
+      const res = await fetch("/v1/shieldwing/channels/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -147,7 +147,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
   const handleFetchGmailUnread = async () => {
     setGmailLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/shieldwing/channels/gmail/unread");
+      const res = await fetch("/v1/shieldwing/channels/gmail/unread");
       const data = await res.json();
       setGmailLoading(false);
       setGmailUnreadResult(data);
@@ -161,7 +161,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
   const handleCreateGmailDraft = async () => {
     setGoogleStatus("Creating email draft with 15-minute safety buffer...");
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/shieldwing/channels/gmail/draft", {
+      const res = await fetch("/v1/shieldwing/channels/gmail/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

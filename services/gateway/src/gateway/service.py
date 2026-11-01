@@ -4,6 +4,7 @@ Validates inbound event schemas, checks rate limits, routes to Decision Service,
 and asynchronously publishes events to the event bus.
 """
 
+import os
 from typing import Optional
 import httpx
 from shield_core.models import Decision, ToolCallEvent, ShieldAction, Reason
@@ -18,11 +19,12 @@ class GatewayService:
 
     def __init__(
         self,
-        decision_service_url: str = "http://localhost:8001",
+        decision_service_url: Optional[str] = None,
         event_bus: Optional[EventBus] = None,
         timeout_seconds: float = 0.5,
     ) -> None:
-        self.decision_service_url = decision_service_url.rstrip("/")
+        url = decision_service_url or os.getenv("DECISION_SERVICE_URL", "http://localhost:8001")
+        self.decision_service_url = url.rstrip("/")
         self.event_bus = event_bus or MemoryEventBus()
         self.timeout_seconds = timeout_seconds
 

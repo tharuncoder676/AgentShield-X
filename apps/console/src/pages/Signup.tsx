@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { signUpWithFirebase } from "../lib/firebase";
 import { OAuthModal } from "../components/OAuthModal";
 
 export const Signup: React.FC = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,23 +18,44 @@ export const Signup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [activeOAuthProvider, setActiveOAuthProvider] = useState<"google" | "apple" | null>(null);
 
+  const handleGoogleSignUp = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+      navigate("/security-challenge");
+    } catch (err: any) {
+      console.warn("Google signup fallback:", err);
+      setActiveOAuthProvider("google");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
+      try {
+        await signUpWithFirebase(email, password, fullName);
+      } catch (fbErr: any) {
+        console.warn("Firebase email signup error:", fbErr?.message);
+      }
+
       await signup({
         full_name: fullName,
         email,
         password,
         organization_name: orgName.trim() || undefined,
       });
-      navigate("/overview");
+      navigate("/security-challenge");
     } catch (err: any) {
       if (email.includes("@")) {
         localStorage.setItem("agentshield_token", "dev_operator_session_token");
-        navigate("/overview");
+        localStorage.setItem("agentshield_user_email", email.toLowerCase());
+        navigate("/security-challenge");
       } else {
         setError(err.message || "Sign-up failed. Please review your details.");
       }
@@ -46,7 +68,7 @@ export const Signup: React.FC = () => {
     setActiveOAuthProvider(null);
     setLoading(true);
     try {
-      const res = await fetch(`${window.location.port === "3000" ? "" : "http://localhost:8002"}/v1/auth/oauth`, {
+      const res = await fetch(`${""}/v1/auth/oauth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,7 +88,7 @@ export const Signup: React.FC = () => {
       localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
     } finally {
       setLoading(false);
-      navigate("/overview");
+      navigate("/security-challenge");
     }
   };
 
@@ -115,7 +137,7 @@ export const Signup: React.FC = () => {
           {/* Continue with Google */}
           <button
             type="button"
-            onClick={() => setActiveOAuthProvider("google")}
+            onClick={handleGoogleSignUp}
             className="w-full py-3.5 px-4 rounded-full border border-zinc-700/80 bg-[#121318] hover:bg-[#191b22] hover:border-zinc-500 text-white font-medium text-sm flex items-center justify-center space-x-3 transition-all shadow-sm group cursor-pointer"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">

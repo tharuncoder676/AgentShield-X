@@ -62,7 +62,7 @@ export function Compliance() {
   const fetchCompliance = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/compliance/frameworks");
+      const res = await fetch("/v1/compliance/frameworks");
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -76,7 +76,7 @@ export function Compliance() {
 
   const handleDownloadMemorandum = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/compliance/memorandum");
+      const res = await fetch("/v1/compliance/memorandum");
       if (res.ok) {
         const text = await res.text();
         const blob = new Blob([text], { type: "text/markdown" });
@@ -94,7 +94,7 @@ export function Compliance() {
   const handleRecertify = async () => {
     setRecertifying(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/compliance/certify", { method: "POST" });
+      const res = await fetch("/v1/compliance/certify", { method: "POST" });
       if (res.ok) {
         await fetchCompliance();
       }

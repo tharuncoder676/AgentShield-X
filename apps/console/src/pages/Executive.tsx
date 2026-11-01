@@ -75,7 +75,7 @@ export function Executive() {
   const fetchSummary = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/executive/summary");
+      const res = await fetch("/v1/executive/summary");
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -89,7 +89,7 @@ export function Executive() {
 
   const fetchSiemExport = async (format: "splunk" | "datadog" | "cef") => {
     try {
-      const res = await fetch(`http://127.0.0.1:8002/v1/executive/siem/export?format=${format}`);
+      const res = await fetch(`/v1/executive/siem/export?format=${format}`);
       if (res.ok) {
         if (format === "cef") {
           const text = await res.text();
@@ -113,7 +113,7 @@ export function Executive() {
     setStreamTesting(true);
     setStreamStatus(null);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/executive/siem/test-stream", {
+      const res = await fetch("/v1/executive/siem/test-stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ siem_type: siemFormat }),

@@ -33,6 +33,12 @@ ALLOWED_ORIGINS_RAW = os.getenv(
 )
 ALLOWED_ORIGINS = [orig.strip() for orig in ALLOWED_ORIGINS_RAW.split(",") if orig.strip()]
 
+# Auto-detect Vercel deployment environments
+if os.getenv("VERCEL_URL"):
+    ALLOWED_ORIGINS.append(f"https://{os.getenv('VERCEL_URL')}")
+if os.getenv("VERCEL_PROJECT_PRODUCTION_URL"):
+    ALLOWED_ORIGINS.append(f"https://{os.getenv('VERCEL_PROJECT_PRODUCTION_URL')}")
+
 RATE_LIMIT_STANDARD_PER_MIN = int(os.getenv("RATE_LIMIT_STANDARD_PER_MIN", "120"))
 RATE_LIMIT_AUTH_PER_MIN = int(os.getenv("RATE_LIMIT_AUTH_PER_MIN", "15"))
 MONTHLY_SPEND_CAP_USD = float(os.getenv("SPEND_CAP_MONTHLY", "250.00"))
@@ -59,7 +65,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* "
+            "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https://*.vercel.app wss://*.vercel.app "
             "https://*.googleapis.com https://*.firebaseio.com; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "

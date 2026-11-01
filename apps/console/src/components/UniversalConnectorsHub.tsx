@@ -49,7 +49,7 @@ export const UniversalConnectorsHub: React.FC = () => {
   const fetchStatuses = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8002/v1/mcp/connectors/status");
+      const res = await fetch("/v1/mcp/connectors/status");
       if (res.ok) {
         const data = await res.json();
         setConnectors(data);
@@ -76,7 +76,7 @@ export const UniversalConnectorsHub: React.FC = () => {
     setConfiguring(target);
     setConfigResult(null);
     try {
-      const res = await fetch("http://localhost:8002/v1/mcp/connectors/setup", {
+      const res = await fetch("/v1/mcp/connectors/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target }),
@@ -110,7 +110,7 @@ export const UniversalConnectorsHub: React.FC = () => {
     setProxyTestResult(null);
     const start = performance.now();
     try {
-      const res = await fetch("http://localhost:8002/v1/chat/completions", {
+      const res = await fetch("/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -133,7 +133,7 @@ export const UniversalConnectorsHub: React.FC = () => {
     setTestingWebhook(true);
     setWebhookResult(null);
     try {
-      const res = await fetch("http://localhost:8002/v1/webhooks/test", {
+      const res = await fetch("/v1/webhooks/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +154,7 @@ export const UniversalConnectorsHub: React.FC = () => {
   const handleSaveWebhook = async () => {
     if (!webhookUrl) return;
     try {
-      await fetch("http://localhost:8002/v1/webhooks/", {
+      await fetch("/v1/webhooks/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

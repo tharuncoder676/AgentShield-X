@@ -42,7 +42,9 @@ export const StreamProvider: React.FC<{ children: React.ReactNode }> = ({
     const host = window.location.origin.includes("localhost:3000")
       ? "localhost:8002"
       : window.location.host;
-    const wsUrl = `${protocol}//${host}/v1/ws/decisions`;
+    const wsUrl =
+      (import.meta as any).env?.VITE_WS_URL ||
+      `${protocol}//${host}/v1/ws/decisions`;
 
     const client = new DecisionStreamClient({
       wsUrl,

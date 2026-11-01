@@ -56,8 +56,8 @@ export const ShadowAgents: React.FC = () => {
   const fetchShadowData = async () => {
     try {
       const [agentsRes, statsRes] = await Promise.all([
-        fetch('http://127.0.0.1:8002/v1/shadow-agents'),
-        fetch('http://127.0.0.1:8002/v1/shadow-agents/stats'),
+        fetch('/v1/shadow-agents'),
+        fetch('/v1/shadow-agents/stats'),
       ]);
 
       if (agentsRes.ok && statsRes.ok) {
@@ -156,7 +156,7 @@ export const ShadowAgents: React.FC = () => {
 
   const handleQuarantine = async (shadowId: string) => {
     try {
-      await fetch(`http://127.0.0.1:8002/v1/shadow-agents/${shadowId}/quarantine`, { method: 'POST' });
+      await fetch(`/v1/shadow-agents/${shadowId}/quarantine`, { method: 'POST' });
     } catch {
       // offline fallback
     }
@@ -167,7 +167,7 @@ export const ShadowAgents: React.FC = () => {
   const handleOnboard = async () => {
     if (!selectedAgent || !onboardName) return;
     try {
-      await fetch(`http://127.0.0.1:8002/v1/shadow-agents/${selectedAgent.shadow_id}/onboard`, {
+      await fetch(`/v1/shadow-agents/${selectedAgent.shadow_id}/onboard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assigned_name: onboardName, policy_id: 'default-enterprise-guard' }),
@@ -184,7 +184,7 @@ export const ShadowAgents: React.FC = () => {
   const handleSimulateRogue = async () => {
     setSimulating(true);
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/shadow-agents/telemetry/ingest', {
+      const res = await fetch('/v1/shadow-agents/telemetry/ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

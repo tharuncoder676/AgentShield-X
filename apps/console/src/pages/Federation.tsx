@@ -83,9 +83,9 @@ export const Federation: React.FC = () => {
     setLoading(true);
     try {
       const [meshRes, sigsRes, heatRes] = await Promise.all([
-        fetch("http://127.0.0.1:8002/v1/federation/mesh"),
-        fetch("http://127.0.0.1:8002/v1/federation/signatures"),
-        fetch("http://127.0.0.1:8002/v1/federation/heatmap"),
+        fetch("/v1/federation/mesh"),
+        fetch("/v1/federation/signatures"),
+        fetch("/v1/federation/heatmap"),
       ]);
 
       if (meshRes.ok) {
@@ -117,7 +117,7 @@ export const Federation: React.FC = () => {
     setProbing(true);
     setProbeResult(null);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/federation/query", {
+      const res = await fetch("/v1/federation/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: text }),

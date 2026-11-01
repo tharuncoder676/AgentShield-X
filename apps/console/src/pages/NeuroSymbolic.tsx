@@ -64,7 +64,7 @@ export function NeuroSymbolic() {
   const fetchSignatures = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/neuro-symbolic/signatures");
+      const res = await fetch("/v1/neuro-symbolic/signatures");
       if (res.ok) {
         const json = await res.json();
         setSignatures(json);
@@ -79,7 +79,7 @@ export function NeuroSymbolic() {
   const handleAppendStep = async (tool_name: string, customArgs: Record<string, any> = {}) => {
     setEvaluating(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/neuro-symbolic/evaluate", {
+      const res = await fetch("/v1/neuro-symbolic/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -102,7 +102,7 @@ export function NeuroSymbolic() {
 
   const handleResetSession = async () => {
     try {
-      await fetch("http://127.0.0.1:8002/v1/neuro-symbolic/reset", {
+      await fetch("/v1/neuro-symbolic/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: sessionId }),

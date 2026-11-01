@@ -81,7 +81,7 @@ export const WingshieldVoiceAssistant: React.FC = () => {
 
       // Signal interruption to backend
       try {
-        fetch("http://localhost:8002/v1/shieldvoice/barge_in", { method: "POST" }).catch(() => {});
+        fetch("/v1/shieldvoice/barge_in", { method: "POST" }).catch(() => {});
       } catch (_) {}
     }
   };
@@ -223,7 +223,7 @@ export const WingshieldVoiceAssistant: React.FC = () => {
     setGuardrailVerdict({ verdict: "SCANNING", latency_ms: 0.1 });
 
     try {
-      const response = await fetch("http://localhost:8002/v1/shieldvoice/chat", {
+      const response = await fetch("/v1/shieldvoice/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: cmd, language: selectedLanguage }),
@@ -263,7 +263,7 @@ export const WingshieldVoiceAssistant: React.FC = () => {
           if (data.tool_call.desktop_target) {
             setDesktopStatus(`OS: Opening ${data.tool_call.desktop_target}...`);
             setTimeout(() => setDesktopStatus(null), 4000);
-            fetch("http://localhost:8002/v1/desktop/open", {
+            fetch("/v1/desktop/open", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ target: data.tool_call.desktop_target }),
@@ -331,7 +331,7 @@ export const WingshieldVoiceAssistant: React.FC = () => {
     setDesktopStatus(`Opening ${target}...`);
     setTimeout(() => setDesktopStatus(null), 4000);
     try {
-      fetch("http://localhost:8002/v1/desktop/open", {
+      fetch("/v1/desktop/open", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target }),

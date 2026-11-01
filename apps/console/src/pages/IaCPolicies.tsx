@@ -101,7 +101,7 @@ export const IaCPolicies: React.FC = () => {
     setLinting(true);
     setDeploySuccess(null);
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/iac/lint', {
+      const res = await fetch('/v1/iac/lint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ yaml_content: yamlContent }),
@@ -135,7 +135,7 @@ export const IaCPolicies: React.FC = () => {
   const handleApply = async () => {
     setApplying(true);
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/iac/apply', {
+      const res = await fetch('/v1/iac/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ yaml_content: yamlContent }),

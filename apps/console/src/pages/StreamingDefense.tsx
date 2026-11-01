@@ -44,7 +44,7 @@ export const StreamingDefense: React.FC = () => {
     setAborted(false);
 
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/streaming/simulate', {
+      const res = await fetch('/v1/streaming/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ attack_type: type }),

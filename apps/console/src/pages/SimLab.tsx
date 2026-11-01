@@ -69,7 +69,7 @@ export const SimLab: React.FC = () => {
 
   // Fetch personas on mount
   useEffect(() => {
-    fetch("http://127.0.0.1:8002/v1/sim-lab/personas")
+    fetch("/v1/sim-lab/personas")
       .then((res) => res.json())
       .then((data) => {
         setPersonas(data);
@@ -85,7 +85,7 @@ export const SimLab: React.FC = () => {
     const diff = difficulty || selectedDifficulty;
     setIsRunningWarGame(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/sim-lab/run", {
+      const res = await fetch("/v1/sim-lab/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

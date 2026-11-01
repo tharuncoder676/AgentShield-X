@@ -58,9 +58,9 @@ export const ThreatIntel: React.FC = () => {
   const fetchIntel = async () => {
     try {
       const [advRes, mcpRes, trendRes] = await Promise.all([
-        fetch('http://127.0.0.1:8002/v1/threats/advisories'),
-        fetch('http://127.0.0.1:8002/v1/threats/mcp-index'),
-        fetch('http://127.0.0.1:8002/v1/threats/trending'),
+        fetch('/v1/threats/advisories'),
+        fetch('/v1/threats/mcp-index'),
+        fetch('/v1/threats/trending'),
       ]);
 
       if (advRes.ok && mcpRes.ok && trendRes.ok) {

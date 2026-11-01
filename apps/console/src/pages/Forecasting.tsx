@@ -65,7 +65,7 @@ export function Forecasting() {
   const fetchForecast = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/forecasting/summary");
+      const res = await fetch("/v1/forecasting/summary");
       if (res.ok) {
         const json = await res.json();
         setData(json);

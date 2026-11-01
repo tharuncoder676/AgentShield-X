@@ -65,7 +65,7 @@ export const RuleBuilder: React.FC = () => {
 
   const fetchRules = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/rule-builder/rules');
+      const res = await fetch('/v1/rule-builder/rules');
       if (res.ok) {
         const data = await res.json();
         setRules(data.rules || []);
@@ -170,7 +170,7 @@ export const RuleBuilder: React.FC = () => {
         parsedArgs = { query: testArgs };
       }
 
-      const res = await fetch('http://127.0.0.1:8002/v1/rule-builder/evaluate', {
+      const res = await fetch('/v1/rule-builder/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -223,7 +223,7 @@ export const RuleBuilder: React.FC = () => {
 
   const handleDeleteRule = async (ruleId: string) => {
     try {
-      await fetch(`http://127.0.0.1:8002/v1/rule-builder/rules/${ruleId}`, { method: 'DELETE' });
+      await fetch(`/v1/rule-builder/rules/${ruleId}`, { method: 'DELETE' });
     } catch {}
     setRules(prev => prev.filter(r => r.rule_id !== ruleId));
   };
@@ -242,7 +242,7 @@ export const RuleBuilder: React.FC = () => {
     };
 
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/rule-builder/rules', {
+      const res = await fetch('/v1/rule-builder/rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

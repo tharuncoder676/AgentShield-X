@@ -52,8 +52,8 @@ export const Marketplace: React.FC = () => {
   const fetchMarketplace = async () => {
     try {
       const [pkgsRes, statsRes] = await Promise.all([
-        fetch('http://127.0.0.1:8002/v1/marketplace/packages'),
-        fetch('http://127.0.0.1:8002/v1/marketplace/stats'),
+        fetch('/v1/marketplace/packages'),
+        fetch('/v1/marketplace/stats'),
       ]);
 
       if (pkgsRes.ok && statsRes.ok) {
@@ -187,7 +187,7 @@ export const Marketplace: React.FC = () => {
     setActionLoading(pkg.package_id);
     const endpoint = pkg.installed ? 'uninstall' : 'install';
     try {
-      await fetch(`http://127.0.0.1:8002/v1/marketplace/${endpoint}/${pkg.package_id}`, { method: 'POST' });
+      await fetch(`/v1/marketplace/${endpoint}/${pkg.package_id}`, { method: 'POST' });
     } catch {}
 
     setPackages(prev =>
@@ -225,7 +225,7 @@ export const Marketplace: React.FC = () => {
     };
 
     try {
-      await fetch('http://127.0.0.1:8002/v1/marketplace/publish', {
+      await fetch('/v1/marketplace/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPkg),

@@ -123,7 +123,7 @@ export const Terminal: React.FC = () => {
         ]);
 
         try {
-          const res = await fetch("http://localhost:8002/v1/mcp/connectors/setup", {
+          const res = await fetch("/v1/mcp/connectors/setup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ target }),

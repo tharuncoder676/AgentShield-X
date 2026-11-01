@@ -1,0 +1,98 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "console": {
+      "root": "apps/console",
+      "framework": "vite"
+    },
+    "control_api": {
+      "root": "services/control_api",
+      "framework": "fastapi",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "decision",
+          "format": "url",
+          "env": "DECISION_SERVICE_URL"
+        },
+        {
+          "type": "service",
+          "service": "gateway",
+          "format": "url",
+          "env": "GATEWAY_SERVICE_URL"
+        }
+      ]
+    },
+    "gateway": {
+      "root": "services/gateway",
+      "framework": "fastapi",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "decision",
+          "format": "url",
+          "env": "DECISION_SERVICE_URL"
+        }
+      ]
+    },
+    "decision": {
+      "root": "services/decision",
+      "framework": "fastapi"
+    },
+    "site": {
+      "root": "apps/site",
+      "framework": "vite"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/v1/events/(.*)",
+      "destination": {
+        "service": "gateway"
+      }
+    },
+    {
+      "source": "/v1/ws/(.*)",
+      "destination": {
+        "service": "gateway"
+      }
+    },
+    {
+      "source": "/v1/(.*)",
+      "destination": {
+        "service": "control_api"
+      }
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "control_api"
+      }
+    },
+    {
+      "source": "/downloads/(.*)",
+      "destination": {
+        "service": "control_api"
+      }
+    },
+    {
+      "source": "/health",
+      "destination": {
+        "service": "control_api"
+      }
+    },
+    {
+      "source": "/docs/(.*)",
+      "destination": {
+        "service": "site"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "console"
+      }
+    }
+  ]
+}
+

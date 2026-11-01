@@ -72,10 +72,10 @@ export function RBAC() {
     setLoading(true);
     try {
       const [resRoles, resTenants, resUsers, resSSO] = await Promise.all([
-        fetch("http://127.0.0.1:8002/v1/rbac/roles"),
-        fetch("http://127.0.0.1:8002/v1/rbac/tenants"),
-        fetch("http://127.0.0.1:8002/v1/rbac/users"),
-        fetch("http://127.0.0.1:8002/v1/rbac/sso/config"),
+        fetch("/v1/rbac/roles"),
+        fetch("/v1/rbac/tenants"),
+        fetch("/v1/rbac/users"),
+        fetch("/v1/rbac/sso/config"),
       ]);
 
       if (resRoles.ok) {
@@ -97,7 +97,7 @@ export function RBAC() {
     setSimulating(true);
     setSimResult(null);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/rbac/sso/test-auth", {
+      const res = await fetch("/v1/rbac/sso/test-auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,7 +111,7 @@ export function RBAC() {
         const json = await res.json();
         setSimResult(json);
         // Refresh users list to show JIT provisioned user
-        const uRes = await fetch("http://127.0.0.1:8002/v1/rbac/users");
+        const uRes = await fetch("/v1/rbac/users");
         if (uRes.ok) setUsers(await uRes.json());
       }
     } catch (e) {

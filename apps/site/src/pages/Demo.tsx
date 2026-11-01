@@ -65,7 +65,10 @@ export const Demo: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/v1/events/tool-call", {
+      const gwBase = (import.meta as any).env?.VITE_GATEWAY_URL || (
+        typeof window !== "undefined" && window.location.port === "5173" ? "http://127.0.0.1:8000" : ""
+      );
+      const response = await fetch(`${gwBase}/v1/events/tool-call`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -165,7 +168,10 @@ export const Demo: React.FC = () => {
         customPrompt.toLowerCase().includes("aws_") ||
         customPrompt.toLowerCase().includes("export");
 
-      const response = await fetch("http://127.0.0.1:8000/v1/events/tool-call", {
+      const gwBase = (import.meta as any).env?.VITE_GATEWAY_URL || (
+        typeof window !== "undefined" && window.location.port === "5173" ? "http://127.0.0.1:8000" : ""
+      );
+      const response = await fetch(`${gwBase}/v1/events/tool-call`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

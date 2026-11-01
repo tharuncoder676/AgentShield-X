@@ -72,7 +72,7 @@ export const Forensics: React.FC = () => {
 
   // Fetch all trace summaries
   useEffect(() => {
-    fetch("http://127.0.0.1:8002/v1/forensics/traces")
+    fetch("/v1/forensics/traces")
       .then((res) => res.json())
       .then((data) => {
         setTracesSummary(data);
@@ -90,7 +90,7 @@ export const Forensics: React.FC = () => {
     setIsPlaying(false);
     if (timerRef.current) clearInterval(timerRef.current);
 
-    fetch(`http://127.0.0.1:8002/v1/forensics/traces/${selectedIncidentId}`)
+    fetch(`/v1/forensics/traces/${selectedIncidentId}`)
       .then((res) => res.json())
       .then((data) => {
         setActiveTrace(data);
@@ -126,7 +126,7 @@ export const Forensics: React.FC = () => {
     setWhatIfMode(mode);
     setSimulatingWhatIf(true);
     try {
-      const res = await fetch("http://127.0.0.1:8002/v1/forensics/what-if", {
+      const res = await fetch("/v1/forensics/what-if", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -146,7 +146,7 @@ export const Forensics: React.FC = () => {
 
   const handleOpenCert = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8002/v1/forensics/traces/${selectedIncidentId}/certificate`);
+      const res = await fetch(`/v1/forensics/traces/${selectedIncidentId}/certificate`);
       if (res.ok) {
         setCertData(await res.json());
         setCertModalOpen(true);

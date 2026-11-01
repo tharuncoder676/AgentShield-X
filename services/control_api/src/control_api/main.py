@@ -88,6 +88,7 @@ app.add_middleware(SpendCapMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
@@ -157,11 +158,11 @@ def root(request: Request):
             "service": "AgentShield-X Control API",
             "status": "online",
             "version": "1.0.0",
-            "web_console": "http://localhost:3000",
+            "web_console": os.getenv("WEB_CONSOLE_URL", "/"),
             "docs": "/docs",
             "health": "/health",
         }
-    return RedirectResponse(url="http://localhost:3000")
+    return RedirectResponse(url=os.getenv("WEB_CONSOLE_URL", "/"))
 
 
 @app.get("/health")

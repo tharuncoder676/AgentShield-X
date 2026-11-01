@@ -49,7 +49,7 @@ export const Academy: React.FC = () => {
 
   const fetchLessons = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/academy/lessons');
+      const res = await fetch('/v1/academy/lessons');
       if (res.ok) {
         const data = await res.json();
         setLessons(data.lessons || []);
@@ -159,7 +159,7 @@ export const Academy: React.FC = () => {
     setTestingChallenge(true);
 
     try {
-      const res = await fetch(`http://127.0.0.1:8002/v1/academy/lessons/${activeLesson.lesson_id}/challenge`, {
+      const res = await fetch(`/v1/academy/lessons/${activeLesson.lesson_id}/challenge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ submission_text: challengeInput }),
@@ -197,7 +197,7 @@ export const Academy: React.FC = () => {
 
   const handleIssueCert = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8002/v1/academy/certify', {
+      const res = await fetch('/v1/academy/certify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidate_name: candidateName, score: 100 }),

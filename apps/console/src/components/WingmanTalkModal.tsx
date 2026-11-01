@@ -167,7 +167,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     if (lower.includes("youtube")) {
       reply = `Opening YouTube for you, ${config.operatorName}.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: lower }),
@@ -176,7 +176,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     } else if (lower.includes("chrome") || lower.includes("open browser")) {
       reply = `Opening Google Chrome, ${config.operatorName}.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: lower }),
@@ -190,7 +190,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     ) {
       reply = `Workspace initialized in VS Code for AgentShield-X repository.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: "vscode" }),
@@ -199,7 +199,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     } else if (lower.includes("calc") || lower.includes("calculator")) {
       reply = `Launching Calculator.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: "calc" }),
@@ -208,7 +208,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     } else if (lower.includes("notepad")) {
       reply = `Opening Notepad.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: "notepad" }),
@@ -217,7 +217,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     } else if (lower.includes("spotify")) {
       reply = `Opening Spotify for you, ${config.operatorName}.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: "spotify" }),
@@ -226,7 +226,7 @@ export const WingmanTalkModal: React.FC<WingmanTalkModalProps> = ({
     } else if (lower.startsWith("open ") || lower.startsWith("launch ") || lower.startsWith("start ")) {
       reply = `Executing desktop directive: ${query}.`;
       try {
-        fetch("http://localhost:8002/v1/desktop/open", {
+        fetch("/v1/desktop/open", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ target: query }),
