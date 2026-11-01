@@ -261,9 +261,14 @@ export const Marketplace: React.FC = () => {
               <div className="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-400">
                 <ShoppingBag className="w-6 h-6 animate-pulse" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
-                AgentShield Marketplace
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+                  AgentShield Marketplace
+                </h1>
+                <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider">
+                  SEEDED DEMO CATALOG
+                </span>
+              </div>
             </div>
             <p className="text-sm text-purple-300/70 mt-1">
               Community registry for zero-trust policy packs, custom detectors, and adversarial war game scenarios

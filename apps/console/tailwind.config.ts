@@ -20,8 +20,10 @@ const config: Config = {
         warn: "var(--warn)",
       },
       fontFamily: {
+        sora: ["'Sora'", "'Sora Fallback'", "'Inter'", "system-ui", "sans-serif"],
+        inter: ["'Inter'", "system-ui", "sans-serif"],
         chakra: ["'Chakra Petch'", "system-ui", "sans-serif"],
-        sans: ["'IBM Plex Sans'", "system-ui", "sans-serif"],
+        sans: ["'Sora'", "'Inter'", "'IBM Plex Sans'", "system-ui", "sans-serif"],
         mono: [
           "ui-monospace",
           "SFMono-Regular",

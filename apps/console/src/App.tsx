@@ -53,17 +53,19 @@ import { ThreatIntel } from "./pages/ThreatIntel";
 import { Plugins } from "./pages/Plugins";
 import { Benchmark } from "./pages/Benchmark";
 import { Landing } from "./pages/Landing";
+import { SecurityChallenge } from "./pages/SecurityChallenge";
+import { NotFound } from "./pages/NotFound";
 import { Panel } from "@agentshield/ui";
 
 // Protected Route Guard
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { token, isLoading } = useAuth();
+  const { token, securityChallengePassed, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-bg text-fg flex items-center justify-center font-chakra text-xs tracking-widest uppercase">
+      <div className="min-h-screen bg-[#07080b] text-white flex items-center justify-center font-sora text-xs tracking-widest uppercase">
         <span className="animate-pulse">Loading Security Context...</span>
       </div>
     );
@@ -71,6 +73,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 
   if (!token) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!securityChallengePassed) {
+    return <Navigate to="/security-challenge" replace />;
   }
 
   return <>{children}</>;
@@ -114,6 +120,7 @@ export const App: React.FC = () => {
             {/* Public Auth Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/security-challenge" element={<SecurityChallenge />} />
 
             {/* Onboarding Wizard (Can be accessed standalone or within console) */}
             <Route
@@ -216,7 +223,7 @@ export const App: React.FC = () => {
             </Route>
 
             {/* Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/command-center" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </StreamProvider>
       </AuthProvider>

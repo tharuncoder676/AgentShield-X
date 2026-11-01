@@ -147,6 +147,9 @@ export const Federation: React.FC = () => {
             <span className="px-2.5 py-0.5 text-[10px] font-chakra font-bold rounded bg-purple-950/80 text-purple-300 border border-purple-500/40 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               FEATURE 2: CROSS-ORG INTELLIGENCE MESH
             </span>
+            <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 uppercase tracking-wider">
+              DEMO TELEMETRY & SIGNATURES
+            </span>
             <span className="text-purple-400/50">&bull;</span>
             <span className="text-xs text-purple-300/80 font-mono">VirusTotal for AI Agents</span>
           </div>

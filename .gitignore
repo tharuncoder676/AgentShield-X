@@ -69,14 +69,19 @@ desktop.ini
 scratch/
 results/*.png
 results/*.svg
+services/data/*.db
+services/data/*.db-wal
+services/data/*.db-shm
 *.db-wal
 *.db-shm
 *.db
 *.sqlite
 *.sqlite3
+.agentshield_attestation_secret
 
 # Binaries & Media Assets
 agentshield-film/
+AgentShield-X video photos/
 OpenJarvis-main/
 apps/console/public/downloads/*.exe
 apps/console/public/downloads/*.dmg

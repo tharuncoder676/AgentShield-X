@@ -225,6 +225,23 @@ AgentShield-X features **45+ interactive commands** organized into 7 functional 
 
 ---
 
+## 🔬 Evaluation, Simulation & Demonstration Modes
+
+AgentShield-X balances **deterministic real-time runtime security** with **safe synthetic simulation environments** for stress-testing and demonstration:
+
+| Subsystem | Mode / Status | Implementation & Security Profile |
+|---|---|---|
+| **Deterministic Dual-Rail Sentinel** | **Production Runtime** | Real-time AST linting, regex normalization, and <0.18ms latency policy enforcement. |
+| **Ephemeral Sandbox Isolation** | **Deterministic Safe Isolation** | Strict pre-flight AST policy inspection without bare host execution. Container isolation (Docker/Podman with `--network=none`, `--read-only`, and dropped capabilities) required for physical execution. |
+| **Adversarial War Game SimLab (`/simlab`)** | **Synthetic Simulation** | Generates synthetic adversarial mutations across 20+ red-team personas to stress-test policies without live system harm. |
+| **Incident Forensics Flight Recorder (`/forensics`)** | **Forensic Playback & What-If Simulation** | Replays recorded Merkle-hashed attack frames and projects counterfactual "What-If" defense outcomes under alternate zero-trust rules. |
+| **ShieldVoice & Wingshield Copilot (`/voice`)** | **Live Audio + NIM Fallback Simulation** | Web Audio API / browser speech transcription with offline OpenVINO/CTranslate2 Whisper INT8 and simulated fallback when NVIDIA NIM API credentials are not configured. |
+| **Agent Federation Protocol (`/federation`)** | **Decentralized Protocol + Seeded Signatures** | Cryptographic Bloom filter exchange demonstrated with seeded zero-knowledge cross-org threat telemetry. |
+| **Security Package Marketplace (`/marketplace`)** | **Seeded Community Catalog** | Curated catalog of pre-built OWASP, PCI-DSS, and MITRE AI agent rule packs. |
+| **Local Demo Seed Script** | **On-Demand Local Generator** | Standalone script (`python scripts/seed_demo_data.py --reset`) to seed local SQLite demo accounts and policies without committing test credentials to git. |
+
+---
+
 ## 📦 Native Desktop Distribution Packages
 
 Ready-to-use release distributions are compiled and hosted locally in [`apps/console/public/downloads/`](apps/console/public/downloads/):

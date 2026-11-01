@@ -10,23 +10,84 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
+import os
 import secrets
 import time
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
-
-
-import os
-import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger("shield_core.attestation")
 
+_CACHED_ATTESTATION_SECRET: Optional[str] = None
+
 
 def get_attestation_secret() -> str:
+    """
+    Returns the persistent attestation secret key.
+    If SHIELD_ATTESTATION_SECRET or ATTESTATION_SECRET is set, uses that.
+    Otherwise, reads or creates a persistent local secret file so all processes
+    and instances on this machine share the exact same key without breaking
+    signing and verification across instances.
+    """
+    global _CACHED_ATTESTATION_SECRET
+    if _CACHED_ATTESTATION_SECRET:
+        return _CACHED_ATTESTATION_SECRET
+
     secret = os.getenv("SHIELD_ATTESTATION_SECRET") or os.getenv("ATTESTATION_SECRET")
-    if not secret:
-        return secrets.token_hex(32)
-    return secret
+    if secret:
+        _CACHED_ATTESTATION_SECRET = secret
+        return secret
+
+    # 1. Check user home config directory
+    user_secret_file = Path.home() / ".agentshield" / "attestation_secret"
+    try:
+        if user_secret_file.exists():
+            val = user_secret_file.read_text(encoding="utf-8").strip()
+            if len(val) >= 16:
+                _CACHED_ATTESTATION_SECRET = val
+                os.environ["SHIELD_ATTESTATION_SECRET"] = val
+                return val
+    except Exception:
+        pass
+
+    # 2. Check repo-local persistent file
+    repo_secret_file = Path(__file__).resolve().parents[4] / ".agentshield_attestation_secret"
+    try:
+        if repo_secret_file.exists():
+            val = repo_secret_file.read_text(encoding="utf-8").strip()
+            if len(val) >= 16:
+                _CACHED_ATTESTATION_SECRET = val
+                os.environ["SHIELD_ATTESTATION_SECRET"] = val
+                return val
+    except Exception:
+        pass
+
+    # 3. Generate a persistent high-entropy 256-bit secret and save to disk
+    new_secret = secrets.token_hex(32)
+    saved = False
+    try:
+        user_secret_file.parent.mkdir(parents=True, exist_ok=True)
+        user_secret_file.write_text(new_secret, encoding="utf-8")
+        if hasattr(os, "chmod"):
+            try:
+                os.chmod(user_secret_file, 0o600)
+            except Exception:
+                pass
+        saved = True
+    except Exception:
+        pass
+
+    if not saved:
+        try:
+            repo_secret_file.write_text(new_secret, encoding="utf-8")
+        except Exception:
+            pass
+
+    _CACHED_ATTESTATION_SECRET = new_secret
+    os.environ["SHIELD_ATTESTATION_SECRET"] = new_secret
+    return new_secret
 
 
 @dataclass
@@ -126,15 +187,27 @@ class A2AAttestationEngine:
 
     def verify_token(
         self,
-        jti: str,
+        token_or_jti: Union[str, A2ACapabilityToken, Dict[str, Any]],
         tool_name: str,
         agent_calling: str,
         params: Optional[Dict[str, Any]] = None,
     ) -> Tuple[bool, str, Optional[A2ACapabilityToken]]:
-        if jti in self._revocation_list:
-            return False, f"Token '{jti}' is REVOKED by security controller.", None
+        # Handle string JTI, dataclass instance, or dict payload
+        if isinstance(token_or_jti, A2ACapabilityToken):
+            token = token_or_jti
+            jti = token.jti
+            self._tokens[jti] = token
+        elif isinstance(token_or_jti, dict):
+            jti = str(token_or_jti.get("jti", ""))
+            token = A2ACapabilityToken(**token_or_jti)
+            self._tokens[jti] = token
+        else:
+            jti = str(token_or_jti)
+            token = self._tokens.get(jti)
 
-        token = self._tokens.get(jti)
+        if jti in self._revocation_list:
+            return False, f"Token '{jti}' is REVOKED by security controller.", token
+
         if not token:
             return False, f"Token '{jti}' does not exist or has expired from memory.", None
 

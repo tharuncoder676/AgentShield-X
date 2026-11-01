@@ -64,6 +64,14 @@ from control_api.routes.benchmark import router as benchmark_router
 from control_api.routes.ide import router as ide_router
 from control_api.routes.shieldvoice import router as shieldvoice_router
 from control_api.routes.licensing import router as licensing_router
+from control_api.security_hardening import (
+    SecurityHeadersMiddleware,
+    RateLimitMiddleware,
+    SpendCapMiddleware,
+    router as security_router,
+    ALLOWED_ORIGINS,
+    DEBUG_MODE,
+)
 
 app = FastAPI(
     title="AgentShield-X Control API",
@@ -71,17 +79,24 @@ app = FastAPI(
     description="Multi-tenant SaaS Control Plane for AgentShield-X",
 )
 
-# Enable CORS for frontend applications
+# 1. Security Hardening Middlewares (Checks 8, 11, 12, 14, 16, 17, 18)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SpendCapMiddleware)
+
+# 2. Strict CORS Configuration (Check 15: No wildcard with credentials)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-Request-Id"],
 )
 
 app.include_router(auth_router)
 app.include_router(licensing_router)
+app.include_router(security_router)
 app.include_router(orgs_router)
 app.include_router(analytics_router)
 app.include_router(onboarding_router)
@@ -300,3 +315,16 @@ if __name__ == "__main__":
     import uvicorn
     # Default to loopback binding for security
     uvicorn.run(app, host="127.0.0.1", port=8002)
+
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(404)
+async def custom_api_404_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": "ROUTE_NOT_FOUND",
+            "message": f"Endpoint '{request.url.path}' does not exist on AgentShield-X Control API.",
+            "status_code": 404,
+        }
+    )

@@ -1,2 +1,85 @@
 @import "../../../packages/ui/src/styles/tokens.css";
 @import "../../../packages/ui/src/styles/globals.css";
+
+/* =========================================================================
+   PREMIUM TYPOGRAPHY: SORA DISPLAY & HEADLINE SHEEN EFFECT
+   ========================================================================= */
+
+.font-sora {
+  font-family: 'Sora', 'Sora Fallback', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Primary Headline Sheen: 84px Semibold with Dense Display Spacing */
+.headline-sheen {
+  font-family: 'Sora', 'Sora Fallback', 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em; /* Dense display aesthetic */
+  line-height: 1.02;
+  text-wrap: balance;
+  
+  /* Luxury Multi-Stop Sheen: White -> Cold Platinum -> Warm Glow */
+  background-image: linear-gradient(
+    to bottom right,
+    #ffffff 28%,
+    #cfdcff 68%,
+    #fff3df 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.headline-sheen span.block {
+  display: block;
+}
+
+/* Secondary Headline Sheen with Royal Purple Horizon Accent */
+.headline-sheen-purple {
+  font-family: 'Sora', 'Sora Fallback', 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+
+  background-image: linear-gradient(
+    to bottom right,
+    #ffffff 20%,
+    #e9d5ff 55%,
+    #c084fc 80%,
+    #ffffff 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.headline-sheen-purple span.block {
+  display: block;
+}
+
+/* Section Display Headers (H2) */
+.section-headline {
+  font-family: 'Sora', 'Sora Fallback', 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  text-wrap: balance;
+  color: #ffffff;
+}
+
+/* Universal Text Sheen Utility */
+.text-sheen {
+  background-image: linear-gradient(
+    to bottom right,
+    #ffffff 28%,
+    #cfdcff 68%,
+    #fff3df 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+

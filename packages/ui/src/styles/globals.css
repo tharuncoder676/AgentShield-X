@@ -12,13 +12,18 @@
   body {
     background-color: var(--bg);
     color: var(--fg);
-    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Sora', 'Inter', 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6, button, nav {
-    font-family: 'Chakra Petch', system-ui, -apple-system, sans-serif;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', 'Sora Fallback', 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  button, nav {
+    font-family: 'Sora', 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   code, pre, kbd, samp {

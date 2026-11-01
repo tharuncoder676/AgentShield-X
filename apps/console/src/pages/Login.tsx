@@ -8,7 +8,7 @@ import { supabase, signInWithProvider } from "../lib/supabase";
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +26,7 @@ export const Login: React.FC = () => {
       if (session) {
         localStorage.setItem("agentshield_token", session.access_token);
         localStorage.setItem("agentshield_tier", "pro");
-        navigate("/overview");
+        navigate("/security-challenge");
       }
     });
 
@@ -36,7 +36,7 @@ export const Login: React.FC = () => {
       if (session) {
         localStorage.setItem("agentshield_token", session.access_token);
         localStorage.setItem("agentshield_tier", "pro");
-        navigate("/overview");
+        navigate("/security-challenge");
       }
     });
 
@@ -66,11 +66,11 @@ export const Login: React.FC = () => {
       // 2. Control plane backend login
       await login({ email, password });
       localStorage.setItem("agentshield_remember", "true");
-      navigate("/overview");
+      navigate("/security-challenge");
     } catch (err: any) {
       if (email.includes("@")) {
         localStorage.setItem("agentshield_token", "dev_operator_session_token");
-        navigate("/overview");
+        navigate("/security-challenge");
       } else {
         setError(err.message || "Failed to log in. Please verify your credentials.");
       }
@@ -81,6 +81,18 @@ export const Login: React.FC = () => {
 
   const handleOAuthClick = async (provider: "google" | "apple") => {
     setError(null);
+    if (provider === "google") {
+      setLoading(true);
+      try {
+        await loginWithGoogle();
+        navigate("/security-challenge");
+        return;
+      } catch (err: any) {
+        console.warn("Firebase Google login fallback:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
     // 1. Try real Supabase OAuth redirect
     const res = await signInWithProvider(provider);
     if (!res.success) {
@@ -113,7 +125,7 @@ export const Login: React.FC = () => {
       localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
     } finally {
       setLoading(false);
-      navigate("/overview");
+      navigate("/security-challenge");
     }
   };
 

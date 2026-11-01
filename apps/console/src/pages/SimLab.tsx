@@ -118,6 +118,9 @@ export const SimLab: React.FC = () => {
             <span className="px-2.5 py-0.5 text-[10px] font-chakra font-bold rounded bg-purple-950/80 text-purple-300 border border-purple-500/40 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               FEATURE 4: RED-TEAM WAR GAME ARENA
             </span>
+            <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider">
+              SYNTHETIC ADVERSARIAL SIMULATION
+            </span>
             <span className="text-purple-400/50">&bull;</span>
             <span className="text-xs text-purple-300/80 font-mono">20+ Adversarial AI Personas</span>
           </div>
