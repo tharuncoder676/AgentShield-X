@@ -8,7 +8,7 @@ import {
   SignupRequest,
   User,
 } from "@agentshield/api-client";
-import { signInWithGoogle, signInWithApple, signOutUser } from "../lib/firebase";
+import { signInWithGoogle, signOutUser } from "../lib/firebase";
 
 export interface AuthContextType {
   user: User | null;
@@ -23,7 +23,6 @@ export interface AuthContextType {
   client: AgentShieldClient;
   login: (data: LoginRequest) => Promise<AuthResponse>;
   loginWithGoogle: () => Promise<void>;
-  loginWithApple: () => Promise<void>;
   enrollSecurityQuestions: (answers: { q1: string; q2: string; q3: string }) => void;
   verifySecurityQuestions: (answers: { q1: string; q2: string; q3: string }) => boolean;
   signup: (data: SignupRequest) => Promise<AuthResponse>;
@@ -187,41 +186,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const loginWithApple = async () => {
-    setIsLoading(true);
-    try {
-      const appleUser = await signInWithApple();
-      const generatedToken = appleUser.idToken || `firebase_apple_tok_${Date.now()}`;
-      const userKey = localStorage.getItem("agentshield_api_key") || `shld_live_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
-      const userEmail = (appleUser.email || "apple.operator@privaterelay.appleid.com").toLowerCase();
-      
-      const loggedUser: User = {
-        id: appleUser.uid,
-        email: userEmail,
-        name: appleUser.displayName || "Apple User",
-        role: "operator",
-        photoURL: null,
-        created_at: new Date().toISOString(),
-      } as any;
-
-      localStorage.setItem("agentshield_token", generatedToken);
-      localStorage.setItem("agentshield_api_key", userKey);
-      localStorage.setItem("agentshield_user_email", userEmail);
-
-      const existingAnswers = localStorage.getItem("agentshield_sec_answers_" + userEmail);
-      setHasEnrolledQuestions(!!existingAnswers);
-
-      setSecurityChallengePassed(false);
-      sessionStorage.removeItem("agentshield_security_challenge_passed");
-
-      setToken(generatedToken);
-      setApiKey(userKey);
-      setUser(loggedUser);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const enrollSecurityQuestions = (answers: { q1: string; q2: string; q3: string }) => {
     const email = (user?.email || localStorage.getItem("agentshield_user_email") || "operator@enterprise.ai").toLowerCase();
     const payload = {
@@ -352,7 +316,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         client,
         login,
         loginWithGoogle,
-        loginWithApple,
         enrollSecurityQuestions,
         verifySecurityQuestions,
         signup,

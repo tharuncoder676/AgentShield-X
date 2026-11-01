@@ -18,9 +18,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 /**
- * Triggers official Supabase OAuth flow for Google or Apple
+ * Triggers official Supabase OAuth flow for Google
  */
-export async function signInWithProvider(provider: "google" | "apple") {
+export async function signInWithProvider(provider: "google") {
   try {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,

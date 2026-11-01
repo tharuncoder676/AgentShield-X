@@ -8,7 +8,7 @@ import { supabase, signInWithProvider } from "../lib/supabase";
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithApple } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,7 +17,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   // Modals
-  const [activeOAuthProvider, setActiveOAuthProvider] = useState<"google" | "apple" | null>(null);
+  const [activeOAuthProvider, setActiveOAuthProvider] = useState<"google" | null>(null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   // Check if returning from a Supabase OAuth redirect URL
@@ -79,39 +79,21 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleOAuthClick = async (provider: "google" | "apple") => {
+  const handleGoogleClick = async () => {
     setError(null);
-    if (provider === "google") {
-      setLoading(true);
-      try {
-        await loginWithGoogle();
-        navigate("/security-challenge");
-        return;
-      } catch (err: any) {
-        console.warn("Firebase Google login fallback:", err);
-        setActiveOAuthProvider("google");
-        return;
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (provider === "apple") {
-      setLoading(true);
-      try {
-        await loginWithApple();
-        navigate("/security-challenge");
-        return;
-      } catch (err: any) {
-        console.warn("Firebase Apple login fallback:", err);
-        setActiveOAuthProvider("apple");
-        return;
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+      navigate("/security-challenge");
+    } catch (err: any) {
+      console.warn("Firebase Google login fallback:", err);
+      setActiveOAuthProvider("google");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleOAuthModalSuccess = async (profile: { email: string; name: string; provider: "google" | "apple" }) => {
+  const handleOAuthModalSuccess = async (profile: { email: string; name: string; provider: "google" }) => {
     setActiveOAuthProvider(null);
     setLoading(true);
     try {
@@ -184,7 +166,7 @@ export const Login: React.FC = () => {
           {/* Continue with Google */}
           <button
             type="button"
-            onClick={() => handleOAuthClick("google")}
+            onClick={handleGoogleClick}
             className="w-full py-3.5 px-4 rounded-full border border-zinc-700/80 bg-[#121318] hover:bg-[#191b22] hover:border-zinc-500 text-white font-medium text-sm flex items-center justify-center space-x-3 transition-all shadow-sm group cursor-pointer"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -206,18 +188,6 @@ export const Login: React.FC = () => {
               />
             </svg>
             <span className="group-hover:text-white transition-colors">Continue with Google</span>
-          </button>
-
-          {/* Continue with Apple: Crisp Vector Apple Silhouette */}
-          <button
-            type="button"
-            onClick={() => handleOAuthClick("apple")}
-            className="w-full py-3.5 px-4 rounded-full border border-zinc-700/80 bg-[#121318] hover:bg-[#191b22] hover:border-zinc-500 text-white font-medium text-sm flex items-center justify-center space-x-3 transition-all shadow-sm group cursor-pointer"
-          >
-            <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 170 170">
-              <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.86-11.93-14.44-7.2-11.05-12.82-23.78-16.86-38.19-4.04-14.41-6.06-27.46-6.06-39.15 0-14.73 3.73-27.05 11.19-36.96 7.46-9.91 16.91-14.96 28.34-15.15 4.69 0 10.15 1.25 16.39 3.76 6.24 2.5 10.22 3.79 11.93 3.86 1.71 0 5.86-1.34 12.45-4.02 6.59-2.68 12.18-3.91 16.78-3.69 13.04.59 23.36 5.3 30.96 14.13-11.36 6.94-16.93 16.64-16.7 29.1.23 9.69 3.91 17.77 11.05 24.24 7.14 6.47 15.48 10.17 25.02 11.1-2.45 7.23-5.34 14.31-8.67 21.24zM119.22 31.84c0-7.28 2.66-14.12 7.98-20.52 5.32-6.4 11.75-10.45 19.3-12.15.53 1.05.8 2.22.8 3.51 0 7.39-2.73 14.36-8.2 20.91-5.47 6.55-12.11 10.51-19.92 11.88.03-1.22.04-2.43.04-3.63z" />
-            </svg>
-            <span className="group-hover:text-white transition-colors">Continue with Apple</span>
           </button>
         </div>
 

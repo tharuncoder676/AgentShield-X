@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { X, Check, Shield, User, ArrowRight, Mail } from "lucide-react";
+import { X, User } from "lucide-react";
 
 export interface OAuthModalProps {
   isOpen: boolean;
-  provider: "google" | "apple" | null;
+  provider: "google" | null;
   onClose: () => void;
-  onSuccess: (profile: { email: string; name: string; provider: "google" | "apple" }) => void;
+  onSuccess: (profile: { email: string; name: string; provider: "google" }) => void;
 }
 
 export const OAuthModal: React.FC<OAuthModalProps> = ({
@@ -18,7 +18,6 @@ export const OAuthModal: React.FC<OAuthModalProps> = ({
   const [customEmail, setCustomEmail] = useState("");
   const [customName, setCustomName] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(!savedLastEmail);
-  const [appleEmailOption, setAppleEmailOption] = useState<"share" | "hide">("share");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inputError, setInputError] = useState("");
 
@@ -42,20 +41,6 @@ export const OAuthModal: React.FC<OAuthModalProps> = ({
     const cleanEmail = customEmail.trim().toLowerCase();
     const cleanName = customName.trim() || cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     handleGoogleSelect(cleanEmail, cleanName);
-  };
-
-  const handleAppleConfirm = () => {
-    setIsSubmitting(true);
-    const userEmail = (customEmail.trim() || savedLastEmail || "user@enterprise.ai").toLowerCase();
-    const chosenEmail =
-      appleEmailOption === "share"
-        ? userEmail
-        : `privaterelay_${Math.random().toString(36).substring(2, 8)}@appleid.com`;
-    setTimeout(() => {
-      setIsSubmitting(false);
-      localStorage.setItem("agentshield_user_email", chosenEmail);
-      onSuccess({ email: chosenEmail, name: customName.trim() || "Apple User", provider: "apple" });
-    }, 400);
   };
 
   return (
@@ -204,86 +189,6 @@ export const OAuthModal: React.FC<OAuthModalProps> = ({
           {/* Footer Note */}
           <div className="p-4 bg-[#18191c] border-t border-[#3c4043] text-[11px] text-zinc-400 leading-relaxed text-left">
             Google authenticates your identity securely. Each user receives their own isolated tenant and cryptographic API credentials.
-          </div>
-        </div>
-      )}
-
-      {/* APPLE SIGN IN MODAL */}
-      {provider === "apple" && (
-        <div className="w-full max-w-[420px] bg-[#1c1c1e] text-white rounded-3xl shadow-2xl border border-zinc-700/80 overflow-hidden animate-in zoom-in-95 duration-150">
-          
-          {/* Header with Apple Logo */}
-          <div className="p-6 text-center border-b border-zinc-800 relative">
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-white rounded-full hover:bg-zinc-800 transition-colors"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-black border border-zinc-700 mb-3 shadow-md">
-              <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 1.01-2.87-.96.04-2.12.64-2.79 1.43-.59.68-1.1 1.76-1.03 2.81 1.06.08 2.19-.62 2.81-1.37z" />
-              </svg>
-            </div>
-
-            <h3 className="text-xl font-bold text-white tracking-tight">Sign in with Apple</h3>
-            <p className="text-xs text-zinc-400 mt-1 max-w-xs mx-auto">
-              Use your Apple ID to sign in to <strong className="text-white">AgentShield-X</strong>.
-            </p>
-          </div>
-
-          {/* Privacy Options */}
-          <div className="p-6 space-y-4">
-            
-            <div className="space-y-2 text-left">
-              <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">
-                Email Preference
-              </label>
-
-              {/* Option 1: Share my email */}
-              <div
-                onClick={() => setAppleEmailOption("share")}
-                className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                  appleEmailOption === "share"
-                    ? "bg-[#2c2c2e] border-white text-white"
-                    : "bg-[#222224] border-zinc-800 text-zinc-400 hover:border-zinc-700"
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-semibold">Share My Email</div>
-                  <div className="text-[11px] text-zinc-400 font-mono">
-                    {customEmail || savedLastEmail || "user@enterprise.ai"}
-                  </div>
-                </div>
-                {appleEmailOption === "share" && <Check size={16} className="text-white" />}
-              </div>
-
-              {/* Option 2: Hide my email */}
-              <div
-                onClick={() => setAppleEmailOption("hide")}
-                className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                  appleEmailOption === "hide"
-                    ? "bg-[#2c2c2e] border-white text-white"
-                    : "bg-[#222224] border-zinc-800 text-zinc-400 hover:border-zinc-700"
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-semibold">Hide My Email</div>
-                  <div className="text-[11px] text-zinc-400 font-mono">relay-...@appleid.com</div>
-                </div>
-                {appleEmailOption === "hide" && <Check size={16} className="text-white" />}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={handleAppleConfirm}
-              className="w-full py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-xs tracking-wider uppercase transition-colors"
-            >
-              {isSubmitting ? "Authenticating..." : "Continue with Apple"}
-            </button>
           </div>
         </div>
       )}

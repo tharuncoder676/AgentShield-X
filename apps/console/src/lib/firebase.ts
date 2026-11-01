@@ -7,7 +7,6 @@ import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
-  OAuthProvider,
   signInWithPopup,
   signOut,
   createUserWithEmailAndPassword,
@@ -42,10 +41,6 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: "select_account",
 });
-
-export const appleProvider = new OAuthProvider("apple.com");
-appleProvider.addScope("email");
-appleProvider.addScope("name");
 
 export interface FirebaseAuthResult {
   uid: string;
@@ -88,34 +83,6 @@ export async function signInWithGoogle(): Promise<FirebaseAuthResult> {
   throw new Error("FIREBASE_DEMO_KEY_REQUIRES_CHOOSER");
 }
 
-/**
- * Perform Sign In with Apple via Firebase OAuthProvider
- * Supports official Apple OAuth 2.0 popup and privaterelay anonymization.
- */
-export async function signInWithApple(): Promise<FirebaseAuthResult> {
-  const isDemoKey = firebaseConfig.apiKey.startsWith("AIzaSyDemo");
-
-  if (!isDemoKey) {
-    try {
-      const result = await signInWithPopup(auth, appleProvider);
-      const credential = OAuthProvider.credentialFromResult(result);
-      const idToken = credential?.idToken || (await result.user.getIdToken());
-
-      return {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName || "Apple User",
-        photoURL: null, // Apple does not expose avatar URLs
-        idToken,
-      };
-    } catch (error: any) {
-      console.warn("Firebase Apple popup error, delegating to account chooser:", error?.message);
-      throw error;
-    }
-  }
-
-  throw new Error("FIREBASE_DEMO_KEY_REQUIRES_CHOOSER");
-}
 
 /**
  * Create a new user account with Firebase Email/Password Authentication
