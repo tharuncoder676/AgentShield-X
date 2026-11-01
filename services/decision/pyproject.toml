@@ -8,12 +8,14 @@ version = "0.1.0"
 description = "AgentShield-X Stateless Decision Service"
 requires-python = ">=3.11"
 dependencies = [
-    "shield-core",
-    "detectors-rules",
-    "detectors-pii",
-    "detectors-honey",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.20.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "httpx>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "joblib>=1.3.0",
 ]
 
 [tool.setuptools.packages.find]

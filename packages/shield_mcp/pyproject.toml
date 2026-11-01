@@ -9,7 +9,6 @@ description = "AgentShield-X MCP Security Proxy & Tool Rug-Pull Guard"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "shield-core",
     "pydantic>=2.0.0",
 ]
 

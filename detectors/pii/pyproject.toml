@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "PII and Secret Detector for AgentShield-X"
 requires-python = ">=3.11"
 dependencies = [
-    "shield-core",
+    "pydantic>=2.0.0",
 ]
 
 [tool.setuptools.packages.find]
