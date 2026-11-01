@@ -33,6 +33,7 @@ import {
   Code2,
   Award,
   GitFork,
+  Bot,
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
@@ -76,6 +77,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems: NavItem[] = [
+    { id: "shieldwing", label: "ShieldWing Studio", icon: <Bot size={16} />, badge: <span className="text-[10px] px-1.5 py-0.2 rounded-sm bg-cyan-500/20 text-cyan-300 font-mono font-bold animate-pulse">300+</span> },
     { id: "overview", label: "Overview", icon: <Activity size={16} /> },
     { id: "terminal", label: "Web Terminal", icon: <Terminal size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-ok/20 text-ok font-mono font-bold">CLI</span> },
     { id: "live", label: "Live Feed", icon: <Radio size={16} />, badge: <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" /> },
@@ -90,7 +92,6 @@ export const AppShell: React.FC<AppShellProps> = ({
     { id: "federation", label: "Federation Mesh", icon: <Globe size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-300 font-mono font-bold">MESH</span> },
     { id: "forensics", label: "Attack Forensics", icon: <Film size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-300 font-mono font-bold">REPLAY</span> },
     { id: "sim-lab", label: "Simulation Lab", icon: <Swords size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-400/20 text-purple-300 font-mono font-bold">WAR GAME</span> },
-    { id: "executive", label: "Executive SOC", icon: <BarChart3 size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SOC</span> },
     { id: "executive", label: "Executive SOC", icon: <BarChart3 size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SOC</span> },
     { id: "rbac", label: "RBAC & SSO", icon: <Users size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SSO</span> },
     { id: "connectors", label: "Universal SDK", icon: <Code2 size={16} />, badge: <span className="text-[10px] px-1 py-0.2 rounded-sm bg-purple-500/20 text-purple-300 font-mono font-bold">SDK</span> },

@@ -32,6 +32,7 @@ import { Attestation } from "./pages/Attestation";
 import { Immunity } from "./pages/Immunity";
 import { RAGFirewall } from "./pages/RAGFirewall";
 import { WingmanCommandCenter } from "./pages/WingmanCommandCenter";
+import { ShieldWingStudio } from "./pages/ShieldWingStudio";
 import { Genome } from "./pages/Genome";
 import { Federation } from "./pages/Federation";
 import { Forensics } from "./pages/Forensics";
@@ -132,12 +133,20 @@ export const App: React.FC = () => {
               }
             />
 
-            {/* Dedicated WINGMAN AI Full Cyber Command Deck */}
+            {/* Dedicated ShieldWing / Wingman AI Studio (300+ Connectors & Automation) */}
+            <Route
+              path="/shieldwing"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/command-center"
               element={
                 <ProtectedRoute>
-                  <WingmanCommandCenter />
+                  <ShieldWingStudio />
                 </ProtectedRoute>
               }
             />
@@ -150,6 +159,7 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
+              <Route path="shieldwing" element={<ShieldWingStudio />} />
               <Route path="overview" element={<Overview />} />
               <Route path="terminal" element={<Terminal />} />
               <Route path="live" element={<LiveFeed />} />
