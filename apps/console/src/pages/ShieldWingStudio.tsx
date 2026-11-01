@@ -39,6 +39,11 @@ import {
   Key,
   Share2,
   Trash2,
+  Compass,
+  BookOpen,
+  Lightbulb,
+  HelpCircle,
+  CheckSquare,
 } from "lucide-react";
 import { ConnectorsHubModal } from "../components/ConnectorsHubModal";
 import { Connector, CONNECTORS_DATA } from "../data/connectorsCatalog";
@@ -100,6 +105,12 @@ export const ShieldWingStudio: React.FC = () => {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [showAppsBanner, setShowAppsBanner] = useState(true);
 
+  // End-to-End Setup & Facilitation Guide Modal
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [guideActiveTab, setGuideActiveTab] = useState<
+    "quickstart" | "connectors" | "nvidia" | "security" | "recipes" | "faq"
+  >("quickstart");
+
   // Execution Report Modal
   const [activeReportData, setActiveReportData] = useState<{
     taskTitle: string;
@@ -129,6 +140,7 @@ export const ShieldWingStudio: React.FC = () => {
 
   // Quick Connect popover state
   const [showQuickConnectPopover, setShowQuickConnectPopover] = useState(false);
+  const [showPercentPopover, setShowPercentPopover] = useState(false);
   const [quickConnectToast, setQuickConnectToast] = useState<string | null>(null);
 
   // Input state
@@ -894,7 +906,11 @@ All deterministic outputs verified against AgentShield-X safety policies with su
             className="p-1.5 text-purple-300/80 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
             title="Return to Console Overview"
           >
-            <Layers size={18} />
+            <svg className="w-4 h-4 text-purple-300/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M9 21V9" />
+            </svg>
           </Link>
 
           {/* Purple Glowing Pill button: "Wingman" */}
@@ -913,8 +929,20 @@ All deterministic outputs verified against AgentShield-X safety policies with su
           </div>
         </div>
 
-        {/* Right: Upgrade Plan + Green Counter + Setup */}
-        <div className="flex items-center gap-3">
+        {/* Right: Setup Guide + Upgrade Plan + Green Counter + Setup */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsGuideModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-200 hover:text-white rounded-lg bg-purple-950/70 hover:bg-purple-900/70 transition-colors border border-purple-500/40 shadow-sm cursor-pointer"
+            title="Complete End-to-End Setup & Facilitation Guide"
+          >
+            <Compass size={14} className="text-purple-400" />
+            <span className="font-semibold">Setup Guide</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 font-mono hidden sm:inline">
+              End-to-End
+            </span>
+          </button>
+
           <button
             onClick={() => navigate("/billing")}
             className="px-3.5 py-1 rounded-full bg-white text-black font-semibold text-xs hover:bg-slate-200 transition-colors shadow-sm"
@@ -928,7 +956,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
 
           <button
             onClick={() => setIsSetupModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-200/90 hover:text-white rounded-lg hover:bg-white/5 transition-colors border border-purple-500/20"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-200/90 hover:text-white rounded-lg hover:bg-white/5 transition-colors border border-purple-500/20 cursor-pointer"
           >
             <Sliders size={14} />
             <span>Setup</span>
@@ -968,14 +996,21 @@ All deterministic outputs verified against AgentShield-X safety policies with su
           </button>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+        <div className="flex items-center gap-4 text-xs text-slate-400">
           <span className="flex items-center gap-1.5 text-[11px] font-mono text-purple-300">
             <Shield size={12} className="text-purple-400" />
             <span>Dual-Rail Guard Active &bull; 312 Connectors</span>
           </span>
           <button
+            onClick={() => setIsGuideModalOpen(true)}
+            className="flex items-center gap-1 text-purple-300 hover:text-white cursor-pointer transition-colors"
+          >
+            <BookOpen size={13} className="text-purple-400" />
+            <span>End-to-End Docs</span>
+          </button>
+          <button
             onClick={() => setIsSetupModalOpen(true)}
-            className="flex items-center gap-1 text-slate-400 hover:text-white"
+            className="flex items-center gap-1 text-slate-400 hover:text-white cursor-pointer"
           >
             <Settings size={13} />
             <span>Setup</span>
@@ -1017,10 +1052,18 @@ All deterministic outputs verified against AgentShield-X safety policies with su
             </button>
           </div>
 
-          {/* Bottom Rail Icon */}
-          <div className="text-purple-400/60 hover:text-purple-300 transition-colors cursor-pointer" title="AgentShield-X Engine 2.4">
-            <Shield size={18} />
-          </div>
+          {/* Bottom Rail Icon: GitHub Octocat */}
+          <a
+            href="https://github.com/tharuncoder676/AgentShield-X"
+            target="_blank"
+            rel="noreferrer"
+            className="text-purple-400/70 hover:text-white transition-colors cursor-pointer p-2 rounded-lg hover:bg-white/5"
+            title="GitHub: tharuncoder676/AgentShield-X"
+          >
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+            </svg>
+          </a>
         </div>
 
         {/* WORKSPACE VIEWPORT */}
@@ -1079,6 +1122,30 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                   <p className="text-center text-xs text-purple-300/60">
                     Click the card above or type a command below. Powered by NVIDIA Nemotron-4 340B with 312 universal connectors.
                   </p>
+
+                  {/* End-to-End Facilitator Guide Banner */}
+                  <div
+                    onClick={() => setIsGuideModalOpen(true)}
+                    className="p-3.5 px-4 rounded-xl bg-gradient-to-r from-purple-950/60 to-[#140b29] hover:border-purple-400/60 border border-purple-500/30 flex items-center justify-between text-xs text-purple-200 cursor-pointer transition-all shadow-lg shadow-purple-950/50 group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0">
+                        <Compass size={17} />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white group-hover:text-purple-300 transition-colors">
+                          Need Help Facilitating the Agent End-to-End?
+                        </div>
+                        <div className="text-[11px] text-purple-300/70">
+                          Step-by-step walkthrough: connecting tools, NVIDIA NIM setup, AST guardrails & recurring recipes.
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-600/30 group-hover:bg-purple-600 text-purple-200 group-hover:text-white font-semibold text-[11px] transition-all shrink-0">
+                      <span>Open Guide</span>
+                      <ArrowRight size={11} />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1585,6 +1652,128 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                 </div>
               )}
 
+              {/* PERCENT (%) PROMPT & VARIABLE SELECTOR POPOVER */}
+              {showPercentPopover && (
+                <div className="p-4 rounded-2xl bg-[#120824]/98 border border-purple-500/40 shadow-2xl shadow-purple-950/90 backdrop-blur-xl animate-fadeIn space-y-3 w-full text-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-purple-500/20">
+                    <div className="flex items-center gap-2">
+                      <Percent size={14} className="text-purple-400" />
+                      <span className="font-bold text-white">Skills, Variables & Prompts Library</span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        NVIDIA Nemotron Active
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setShowPercentPopover(false)}
+                      className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/5 cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {/* 1-Click Prompt Recipes */}
+                  <div>
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-purple-400/80 mb-2">
+                      ⚡ Quick Agent Recipes (Click to execute)
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        {
+                          title: "☀️ Daily Morning Briefing",
+                          desc: "7:30 AM summary of PRs, unread Slack alerts & news",
+                          action: () => {
+                            setShowPercentPopover(false);
+                            handleApplyStarterPrompt();
+                          },
+                        },
+                        {
+                          title: "🛡️ PR AST Security Audit",
+                          desc: "Scan repository pull requests for taint and secret leaks",
+                          action: () => {
+                            setShowPercentPopover(false);
+                            handleSendMessage("Connect GitHub and check PRs for open security issues");
+                          },
+                        },
+                        {
+                          title: "🚀 Release Notes Generator",
+                          desc: "Draft executive release notes for latest repository commits",
+                          action: () => {
+                            setShowPercentPopover(false);
+                            handleSendMessage("Connect GitHub and write release notes for the latest sprint");
+                          },
+                        },
+                        {
+                          title: "📬 Inbox Triage & Spam Defense",
+                          desc: "Prioritize unread emails and forward critical escalations",
+                          action: () => {
+                            setShowPercentPopover(false);
+                            handleSendMessage("Triage my executive inbox and notify me on Slack of urgent items");
+                          },
+                        },
+                      ].map((item, idx) => (
+                        <div
+                          key={idx}
+                          onClick={item.action}
+                          className="p-2.5 rounded-xl bg-purple-950/30 hover:bg-purple-900/50 border border-purple-500/20 hover:border-purple-400/60 cursor-pointer transition-all group"
+                        >
+                          <div className="font-bold text-white group-hover:text-purple-300 flex items-center justify-between">
+                            <span>{item.title}</span>
+                            <ArrowRight size={11} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="text-[10px] text-purple-200/70 mt-0.5">{item.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Insert Dynamic Variables */}
+                  <div>
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-purple-400/80 mb-2">
+                      🏷️ Insert Variable or Connector Token
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { label: "@github", val: "@github(tharuncoder676/AgentShield-X) " },
+                        { label: "@slack", val: "@slack(#incident-response) " },
+                        { label: "@telegram", val: "@telegram(bot_alerts) " },
+                        { label: "@nvidia", val: "@nvidia/nemotron-4-340b " },
+                        { label: "{{yesterday}}", val: "{{date.yesterday}} " },
+                        { label: "{{security.ast_scan}}", val: "{{security.ast_scan}} " },
+                      ].map((v, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setInputValue((prev) => prev + v.val);
+                            setShowPercentPopover(false);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-black/60 hover:bg-purple-900/40 border border-purple-500/30 text-purple-200 text-xs font-mono transition-colors cursor-pointer"
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between">
+                    <span className="text-[11px] text-purple-300/60">
+                      Press <kbd className="px-1 py-0.5 bg-black/50 border border-purple-500/30 rounded text-[10px]">Esc</kbd> to dismiss
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPercentPopover(false);
+                        setIsConnectorsModalOpen(true);
+                      }}
+                      className="text-purple-300 hover:text-white flex items-center gap-1 font-semibold cursor-pointer text-xs"
+                    >
+                      <span>Explore all 312 Connectors Hub</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* TOP ATTACHED BANNER: "(X) (GitHub) (Slack) (+300) Let Wingman run apps for you [Connect] [x]" */}
               {showAppsBanner && (
                 <div className="p-2.5 px-4 rounded-2xl bg-[#130b24]/95 border border-purple-500/35 shadow-2xl shadow-purple-950/60 backdrop-blur-md flex items-center justify-between text-xs animate-fadeIn">
@@ -1630,7 +1819,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                         className="px-2 py-0.5 rounded-full bg-purple-950/80 border border-purple-500/50 font-mono text-[10px] font-bold text-purple-200 hover:scale-105 transition-transform cursor-pointer"
                         title="Click to view all 312 Universal Connectors"
                       >
-                        +300
+                        +230
                       </div>
                     </div>
 
@@ -1712,12 +1901,13 @@ All deterministic outputs verified against AgentShield-X safety policies with su
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setTargetConnectorId(null);
-                      setIsConnectorsModalOpen(true);
-                    }}
-                    className="p-1.5 hover:text-purple-200 rounded-lg hover:bg-purple-900/40 transition-colors cursor-pointer"
-                    title="Insert Tool, Variable, or Connector"
+                    onClick={() => setShowPercentPopover((prev) => !prev)}
+                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      showPercentPopover
+                        ? "bg-purple-600 text-white shadow-md shadow-purple-600/50"
+                        : "hover:text-purple-200 hover:bg-purple-900/40 text-purple-300"
+                    }`}
+                    title="Insert Tool, Variable, or Prompt Skill"
                   >
                     <Percent size={14} />
                   </button>
@@ -2012,6 +2202,490 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                 Create Automation
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* END-TO-END AGENT FACILITATOR & SETUP GUIDE MODAL */}
+      {isGuideModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#0e071a] border border-purple-500/40 rounded-2xl shadow-2xl shadow-purple-950/80 flex flex-col overflow-hidden text-slate-100 font-sans">
+            
+            {/* Top Modal Header */}
+            <div className="px-6 py-4 border-b border-purple-500/20 bg-[#130a24] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shadow-md shadow-purple-950/50">
+                  <Compass size={22} className="text-purple-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold font-sora text-white">
+                      ShieldWing Agent: End-to-End Facilitation & Setup Guide
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
+                      v2.4.0 &bull; NVIDIA Powered
+                    </span>
+                  </div>
+                  <p className="text-xs text-purple-200/80 mt-0.5">
+                    Complete end-to-end walkthrough: configuring tools, AI models, dual-rail security, and autonomous workflows.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsGuideModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Navigation Tabs Bar */}
+            <div className="px-6 py-2 border-b border-purple-500/15 bg-[#0a0515] flex items-center gap-2 overflow-x-auto scrollbar-none text-xs">
+              {[
+                { id: "quickstart", label: "🚀 1. Quick Start (5 Steps)" },
+                { id: "connectors", label: "🔌 2. Connecting Tools & APIs" },
+                { id: "nvidia", label: "🤖 3. NVIDIA AI Engine & NIM" },
+                { id: "security", label: "🛡️ 4. Dual-Rail Security" },
+                { id: "recipes", label: "⚡ 5. Automation Recipes" },
+                { id: "faq", label: "❓ 6. FAQs & Help" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setGuideActiveTab(tab.id as any)}
+                  className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-all font-medium cursor-pointer ${
+                    guideActiveTab === tab.id
+                      ? "bg-purple-600 text-white font-bold shadow-md shadow-purple-600/30 border border-purple-400/50"
+                      : "text-purple-300/70 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-200">
+              
+              {/* TAB 1: QUICK START */}
+              {guideActiveTab === "quickstart" && (
+                <div className="space-y-5 animate-fadeIn">
+                  <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">Getting Started in 5 Simple Steps</h3>
+                      <p className="text-xs text-purple-200/80 mt-1">
+                        Follow this checklist to have your autonomous security agent operating across your stack in under 2 minutes.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleConnectAllCoreApps();
+                        setIsGuideModalOpen(false);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 cursor-pointer shrink-0"
+                    >
+                      <Zap size={13} className="fill-white" />
+                      <span>⚡ 1-Click Auto Setup Core Stack</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Step 1 */}
+                    <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">1</span>
+                        <h4 className="font-bold text-white text-sm">Connect Your Core Apps & Services</h4>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1-Click Instant</span>
+                      </div>
+                      <p className="text-purple-200/80 pl-8 leading-relaxed">
+                        Click the <strong>Connect</strong> button on the floating banner at the bottom or click <strong>+300</strong> to open the Connectors Hub. Select any of the 312 apps (GitHub, Twitter, Slack, Telegram, Gmail) and click <strong>⚡ Connect</strong>. It authorizes with live proxy tokens in &lt;200ms.
+                      </p>
+                      <div className="pl-8 pt-1 flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setIsGuideModalOpen(false);
+                            setShowQuickConnectPopover(true);
+                          }}
+                          className="px-3 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-semibold cursor-pointer"
+                        >
+                          Open Quick Connect Bar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">2</span>
+                        <h4 className="font-bold text-white text-sm">Configure the AI Engine (NVIDIA Nemotron-4 340B)</h4>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">NVIDIA CERTIFIED</span>
+                      </div>
+                      <p className="text-purple-200/80 pl-8 leading-relaxed">
+                        ShieldWing runs on <strong>NVIDIA Nemotron-4 340B Instruct</strong> by default with zero setup required. If you want direct cloud NIM acceleration with your own key, click <strong>Setup</strong> at the top right and paste your API key from <code className="text-purple-300">build.nvidia.com</code>.
+                      </p>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">3</span>
+                        <h4 className="font-bold text-white text-sm">Enforce Dual-Rail Trust Boundaries</h4>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">Sub-0.18ms Guard</span>
+                      </div>
+                      <p className="text-purple-200/80 pl-8 leading-relaxed">
+                        Routine read queries (reading commits, fetching PR diffs, searching logs) execute autonomously. Consequential write actions (mass emails, modifying production branches, running destructive scripts) are quarantined until you confirm via Telegram or the Approvals tab.
+                      </p>
+                    </div>
+
+                    {/* Step 4 */}
+                    <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">4</span>
+                        <h4 className="font-bold text-white text-sm">Schedule Automated Workflows & Recurring Tasks</h4>
+                      </div>
+                      <p className="text-purple-200/80 pl-8 leading-relaxed">
+                        Switch to the <strong>Tasks</strong> tab to view and manage your automations, or simply type natural language in chat (e.g. <em>&quot;Set up a recurring daily briefing at 7:30 AM&quot;</em>). The agent creates the cron schedule and executes on time.
+                      </p>
+                      <div className="pl-8 pt-1">
+                        <button
+                          onClick={() => {
+                            setIsGuideModalOpen(false);
+                            setActiveTab("tasks");
+                          }}
+                          className="px-3 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 text-xs font-semibold cursor-pointer"
+                        >
+                          View Automations in Tasks Tab
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Step 5 */}
+                    <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">5</span>
+                        <h4 className="font-bold text-white text-sm">Attach Files & Inspect Code Security</h4>
+                      </div>
+                      <p className="text-purple-200/80 pl-8 leading-relaxed">
+                        Click the <strong>+</strong> icon on the left of the chat input to upload source files (.py, .ts, .json, .pdf, .md). ShieldWing executes static taint analysis, verifies zero leaked credentials, and provides an instant security review.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CONNECTING TOOLS */}
+              {guideActiveTab === "connectors" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <FileCode size={16} className="text-purple-400" />
+                      <span>GitHub Integration (tharuncoder676/AgentShield-X)</span>
+                    </h3>
+                    <p className="text-purple-200/80 leading-relaxed">
+                      • <strong>Public Access</strong>: Direct read access to commits, branches, issues, and PR diffs is pre-configured for <code className="text-purple-300">tharuncoder676/AgentShield-X</code>.<br />
+                      • <strong>Private Repos & Writing Comments</strong>: Open the Connectors Hub &rarr; GitHub &rarr; enter your Personal Access Token (PAT) with <code className="text-purple-300">repo</code> scopes.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <MessageSquare size={16} className="text-emerald-400" />
+                      <span>Telegram Bot Security Gate</span>
+                    </h3>
+                    <p className="text-purple-200/80 leading-relaxed">
+                      1. Open Telegram and message <strong>@BotFather</strong>.<br />
+                      2. Type <code className="text-purple-300">/newbot</code>, choose a name and username, and copy the Bot Token.<br />
+                      3. Message <strong>@userinfobot</strong> to get your numeric Chat ID.<br />
+                      4. Enter both in Connectors Hub &rarr; Telegram. Consequential action approvals and daily briefings will now route straight to your Telegram!
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <MessageSquare size={16} className="text-purple-400" />
+                      <span>Slack Incoming Webhooks</span>
+                    </h3>
+                    <p className="text-purple-200/80 leading-relaxed">
+                      Create an Incoming Webhook in your Slack workspace (e.g. <code className="text-purple-300">#security-alerts</code>), copy the webhook URL, and paste it into Connectors Hub &rarr; Slack. Critical taint leaks and incident reports will post automatically.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <Zap size={16} className="text-amber-400" />
+                      <span>312 Universal Connectors Hub</span>
+                    </h3>
+                    <p className="text-purple-200/80 leading-relaxed">
+                      Includes pre-built deterministic connectors for <strong>AWS, Stripe, HubSpot, Apollo, Supabase, Jira, Linear, Notion, Discord, Twitter / X</strong>, and 300+ other enterprise services. Every connector features 1-click OAuth connect and strict trust boundary enforcement.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setIsGuideModalOpen(false);
+                        setIsConnectorsModalOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-xs hover:opacity-90 cursor-pointer shadow-md shadow-purple-600/30"
+                    >
+                      Browse 312 Connectors
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: NVIDIA ENGINE */}
+              {guideActiveTab === "nvidia" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Cpu size={18} className="text-purple-400" />
+                      <h3 className="font-bold text-white text-sm">NVIDIA AI Agent Architecture</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">NVIDIA NIM</span>
+                    </div>
+                    <p className="text-purple-200/80 leading-relaxed">
+                      ShieldWing utilizes <strong>NVIDIA Nemotron-4 340B Instruct</strong> as its core autonomous reasoning engine, combined with <strong>NVIDIA NeMo Guardrails</strong> to guarantee deterministic safety.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                      <div className="p-3 rounded-lg bg-black/40 border border-purple-500/20 space-y-1">
+                        <div className="font-bold text-white">NVIDIA Nemotron-4 340B</div>
+                        <p className="text-[11px] text-purple-300/70">
+                          Excels at multi-turn planning, tool calling across 300+ APIs, code AST generation, and executive briefings.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-black/40 border border-purple-500/20 space-y-1">
+                        <div className="font-bold text-white">NVIDIA NeMo Guardrails</div>
+                        <p className="text-[11px] text-purple-300/70">
+                          Dual-rail guardrails inspect user inputs and tool outputs in sub-0.18ms to stop prompt injection attacks and data exfiltration.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-2">
+                    <h4 className="font-bold text-white text-xs">How to Add Your Own NVIDIA NIM Key:</h4>
+                    <ol className="list-decimal pl-5 space-y-1 text-purple-200/80 leading-relaxed">
+                      <li>Go to <a href="https://build.nvidia.com" target="_blank" rel="noreferrer" className="text-purple-300 underline">build.nvidia.com</a> and sign in.</li>
+                      <li>Generate an API Key (starts with <code className="text-purple-300">nvapi-...</code>).</li>
+                      <li>Click <strong>Setup</strong> at the top right of ShieldWing Studio and paste your key.</li>
+                      <li>Inference requests will route directly to your NVIDIA NIM tenant with dedicated GPU compute!</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: DUAL-RAIL SECURITY */}
+              {guideActiveTab === "security" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-3">
+                    <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                      <Shield size={18} className="text-purple-400" />
+                      <span>Understanding the Dual-Rail Trust Boundary</span>
+                    </h3>
+                    <p className="text-purple-200/80 leading-relaxed">
+                      Most AI agents fail in production because they lack safe boundaries between reading data and executing consequential actions. AgentShield-X enforces two deterministic rails:
+                    </p>
+
+                    <div className="space-y-3 pt-1">
+                      <div className="p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/40 space-y-1">
+                        <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                          <CheckCircle2 size={14} />
+                          <span>Rail 1: Routine Autonomous Operations (Auto-Approved)</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">
+                          Reading repository stats, querying commit diffs, running AST linters, summarizing emails, and generating daily briefings execute automatically without interrupting the human operator.
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-amber-950/30 border border-amber-500/40 space-y-1">
+                        <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                          <AlertTriangle size={14} />
+                          <span>Rail 2: Consequential Actions (Requires Human Confirmation)</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">
+                          Sending mass marketing sequences (&gt;25 recipients), merging PRs into main, deleting database records, or modifying production infrastructure are quarantined behind a dual-rail confirmation barrier.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: AUTOMATION RECIPES */}
+              {guideActiveTab === "recipes" && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">Pre-Built Automation Recipes</h3>
+                      <p className="text-xs text-purple-200/80 mt-0.5">
+                        Click &quot;Deploy Recipe&quot; to instantly seed these production workflows into your Tasks tab.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      {
+                        title: "Daily Morning Briefing",
+                        schedule: "7:30 AM every morning (0 7 * * *)",
+                        desc: "Synthesizes repository PRs, unread Slack alerts, top Jira blockers, and emails from yesterday into an executive brief.",
+                        tools: ["GitHub", "Slack", "Gmail", "NVIDIA NIM"],
+                        taskData: {
+                          id: "task_daily_briefing",
+                          name: "Daily Morning Briefing (NVIDIA Nemotron Synthesizer)",
+                          schedule: "0 7 * * *",
+                          scheduleHuman: "7:30 AM every morning",
+                          enabled: true,
+                          connectors: ["GitHub", "Slack", "Gmail", "NVIDIA NIM"],
+                          prompt: "Synthesize repository PRs, unread Slack alerts, and security telemetry into an executive brief.",
+                        },
+                      },
+                      {
+                        title: "GitHub PR AST Security Linter",
+                        schedule: "On every pull request opened",
+                        desc: "Inspects AST trees for newly opened PRs on tharuncoder676/AgentShield-X, checks taint flows, and verifies zero secrets leaked.",
+                        tools: ["GitHub", "Semgrep", "Discord"],
+                        taskData: {
+                          id: "task_pr_security_audit",
+                          name: "GitHub PR AST Security & Taint Linter",
+                          schedule: "on_pr_opened",
+                          scheduleHuman: "On every pull request opened",
+                          enabled: true,
+                          connectors: ["GitHub", "Semgrep", "Discord"],
+                          prompt: "Parse AST tree for newly opened PRs, verify taint flows, and post inline comments on security issues.",
+                        },
+                      },
+                      {
+                        title: "HubSpot & Apollo Lead Outreach",
+                        schedule: "Every 4 hours (0 */4 * * *)",
+                        desc: "Enriches high-intent inbound visitors with Apollo data and prepares personalized outreach drafts with dual-rail signoff.",
+                        tools: ["HubSpot", "Apollo", "Gmail"],
+                        taskData: {
+                          id: "task_lead_enrichment",
+                          name: "HubSpot & Apollo Lead Outreach Pipeline",
+                          schedule: "0 */4 * * *",
+                          scheduleHuman: "Every 4 hours",
+                          enabled: true,
+                          connectors: ["HubSpot", "Apollo", "Gmail"],
+                          prompt: "Enrich high-intent inbound leads with Apollo data and prepare executive outreach queue.",
+                        },
+                      },
+                      {
+                        title: "Executive Inbox Triage & Spam Defense",
+                        schedule: "Every 15 minutes (*/15 * * * *)",
+                        desc: "Filters incoming emails, labels urgent client communications, and forwards critical incidents to Slack / Telegram.",
+                        tools: ["Gmail", "Outlook", "Slack"],
+                        taskData: {
+                          id: "task_inbox_cleanup",
+                          name: "Executive Inbox Triage & Spam Defense",
+                          schedule: "*/15 * * * *",
+                          scheduleHuman: "Every 15 minutes",
+                          enabled: true,
+                          connectors: ["Gmail", "Outlook", "Slack"],
+                          prompt: "Filter incoming inbox items, label high-priority customer requests, and ping urgent items on Slack.",
+                        },
+                      },
+                    ].map((recipe, idx) => (
+                      <div key={idx} className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 flex flex-col justify-between space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-white text-xs">{recipe.title}</h4>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/30">
+                              {recipe.schedule}
+                            </span>
+                          </div>
+                          <p className="text-purple-200/80 text-xs mt-1.5 leading-relaxed">
+                            {recipe.desc}
+                          </p>
+                          <div className="pt-2 flex items-center gap-1.5 flex-wrap">
+                            {recipe.tools.map((t, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-600/20 text-purple-300 border border-purple-500/30">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setTasks((prev) => {
+                              const exists = prev.some((t) => t.id === recipe.taskData.id);
+                              if (exists) return prev;
+                              return [
+                                {
+                                  ...recipe.taskData,
+                                  lastRun: "Never (Just deployed)",
+                                  lastStatus: "success",
+                                  runsCount: 0,
+                                },
+                                ...prev,
+                              ];
+                            });
+                            setIsGuideModalOpen(false);
+                            setActiveTab("tasks");
+                          }}
+                          className="w-full py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:opacity-90 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/30 cursor-pointer"
+                        >
+                          <Zap size={12} className="fill-white" />
+                          <span>⚡ Deploy Recipe</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: FAQS */}
+              {guideActiveTab === "faq" && (
+                <div className="space-y-3.5 animate-fadeIn">
+                  {[
+                    {
+                      q: "How do I add files to the chat?",
+                      a: "Click the '+' button on the left of the bottom chat dock. Choose any code, PDF, JSON, or text file. ShieldWing will upload it and run an AST taint inspection.",
+                    },
+                    {
+                      q: "How does 1-Click Connect work?",
+                      a: "Click 'Connect' on the floating dock banner or open the 312 Connectors Hub. Clicking '⚡ Connect' generates live sandbox/OAuth credentials and routes queries through the AgentShield-X proxy in <200ms.",
+                    },
+                    {
+                      q: "Can I customize the agent name and personality?",
+                      a: "Yes! Click the 'Setup' button at the top right or the circular avatar on the left nav rail to change the identity from Wingman to any custom AI persona.",
+                    },
+                    {
+                      q: "Where do automated tasks run?",
+                      a: "Tasks are managed in the 'Tasks' tab. You can click 'Run Now' anytime for an on-demand run and interactive report modal, or let them execute autonomously on their cron schedules.",
+                    },
+                    {
+                      q: "How are production writes protected?",
+                      a: "Every consequential action triggers a dual-rail confirmation barrier. You receive an alert on Telegram or in the Approvals tab to authorize or reject the blast radius before anything touches production.",
+                    },
+                  ].map((faq, idx) => (
+                    <div key={idx} className="p-3.5 rounded-xl bg-[#120822] border border-purple-500/20 space-y-1">
+                      <div className="font-bold text-white text-xs flex items-center gap-2">
+                        <HelpCircle size={14} className="text-purple-400 shrink-0" />
+                        <span>{faq.q}</span>
+                      </div>
+                      <p className="text-purple-200/80 text-xs pl-5 leading-relaxed font-sans">
+                        {faq.a}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer with Quick Actions */}
+            <div className="px-6 py-3 border-t border-purple-500/20 bg-[#0f081c] flex items-center justify-between text-xs text-purple-300/70">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Need live assistance? Ask Wingman directly in chat!</span>
+              </div>
+              <button
+                onClick={() => setIsGuideModalOpen(false)}
+                className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-600/30 cursor-pointer"
+              >
+                Got it, Close Guide
+              </button>
+            </div>
+
           </div>
         </div>
       )}
