@@ -48,6 +48,11 @@ packages/*/dist/
 .coverage
 htmlcov/
 .tox/
+
+# Video Render Artifacts
+video_assets/
+temp_voice/
+*.mp4
 .nox/
 .hypothesis/
 

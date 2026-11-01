@@ -13,6 +13,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    watch: {
+      ignored: ["**/downloads/**", "**/*.mp4", "**/*.exe", "**/*.dmg", "**/*.AppImage", "**/*.zip", "**/*.tar.gz"],
+    },
     proxy: {
       "/v1": {
         target: "http://127.0.0.1:8002",
