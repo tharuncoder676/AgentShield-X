@@ -131,7 +131,63 @@ export const App: React.FC = () => {
 
             {/* Dedicated ShieldWing / Wingman AI Studio (300+ Connectors & Automation) */}
             <Route
+              path="/wing"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wingman"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/shieldwing"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/connected-tools"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/connect"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tools"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/integrations"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/channels"
               element={
                 <ProtectedRoute>
                   <ShieldWingStudio />
@@ -155,7 +211,14 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
+              <Route path="wing" element={<ShieldWingStudio />} />
+              <Route path="wingman" element={<ShieldWingStudio />} />
               <Route path="shieldwing" element={<ShieldWingStudio />} />
+              <Route path="connected-tools" element={<ShieldWingStudio />} />
+              <Route path="connect" element={<ShieldWingStudio />} />
+              <Route path="tools" element={<ShieldWingStudio />} />
+              <Route path="integrations" element={<ShieldWingStudio />} />
+              <Route path="channels" element={<ShieldWingStudio />} />
               <Route path="overview" element={<Overview />} />
               <Route path="terminal" element={<Terminal />} />
               <Route path="live" element={<LiveFeed />} />
