@@ -89,6 +89,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
 
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testSuccessId, setTestSuccessId] = useState<string | null>(null);
+  const [connectedToast, setConnectedToast] = useState<string | null>(null);
 
   // If opened for a specific connector ID
   useEffect(() => {
@@ -191,6 +192,8 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
         details: `Dual-rail sentinels enforced. ${connector.routineActions.length} routine actions auto-approved.`,
         latencyMs: latency,
       });
+      setConnectedToast(`🎉 Successfully connected to ${connector.name}!`);
+      setTimeout(() => setConnectedToast(null), 3000);
     }, 250);
   };
 
@@ -211,6 +214,9 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
         onConnectorConnected({ ...found, connected: true });
       }
     });
+
+    setConnectedToast("⚡ Successfully connected 10 Core Stack Tools in 1 Click!");
+    setTimeout(() => setConnectedToast(null), 3500);
   };
 
   // Perform Real Live Verification and Authorization
@@ -985,6 +991,14 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
               </div>
 
             </div>
+          </div>
+        )}
+
+        {/* Floating Toast Notification */}
+        {connectedToast && (
+          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs shadow-2xl shadow-emerald-950 flex items-center gap-2 animate-bounce border border-emerald-400/40">
+            <CheckCircle2 size={16} />
+            <span>{connectedToast}</span>
           </div>
         )}
 
