@@ -10,7 +10,7 @@ import { Key, Shield, Zap, Copy, CheckCircle, Terminal, Sparkles } from "lucide-
 export const ConsoleLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { org, activeProject } = useAuth();
+  const { org, activeProject, user, logout } = useAuth();
   const { status } = useStream();
 
   const [apiKey, setApiKey] = useState<string | null>(() => localStorage.getItem("agentshield_api_key"));
@@ -65,10 +65,13 @@ export const ConsoleLayout: React.FC = () => {
     <AppShell
       currentPath={currentPathId}
       onNavigate={handleNavigate}
-      orgName={org?.name || "Organization"}
-      projectName={activeProject?.name || "Default Project"}
+      orgName={org?.name || (user?.email ? `${user.email.split("@")[0]}'s Workspace` : "Primary Workspace")}
+      projectName={activeProject?.name || "Production Security Agent"}
       connectionStatus={mappedStatus}
       shieldActive={true}
+      userEmail={user?.email || localStorage.getItem("agentshield_user_email") || undefined}
+      userName={(user as any)?.name || user?.full_name || localStorage.getItem("agentshield_user_name") || undefined}
+      onLogout={logout}
     >
       <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full relative space-y-4">
         

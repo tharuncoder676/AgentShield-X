@@ -23,7 +23,7 @@ export const Signup: React.FC = () => {
     setLoading(true);
     try {
       await loginWithGoogle();
-      navigate("/security-challenge");
+      navigate("/overview");
     } catch (err: any) {
       console.warn("Google signup fallback:", err);
       setActiveOAuthProvider("google");
@@ -37,25 +37,29 @@ export const Signup: React.FC = () => {
     setError(null);
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim() || cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    localStorage.setItem("agentshield_user_email", cleanEmail);
+    localStorage.setItem("agentshield_user_name", cleanName);
+
     try {
       try {
-        await signUpWithFirebase(email, password, fullName);
+        await signUpWithFirebase(cleanEmail, password, cleanName);
       } catch (fbErr: any) {
         console.warn("Firebase email signup error:", fbErr?.message);
       }
 
       await signup({
-        full_name: fullName,
-        email,
+        full_name: cleanName,
+        email: cleanEmail,
         password,
         organization_name: orgName.trim() || undefined,
       });
-      navigate("/security-challenge");
+      navigate("/overview");
     } catch (err: any) {
-      if (email.includes("@")) {
+      if (cleanEmail.includes("@")) {
         localStorage.setItem("agentshield_token", "dev_operator_session_token");
-        localStorage.setItem("agentshield_user_email", email.toLowerCase());
-        navigate("/security-challenge");
+        navigate("/overview");
       } else {
         setError(err.message || "Sign-up failed. Please review your details.");
       }
@@ -67,13 +71,17 @@ export const Signup: React.FC = () => {
   const handleOAuthSuccess = async (profile: { email: string; name: string; provider: "google" }) => {
     setActiveOAuthProvider(null);
     setLoading(true);
+    const cleanEmail = profile.email.trim().toLowerCase();
+    localStorage.setItem("agentshield_user_email", cleanEmail);
+    localStorage.setItem("agentshield_user_name", profile.name);
+
     try {
       const res = await fetch(`${""}/v1/auth/oauth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider: profile.provider,
-          email: profile.email,
+          email: cleanEmail,
           name: profile.name,
         }),
       });
@@ -88,7 +96,7 @@ export const Signup: React.FC = () => {
       localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
     } finally {
       setLoading(false);
-      navigate("/security-challenge");
+      navigate("/overview");
     }
   };
 

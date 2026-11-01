@@ -28,6 +28,7 @@ export const OAuthModal: React.FC<OAuthModalProps> = ({
     setTimeout(() => {
       setIsSubmitting(false);
       localStorage.setItem("agentshield_user_email", email.toLowerCase());
+      localStorage.setItem("agentshield_user_name", name);
       onSuccess({ email: email.toLowerCase(), name, provider: "google" });
     }, 400);
   };

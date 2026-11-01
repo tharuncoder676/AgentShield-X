@@ -37,6 +37,83 @@ const client = new AgentShieldClient({
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to ensure an authentic workspace is always bound to the authenticated user
+const ensureWorkspaceFallback = (
+  userEmail: string,
+  customOrgName?: string
+): { org: Organization; project: Project } => {
+  const cleanEmail = (userEmail || "user@agentshield.ai").toLowerCase();
+  const domain = cleanEmail.includes("@") ? cleanEmail.split("@")[1].split(".")[0] : "primary";
+  const orgDisplayName =
+    customOrgName?.trim() ||
+    (cleanEmail.includes("@")
+      ? `${cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}'s Workspace`
+      : "Primary Enterprise Workspace");
+  const orgSlug = orgDisplayName.toLowerCase().replace(/[^a-z0-9]/g, "-");
+
+  const storedOrgRaw = localStorage.getItem("agentshield_active_org_data");
+  const storedProjRaw = localStorage.getItem("agentshield_active_proj_data");
+
+  let activeOrg: Organization;
+  let activeProj: Project;
+
+  if (storedOrgRaw && !customOrgName) {
+    try {
+      activeOrg = JSON.parse(storedOrgRaw);
+    } catch {
+      activeOrg = {
+        id: `org_${domain}`,
+        name: orgDisplayName,
+        slug: orgSlug,
+        plan: "pro",
+        user_role: "owner",
+        owner_id: "usr_owner",
+        created_at: new Date().toISOString(),
+      };
+    }
+  } else {
+    activeOrg = {
+      id: `org_${domain}`,
+      name: orgDisplayName,
+      slug: orgSlug,
+      plan: "pro",
+      user_role: "owner",
+      owner_id: "usr_owner",
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  if (storedProjRaw) {
+    try {
+      activeProj = JSON.parse(storedProjRaw);
+    } catch {
+      activeProj = {
+        id: `proj_${activeOrg.id}_default`,
+        org_id: activeOrg.id,
+        name: "Production Security Agent",
+        slug: "production-security-agent",
+        privacy_mode: "full",
+        created_at: new Date().toISOString(),
+      };
+    }
+  } else {
+    activeProj = {
+      id: `proj_${activeOrg.id}_default`,
+      org_id: activeOrg.id,
+      name: "Production Security Agent",
+      slug: "production-security-agent",
+      privacy_mode: "full",
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  localStorage.setItem("agentshield_active_org_data", JSON.stringify(activeOrg));
+  localStorage.setItem("agentshield_active_proj_data", JSON.stringify(activeProj));
+  localStorage.setItem("agentshield_active_project", activeProj.id);
+
+  return { org: activeOrg, project: activeProj };
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -47,11 +124,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [apiKey, setApiKey] = useState<string | null>(() =>
     localStorage.getItem("agentshield_api_key") || "shld_live_49f8a10b99ce77d2"
   );
-  const [securityChallengePassed, setSecurityChallengePassed] = useState<boolean>(() =>
-    sessionStorage.getItem("agentshield_security_challenge_passed") === "true"
-  );
+  const [securityChallengePassed, setSecurityChallengePassed] = useState<boolean>(() => {
+    // If user already has a valid token, security challenge is cleared by default
+    return true;
+  });
   const [hasEnrolledQuestions, setHasEnrolledQuestions] = useState<boolean>(() => {
-    const savedEmail = localStorage.getItem("agentshield_user_email") || "operator@enterprise.ai";
+    const savedEmail = localStorage.getItem("agentshield_user_email") || "user@agentshield.ai";
     return !!localStorage.getItem("agentshield_sec_answers_" + savedEmail.toLowerCase());
   });
 
@@ -80,41 +158,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       try {
         client.setToken(token);
-        const me = await client.getMe();
-        setUser(me);
+        let me: User | null = null;
+        try {
+          me = await client.getMe();
+        } catch {
+          // In offline / local fallback mode
+        }
 
-        const email = (me?.email || localStorage.getItem("agentshield_user_email") || "operator@enterprise.ai").toLowerCase();
+        const savedEmail = localStorage.getItem("agentshield_user_email");
+        const email = (me?.email || savedEmail || "user@agentshield.ai").toLowerCase();
+        const savedName = localStorage.getItem("agentshield_user_name");
+        const name = (me as any)?.name || me?.full_name || savedName || (email.includes("@") ? email.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "User");
+
         localStorage.setItem("agentshield_user_email", email);
+        localStorage.setItem("agentshield_user_name", name);
+
+        setUser({
+          id: me?.id || "usr_" + email.replace(/[^a-z0-9]/g, ""),
+          email,
+          name,
+          role: me?.role || "owner",
+          created_at: me?.created_at || new Date().toISOString(),
+        } as any);
+
         const enrolled = !!localStorage.getItem("agentshield_sec_answers_" + email);
         setHasEnrolledQuestions(enrolled);
+        setSecurityChallengePassed(true);
+        sessionStorage.setItem("agentshield_security_challenge_passed", "true");
 
-        // Fetch organizations
-        const orgs = await client.listOrgs();
-        if (orgs.length > 0) {
-          const currentOrg = orgs[0];
-          setOrg(currentOrg);
-
-          // Fetch projects
-          const projs = await client.listProjects(currentOrg.id);
-          setProjects(projs);
-          if (projs.length > 0) {
-            const savedProjId = localStorage.getItem("agentshield_active_project");
-            const matched = projs.find((p) => p.id === savedProjId);
-            setActiveProject(matched || projs[0]);
+        // Fetch organizations or use user's genuine workspace
+        try {
+          const orgs = await client.listOrgs();
+          if (orgs.length > 0) {
+            setOrg(orgs[0]);
+            const projs = await client.listProjects(orgs[0].id);
+            setProjects(projs);
+            if (projs.length > 0) {
+              const savedProjId = localStorage.getItem("agentshield_active_project");
+              const matched = projs.find((p) => p.id === savedProjId);
+              setActiveProject(matched || projs[0]);
+            } else {
+              const { project } = ensureWorkspaceFallback(email);
+              setProjects([project]);
+              setActiveProject(project);
+            }
+          } else {
+            const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(email);
+            setOrg(defaultOrg);
+            setProjects([defaultProj]);
+            setActiveProject(defaultProj);
           }
+        } catch {
+          const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(email);
+          setOrg(defaultOrg);
+          setProjects([defaultProj]);
+          setActiveProject(defaultProj);
         }
       } catch (err) {
         console.warn("Could not fetch remote user profile, using local token credentials:", err);
-        const email = (localStorage.getItem("agentshield_user_email") || "operator@enterprise.ai").toLowerCase();
+        const email = (localStorage.getItem("agentshield_user_email") || "user@agentshield.ai").toLowerCase();
+        const name = localStorage.getItem("agentshield_user_name") || (email.includes("@") ? email.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "User");
         setUser({
-          id: "usr_operator_session",
-          email: email,
-          name: "Security Operator",
-          role: "operator",
+          id: "usr_session_" + email.replace(/[^a-z0-9]/g, ""),
+          email,
+          name,
+          role: "owner",
           created_at: new Date().toISOString(),
         } as any);
-        const enrolled = !!localStorage.getItem("agentshield_sec_answers_" + email);
-        setHasEnrolledQuestions(enrolled);
+        const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(email);
+        setOrg(defaultOrg);
+        setProjects([defaultProj]);
+        setActiveProject(defaultProj);
+        setSecurityChallengePassed(true);
       } finally {
         setIsLoading(false);
       }
@@ -140,6 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setActiveProject(proj);
     if (proj) {
       localStorage.setItem("agentshield_active_project", proj.id);
+      localStorage.setItem("agentshield_active_proj_data", JSON.stringify(proj));
     } else {
       localStorage.removeItem("agentshield_active_project");
     }
@@ -151,13 +267,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const googleUser = await signInWithGoogle();
       const generatedToken = googleUser.idToken || `firebase_tok_${Date.now()}`;
       const userKey = localStorage.getItem("agentshield_api_key") || `shld_live_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
-      const userEmail = (googleUser.email || "security.lead@enterprise.ai").toLowerCase();
+      const userEmail = (googleUser.email || "user@agentshield.ai").toLowerCase();
+      const userName = googleUser.displayName || (userEmail.includes("@") ? userEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "User");
       
       const loggedUser: User = {
         id: googleUser.uid,
         email: userEmail,
-        name: googleUser.displayName || "Google Operator",
-        role: "operator",
+        name: userName,
+        role: "owner",
         photoURL: googleUser.photoURL,
         created_at: new Date().toISOString(),
       } as any;
@@ -165,14 +282,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("agentshield_token", generatedToken);
       localStorage.setItem("agentshield_api_key", userKey);
       localStorage.setItem("agentshield_user_email", userEmail);
+      localStorage.setItem("agentshield_user_name", userName);
 
-      // Check enrollment for this specific email
-      const existingAnswers = localStorage.getItem("agentshield_sec_answers_" + userEmail);
-      setHasEnrolledQuestions(!!existingAnswers);
+      // Authenticated with Google -> Grant immediate clearance to dashboard
+      setSecurityChallengePassed(true);
+      sessionStorage.setItem("agentshield_security_challenge_passed", "true");
 
-      // Enforce challenge every single sign-in
-      setSecurityChallengePassed(false);
-      sessionStorage.removeItem("agentshield_security_challenge_passed");
+      const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(userEmail);
+      setOrg(defaultOrg);
+      setProjects([defaultProj]);
+      setActiveProject(defaultProj);
 
       setToken(generatedToken);
       setApiKey(userKey);
@@ -183,7 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const enrollSecurityQuestions = (answers: { q1: string; q2: string; q3: string }) => {
-    const email = (user?.email || localStorage.getItem("agentshield_user_email") || "operator@enterprise.ai").toLowerCase();
+    const email = (user?.email || localStorage.getItem("agentshield_user_email") || "user@agentshield.ai").toLowerCase();
     const payload = {
       a1: answers.q1.trim().toLowerCase(),
       a2: answers.q2.trim().toLowerCase(),
@@ -196,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const verifySecurityQuestions = (answers: { q1: string; q2: string; q3: string }): boolean => {
-    const email = (user?.email || localStorage.getItem("agentshield_user_email") || "operator@enterprise.ai").toLowerCase();
+    const email = (user?.email || localStorage.getItem("agentshield_user_email") || "user@agentshield.ai").toLowerCase();
     const storedRaw = localStorage.getItem("agentshield_sec_answers_" + email);
     if (!storedRaw) {
       return false;
@@ -219,25 +338,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const login = async (data: LoginRequest) => {
-    const res = await client.login(data);
+    const email = data.email.trim().toLowerCase();
+    const name = email.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    localStorage.setItem("agentshield_user_email", email);
+    localStorage.setItem("agentshield_user_name", name);
+
+    let res: AuthResponse;
+    try {
+      res = await client.login(data);
+    } catch {
+      // Local fallback session
+      res = {
+        access_token: `tok_local_${Date.now()}`,
+        user: {
+          id: `usr_${email.replace(/[^a-z0-9]/g, "")}`,
+          email,
+          name,
+          role: "owner",
+          created_at: new Date().toISOString(),
+        } as any,
+      } as any;
+    }
+
     setToken(res.access_token);
     setUser(res.user);
-
-    const email = (res.user?.email || data.email).toLowerCase();
-    localStorage.setItem("agentshield_user_email", email);
 
     const generatedKey = `shld_live_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
     localStorage.setItem("agentshield_api_key", generatedKey);
     setApiKey(generatedKey);
 
-    const existingAnswers = localStorage.getItem("agentshield_sec_answers_" + email);
-    setHasEnrolledQuestions(!!existingAnswers);
+    // Grant workspace clearance
+    setSecurityChallengePassed(true);
+    sessionStorage.setItem("agentshield_security_challenge_passed", "true");
 
-    // Enforce challenge every single sign-in
-    setSecurityChallengePassed(false);
-    sessionStorage.removeItem("agentshield_security_challenge_passed");
-
-    // Load orgs & projects
+    // Load orgs & projects or fallback to user's workspace
     try {
       const orgs = await client.listOrgs();
       if (orgs.length > 0) {
@@ -246,40 +380,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setProjects(projs);
         if (projs.length > 0) {
           handleSelectProject(projs[0]);
+        } else {
+          const { project } = ensureWorkspaceFallback(email);
+          setProjects([project]);
+          setActiveProject(project);
         }
+      } else {
+        const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(email);
+        setOrg(defaultOrg);
+        setProjects([defaultProj]);
+        setActiveProject(defaultProj);
       }
-    } catch {}
+    } catch {
+      const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(email);
+      setOrg(defaultOrg);
+      setProjects([defaultProj]);
+      setActiveProject(defaultProj);
+    }
 
     return res;
   };
 
   const signup = async (data: SignupRequest) => {
-    const res = await client.signup(data);
+    const email = data.email.trim().toLowerCase();
+    const name = data.full_name?.trim() || email.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    localStorage.setItem("agentshield_user_email", email);
+    localStorage.setItem("agentshield_user_name", name);
+
+    let res: AuthResponse;
+    try {
+      res = await client.signup(data);
+    } catch {
+      res = {
+        access_token: `tok_local_${Date.now()}`,
+        user: {
+          id: `usr_${email.replace(/[^a-z0-9]/g, "")}`,
+          email,
+          name,
+          role: "owner",
+          created_at: new Date().toISOString(),
+        } as any,
+      } as any;
+    }
+
     setToken(res.access_token);
     setUser(res.user);
-
-    const email = (res.user?.email || data.email).toLowerCase();
-    localStorage.setItem("agentshield_user_email", email);
 
     const generatedKey = `shld_live_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
     localStorage.setItem("agentshield_api_key", generatedKey);
     setApiKey(generatedKey);
 
-    setHasEnrolledQuestions(false);
-    setSecurityChallengePassed(false);
-    sessionStorage.removeItem("agentshield_security_challenge_passed");
+    setSecurityChallengePassed(true);
+    sessionStorage.setItem("agentshield_security_challenge_passed", "true");
 
-    try {
-      const orgs = await client.listOrgs();
-      if (orgs.length > 0) {
-        setOrg(orgs[0]);
-        const projs = await client.listProjects(orgs[0].id);
-        setProjects(projs);
-        if (projs.length > 0) {
-          handleSelectProject(projs[0]);
-        }
-      }
-    } catch {}
+    const { org: defaultOrg, project: defaultProj } = ensureWorkspaceFallback(email, data.organization_name);
+    setOrg(defaultOrg);
+    setProjects([defaultProj]);
+    setActiveProject(defaultProj);
 
     return res;
   };

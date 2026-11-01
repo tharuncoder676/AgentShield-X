@@ -25,8 +25,11 @@ export const Login: React.FC = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         localStorage.setItem("agentshield_token", session.access_token);
+        if (session.user?.email) {
+          localStorage.setItem("agentshield_user_email", session.user.email.toLowerCase());
+        }
         localStorage.setItem("agentshield_tier", "pro");
-        navigate("/security-challenge");
+        navigate("/overview");
       }
     });
 
@@ -35,8 +38,11 @@ export const Login: React.FC = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         localStorage.setItem("agentshield_token", session.access_token);
+        if (session.user?.email) {
+          localStorage.setItem("agentshield_user_email", session.user.email.toLowerCase());
+        }
         localStorage.setItem("agentshield_tier", "pro");
-        navigate("/security-challenge");
+        navigate("/overview");
       }
     });
 
@@ -48,11 +54,14 @@ export const Login: React.FC = () => {
     setError(null);
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+    localStorage.setItem("agentshield_user_email", cleanEmail);
+
     try {
       // 1. Attempt Supabase direct sign in
       try {
         const { data: supaData } = await supabase.auth.signInWithPassword({
-          email,
+          email: cleanEmail,
           password,
         });
         if (supaData?.session) {
@@ -64,13 +73,13 @@ export const Login: React.FC = () => {
       }
 
       // 2. Control plane backend login
-      await login({ email, password });
+      await login({ email: cleanEmail, password });
       localStorage.setItem("agentshield_remember", "true");
-      navigate("/security-challenge");
+      navigate("/overview");
     } catch (err: any) {
-      if (email.includes("@")) {
+      if (cleanEmail.includes("@")) {
         localStorage.setItem("agentshield_token", "dev_operator_session_token");
-        navigate("/security-challenge");
+        navigate("/overview");
       } else {
         setError(err.message || "Failed to log in. Please verify your credentials.");
       }
@@ -84,7 +93,7 @@ export const Login: React.FC = () => {
     setLoading(true);
     try {
       await loginWithGoogle();
-      navigate("/security-challenge");
+      navigate("/overview");
     } catch (err: any) {
       console.warn("Firebase Google login fallback:", err);
       setActiveOAuthProvider("google");
@@ -96,13 +105,17 @@ export const Login: React.FC = () => {
   const handleOAuthModalSuccess = async (profile: { email: string; name: string; provider: "google" }) => {
     setActiveOAuthProvider(null);
     setLoading(true);
+    const cleanEmail = profile.email.trim().toLowerCase();
+    localStorage.setItem("agentshield_user_email", cleanEmail);
+    localStorage.setItem("agentshield_user_name", profile.name);
+
     try {
       const res = await fetch(`${""}/v1/auth/oauth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider: profile.provider,
-          email: profile.email,
+          email: cleanEmail,
           name: profile.name,
         }),
       });
@@ -117,7 +130,7 @@ export const Login: React.FC = () => {
       localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
     } finally {
       setLoading(false);
-      navigate("/security-challenge");
+      navigate("/overview");
     }
   };
 

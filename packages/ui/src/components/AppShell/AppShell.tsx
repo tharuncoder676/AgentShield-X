@@ -34,6 +34,7 @@ import {
   Award,
   GitFork,
   Bot,
+  LogOut,
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { ThemeToggle } from "../ThemeToggle/ThemeToggle";
@@ -58,6 +59,9 @@ export interface AppShellProps {
   connectionStatus?: "connected" | "reconnecting" | "offline";
   onOpenCommandPalette?: () => void;
   userRole?: "owner" | "admin" | "analyst" | "viewer";
+  userEmail?: string;
+  userName?: string;
+  onLogout?: () => void;
   className?: string;
 }
 
@@ -72,6 +76,9 @@ export const AppShell: React.FC<AppShellProps> = ({
   connectionStatus = "connected",
   onOpenCommandPalette,
   userRole = "owner",
+  userEmail,
+  userName,
+  onLogout,
   className,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -201,6 +208,32 @@ export const AppShell: React.FC<AppShellProps> = ({
             <span className="text-mut">Role:</span>
             <span className="text-ok font-semibold">{userRole}</span>
           </div>
+
+          {/* Authenticated User Profile Pill */}
+          {userEmail && (
+            <div className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded border border-line bg-bg/60 text-xs font-chakra">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white font-bold text-[10px] flex items-center justify-center uppercase shadow-sm">
+                {(userName || userEmail).charAt(0)}
+              </div>
+              <div className="flex flex-col text-left leading-none max-w-[130px]">
+                <span className="text-[11px] font-semibold text-fg tracking-wide truncate">
+                  {userName || userEmail.split("@")[0]}
+                </span>
+                <span className="text-[9px] font-mono text-mut truncate">
+                  {userEmail}
+                </span>
+              </div>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="p-1 hover:text-bad text-mut transition-colors ml-0.5"
+                  title="Sign out"
+                >
+                  <LogOut size={12} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </header>
 

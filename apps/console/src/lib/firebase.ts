@@ -162,13 +162,20 @@ export async function loginWithFirebaseEmail(
 
 export function getMockGoogleUser(customEmail?: string, customName?: string): FirebaseAuthResult {
   const savedEmail = typeof window !== "undefined" ? localStorage.getItem("agentshield_user_email") : null;
-  const email = (customEmail || savedEmail || `operator_${Math.random().toString(36).substring(2, 7)}@enterprise.ai`).toLowerCase();
-  const name = customName || email.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const savedName = typeof window !== "undefined" ? localStorage.getItem("agentshield_user_name") : null;
+  const email = (customEmail || savedEmail || "user@agentshield.ai").toLowerCase();
+  const name = customName || savedName || (email.includes("@") ? email.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "User");
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem("agentshield_user_email", email);
+    localStorage.setItem("agentshield_user_name", name);
+  }
+
   return {
-    uid: "google_oauth_sub_" + Math.random().toString(36).substring(2, 10),
+    uid: "google_oauth_sub_" + email.replace(/[^a-z0-9]/g, ""),
     email,
     displayName: name,
-    photoURL: "/avatars/avatar-operator.png",
+    photoURL: null,
     idToken: "mock_firebase_id_token_" + Date.now(),
     isDemoFallback: true,
   };
