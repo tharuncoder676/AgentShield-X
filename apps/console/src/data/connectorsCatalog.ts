@@ -18,15 +18,15 @@ export interface Connector {
   consequentialActions: string[];
 }
 
-export const CATEGORIES = [
-  { id: "all", label: "All Connectors", count: "312" },
-  { id: "dev", label: "Developer & Git", count: "48" },
-  { id: "communication", label: "Messaging & Social", count: "42" },
-  { id: "productivity", label: "Workspace & Docs", count: "54" },
-  { id: "crm", label: "Sales & CRM", count: "36" },
-  { id: "cloud", label: "Cloud & DevOps", count: "44" },
-  { id: "database", label: "Databases & Vector", count: "46" },
-  { id: "ai", label: "AI Models & Providers", count: "42" },
+export const CATEGORY_DEFINITIONS = [
+  { id: "all", label: "All Connectors" },
+  { id: "dev", label: "Developer & Git" },
+  { id: "communication", label: "Messaging & Social" },
+  { id: "productivity", label: "Workspace & Docs" },
+  { id: "crm", label: "Sales & CRM" },
+  { id: "cloud", label: "Cloud & DevOps" },
+  { id: "database", label: "Databases & Vector" },
+  { id: "ai", label: "AI Models & Providers" },
 ];
 
 export const CONNECTORS_DATA: Connector[] = [
@@ -715,4 +715,13 @@ export const CONNECTORS_DATA: Connector[] = [
     consequentialActions: ["Exhaust search query limit"],
   },
 ];
+
+export const CATEGORIES = CATEGORY_DEFINITIONS.map((cat) => ({
+  ...cat,
+  count:
+    cat.id === "all"
+      ? String(CONNECTORS_DATA.length)
+      : String(CONNECTORS_DATA.filter((c) => c.category === cat.id).length),
+}));
+
 

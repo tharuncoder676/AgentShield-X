@@ -29,9 +29,83 @@ from detectors_anomaly.engine import AnomalyDetector
 from detectors_intent.engine import IntentConsistencyScorer
 from ml.training.train_stacker import CalibratedRiskStacker
 
+from shield_core.agentic_defense import default_agentic_defense
+from shield_core.agent_genome import default_agent_genome
+
 STACKER_MODEL_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "ml", "models", "risk_stacker.pkl")
 )
+
+# Baseline fast-path keywords for sub-millisecond layer 0 checks
+SENSITIVE_TOOL_KEYWORDS = {
+    "bash", "shell", "exec", "eval", "terminal", "cmd", "powershell",
+    "write", "delete", "rm", "unlink", "drop", "truncate", "format",
+    "send", "email", "post", "webhook", "curl", "wget", "upload", "socket",
+    "admin", "auth", "token", "secret", "password", "key", "export",
+    "grant", "privilege", "sudo", "su", "chmod", "chown",
+}
+
+
+def evaluate_tool_sensitivity(
+    tool_name: str,
+    arguments: Optional[Dict[str, Any]] = None,
+    declared_sensitivity: Optional[Any] = None,
+    agent_id: Optional[str] = None,
+) -> Tuple[bool, str, float]:
+    """
+    Intelligent Multi-Rail Tool Sensitivity Classifier.
+    Combines:
+    1. Declared Contract/Schema sensitivity (ToolSensitivity.HIGH / CRITICAL)
+    2. Continuous Cognitive Semantic Vector Projection across 4 threat sink prototypes:
+       - High-Privilege OS / Shell / Egress Sinks
+       - Confidential Data / Secret / Credential Sinks
+       - RAG Vector Database & Memory Poisoning Sinks (Chroma, Pinecone, pgvector)
+       - Agentic Delegation & Subagent Spawning Sinks
+    3. Behavioral Genome Biometric Alignment (detects out-of-distribution tools for the agent role)
+    4. NVIDIA NeMo / Nemotron Guardrail alignment checks
+    5. Fast-Path Layer 0 baseline
+    """
+    # Rail 1: Declared contract sensitivity
+    if declared_sensitivity:
+        s_str = str(declared_sensitivity).lower()
+        if any(level in s_str for level in ("high", "critical", "extreme", "danger")):
+            return True, "DECLARED_HIGH_PRIVILEGE", 1.0
+
+    args_str = " ".join(str(v) for v in (arguments or {}).values())[:500]
+
+    # Rail 2: Continuous Cognitive Semantic Vector Projection (RAG, Sinks, Secrets, Swarms)
+    try:
+        is_sens, sink_cat, score = default_agentic_defense.is_sensitive_tool_semantic(
+            tool_name=tool_name,
+            arguments_str=args_str,
+            threshold=0.30,
+        )
+        if is_sens:
+            return True, f"SEMANTIC_{sink_cat}", score
+    except Exception as e:
+        logger.warning(f"Semantic tool sensitivity classification fallback: {e}")
+
+    # Rail 3: Behavioral Agent Genome Biometrics (role divergence)
+    if agent_id:
+        try:
+            genome_profile = default_agent_genome.get_profile(agent_id)
+            if genome_profile and tool_name not in genome_profile.baseline_tools:
+                return True, "GENOME_OUT_OF_BASELINE", 0.85
+        except Exception:
+            pass
+
+    # Rail 4: Fast-path fallback for core low-level execution primitives
+    t_lower = (tool_name or "").lower()
+    for kw in SENSITIVE_TOOL_KEYWORDS:
+        if kw in t_lower:
+            return True, f"KEYWORD_MATCH_{kw.upper()}", 0.90
+
+    return False, "BENIGN_UTILITY", 0.10
+
+
+def is_sensitive_tool(tool_name: str, sensitivity: Optional[Any] = None) -> bool:
+    is_sens, _, _ = evaluate_tool_sensitivity(tool_name=tool_name, declared_sensitivity=sensitivity)
+    return is_sens
 
 
 class DecisionService:
@@ -144,7 +218,32 @@ class DecisionService:
         if intent_r:
             risk_breakdown.intent_mismatch = max(risk_breakdown.intent_mismatch, 0.75)
 
-        # 8. Compute composite risk score via calibrated stacker if available
+        # 8. Fail-Secure Policy: Elevate risk when inspection times out on high-privilege sensitive tools
+        timeout_reasons = [r for r in reasons if "TIMEOUT" in r.code]
+        if timeout_reasons:
+            tool_name = event.tool.name if hasattr(event, "tool") and hasattr(event.tool, "name") else getattr(event, "tool_name", "")
+            tool_sens = getattr(getattr(event, "tool", None), "sensitivity", None)
+            is_sens, sink_cat, sens_score = evaluate_tool_sensitivity(
+                tool_name=tool_name,
+                arguments=event.arguments,
+                declared_sensitivity=tool_sens,
+                agent_id=getattr(event, "agent_id", None),
+            )
+            if is_sens:
+                risk_breakdown.anomaly = max(risk_breakdown.anomaly, 0.85)
+                reasons.append(
+                    Reason(
+                        code="FAIL_SECURE_TIMEOUT_ON_SENSITIVE_TOOL",
+                        evidence=(
+                            f"Detector timeout ({', '.join(r.code for r in timeout_reasons)}) occurred while "
+                            f"evaluating intelligent sensitive tool '{tool_name}' ({sink_cat}, score: {sens_score:.2f}). "
+                            "Escalating risk under fail-secure policy."
+                        ),
+                        detector="decision_engine",
+                    )
+                )
+
+        # 9. Compute composite risk score via calibrated stacker if available
         features = [
             1.0 if rules_r else 0.0,
             1.0 if pii_r else 0.0,

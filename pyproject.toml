@@ -1,26 +1,83 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentshield-x"
-version = "0.1.0"
-description = "Multi-Tenant SaaS Security Platform Protecting LLM Agentic Systems in Real Time"
+version = "2.4.0"
+description = "Universal AI Agent Security Platform & Deterministic Dual-Rail Runtime Guardrails"
 readme = "README.md"
-requires-python = ">=3.11"
-authors = [{ name = "AgentShield-X Team" }]
+requires-python = ">=3.10"
+authors = [{ name = "Tharunkumar.S", email = "tharuncoder676@gmail.com" }]
+license = { text = "Apache-2.0" }
+keywords = ["ai", "security", "llm", "guardrails", "agents", "redteam", "rag", "honeytokens"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "pydantic>=2.0.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.20.0",
     "httpx>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "cryptography>=41.0.0",
+    "requests>=2.28.0",
+    "numpy>=1.24.0",
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["packages*", "detectors*", "services*", "demo*"]
+[project.optional-dependencies]
+voice = [
+    "speechrecognition>=3.10.0",
+    "pyttsx3>=2.90",
+]
+all = [
+    "speechrecognition>=3.10.0",
+    "pyttsx3>=2.90",
+    "pytest>=8.0.0",
+    "psycopg2-binary>=2.9.0",
+]
+
+[project.scripts]
+agentshield = "shield_core.cli:main"
+shield = "shield_core.cli:main"
+wingshield = "shield_core.cli:main"
+
+[tool.setuptools.package-dir]
+agentshield = "src/agentshield"
+shield_core = "packages/shield_core/src/shield_core"
+shield_sdk_py = "packages/shield_sdk_py/src/shield_sdk_py"
+shield_mcp = "packages/shield_mcp/src/shield_mcp"
+eventbus = "packages/eventbus/src/eventbus"
+detectors_rules = "detectors/rules/src/detectors_rules"
+detectors_honey = "detectors/honey/src/detectors_honey"
+detectors_pii = "detectors/pii/src/detectors_pii"
+control_api = "services/control_api/src/control_api"
+decision = "services/decision/src/decision"
+gateway = "services/gateway/src/gateway"
 
 [tool.pytest.ini_options]
-pythonpath = [".", "examples/research-agent"]
-testpaths = ["tests/real"]
+pythonpath = [
+    ".",
+    "src",
+    "packages/shield_core/src",
+    "packages/shield_sdk_py/src",
+    "packages/shield_mcp/src",
+    "packages/eventbus/src",
+    "detectors/rules/src",
+    "detectors/honey/src",
+    "detectors/pii/src",
+    "services/control_api/src",
+    "services/decision/src",
+    "services/gateway/src",
+]
+testpaths = ["tests/unit"]
 

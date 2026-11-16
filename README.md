@@ -10,7 +10,7 @@
 [![Version: v2.4.0](https://img.shields.io/badge/Release-v2.4.0%20(Purple%20Edition)-8B5CF6?style=for-the-badge&logo=shield)](https://github.com/tharuncoder676/AgentShield-X/releases)
 [![Guardrail Latency](https://img.shields.io/badge/Dual--Rail%20SLA-%3C0.18ms-06B6D4?style=for-the-badge&logo=lightning)](results/summary.json)
 [![AgentShield-Bench](https://img.shields.io/badge/AgentShield--Bench-%231%20Ranked%20(99.4%25)-A855F7?style=for-the-badge&logo=target)](docs/research/AgentShieldX_Research_Paper.md)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-100%25%20Passing-10B981?style=for-the-badge&logo=checkmarx)](tests/)
+[![CI](https://github.com/tharuncoder676/AgentShield-X/actions/workflows/ci.yml/badge.svg)](https://github.com/tharuncoder676/AgentShield-X/actions/workflows/ci.yml)
 [![Platforms](https://img.shields.io/badge/Downloads-Windows%20%7C%20macOS%20%7C%20Linux-EC4899?style=for-the-badge&logo=apple)](apps/console/public/downloads/)
 [![Architect](https://img.shields.io/badge/Lead%20Architect-Tharunkumar.S-3B82F6?style=for-the-badge&logo=github)](https://github.com/tharuncoder676)
 
@@ -262,18 +262,34 @@ Ready-to-use release distributions are compiled and hosted locally in [`apps/con
 ## 🚀 Quick Start in 60 Seconds
 
 ### 1. Installation
+
+> **Note on Package Name**: The official package is **`agentshield-x`** (not bare `agentshield`, which is an unrelated third-party package on PyPI).
+
+**Option A: 1-Line Universal Install from GitHub (Works on any laptop)**
+```bash
+pip install git+https://github.com/tharuncoder676/AgentShield-X.git
+```
+
+**Option B: Clone & Developer Editable Install**
 ```bash
 git clone https://github.com/tharuncoder676/AgentShield-X.git
 cd AgentShield-X
-pip install -e packages/shield_core -e services/control_api
+pip install -e .
 ```
+
+**Option C: Direct Wheel Install (Offline / Air-Gapped)**
+```bash
+pip install dist/agentshield_x-2.4.0-py3-none-any.whl
+```
+
+Once installed, the `agentshield`, `shield`, and `wingshield` CLI binaries are available globally in your terminal.
 
 ### 2. Universal SDK (2-Line Drop-in)
 ```python
-from shield_core.connectors import agentshield
+import agentshield
 
-# Protect any function, tool call, or agent callback
-@agentshield.wrap
+# Protect any function, tool call, or agent callback with deterministic guardrails
+@agentshield.protect
 def execute_sql_transaction(query: str):
     return "Sanitized database query output"
 ```

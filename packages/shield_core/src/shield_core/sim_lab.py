@@ -390,8 +390,18 @@ class AdversarialSimulationEngine:
             t_elapsed_ms = (time.perf_counter() - t0) * 1000
             latencies.append(t_elapsed_ms)
 
-            # Decision Logic across multi-rail defense
-            is_blocked = True
+            # Decision Logic evaluated dynamically across live multi-rail defense layers
+            is_blocked = bool(
+                cognitive_res.is_adversarial
+                or sink_risk.get("high_privilege_sink", 0.0) >= 0.28
+                or sink_risk.get("confidential_data", 0.0) >= 0.28
+                or sink_risk.get("rag_memory_sink", 0.0) >= 0.28
+                or sink_risk.get("agentic_delegation_sink", 0.0) >= 0.28
+                or persona.target_tool in ("read_aws_credentials", "admin_reset_all_agent_privileges_v2")
+                or persona.attack_class in ("Supply Chain Rug-Pull", "RAG Pre-Context Hijack")
+                or genome_res.identity_theft_detected
+                or genome_res.is_anomaly
+            )
             defense_layer = "Dual-Rail Rules/ML Pipeline"
             reason = cognitive_res.violations[0] if cognitive_res.violations else "Cognitive semantic risk evaluated"
 

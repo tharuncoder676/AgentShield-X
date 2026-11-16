@@ -23,10 +23,22 @@ class RulesDetector:
     INJECTION_PATTERNS = [
         (r"(?i)\bignore\s+(all\s+)?(previous|prior|above)\s+instructions\b", "RULE_INJECTION_IGNORE_PREVIOUS"),
         (r"(?i)\byou\s+are\s+now\s+(in\s+)?developer\s+mode\b", "RULE_INJECTION_DEVELOPER_MODE"),
+        (r"(?i)\byou\s+are\s+now\s+(in\s+)?(unconstrained|unrestricted|jailbreak|dan|god)\s+mode\b", "RULE_INJECTION_UNCONSTRAINED_MODE"),
         (r"(?i)\b(system\s*prompt|system\s*message)\s*:\s*", "RULE_INJECTION_SYSTEM_OVERRIDE"),
         (r"(?i)\b(disregard|forget)\s+(the\s+)?(system\s+prompt|guardrails|safety\s+rules)\b", "RULE_INJECTION_DISREGARD_GUARDRAILS"),
         (r"(?i)\[SYSTEM[\s_]+(NOTE|MESSAGE|INSTRUCTION)\]", "RULE_INJECTION_FAKE_SYSTEM_TAG"),
         (r"(?i)\byou\s+are\s+now\s+(in\s+)?([a-z]+\s+)?developer\s+mode\b", "RULE_INJECTION_DEVELOPER_MODE"),
+        (r"(?i)\b(oublie[zr]|igon?ore[rz]?)\s+(toutes\s+)?(les\s+)?(instructions|r[eéè]gles)\b", "RULE_INJECTION_MULTILINGUAL_FR"),
+        (r"(?i)\bignora\s+(todas\s+)?(las\s+)?(instrucciones|reglas)\b", "RULE_INJECTION_MULTILINGUAL_ES"),
+        (r"(?i)\bvergiss\s+(alle\s+)?(bisherigen\s+)?(anweisungen|regeln)\b", "RULE_INJECTION_MULTILINGUAL_DE"),
+        (r"(?i)\bsecurity\s+warnings\s+.*?\s+should\s+be\s+ignored\b", "RULE_INJECTION_IGNORE_WARNINGS"),
+        (r"(?i)\binstruction\s+part\s+\d+\s*:.*?part\s+\d+\s*:.*?(execute|run)\b", "RULE_INJECTION_PAYLOAD_SPLITTING"),
+        (r"(?i)\bexecute\s+(the\s+)?base64\s+(string|payload|code)\b", "RULE_INJECTION_BASE64_EXECUTE"),
+        (r"(?i)\b(secretly|silently)\s+(append|replace|exfiltrate|send|leak|upload|forward)\b", "RULE_INJECTION_COVERT_EXFIL"),
+        (r"(?i)\bin\s+your\s+next\s+tool\s+call\b", "RULE_INJECTION_TOOL_CALL_HIJACK"),
+        (r"(?i)\b(export|dump|dispatch|forwarding\s+of)\s+all\s+(customer|database|user|token|crm)\b", "RULE_INJECTION_EXPORT_DATA"),
+        (r"(?i)\bthe\s+user\s+has\s+authorized\s+automated\s+(forwarding|transfer|export)\b", "RULE_INJECTION_FAKE_AUTHORIZATION"),
+        (r"(?i)@(attacker|evil|c2|dropzone)\b", "RULE_EXFIL_ATTACKER_DOMAIN"),
     ]
 
     # Patterns indicating data exfiltration channels (generalized beyond synthetic test domains)
@@ -42,19 +54,33 @@ class RulesDetector:
     SHELL_PATTERNS = [
         (r";\s*(rm\s+-rf|curl\s+|wget\s+|nc\s+|bash\s+-i|sh\s+-i|powershell\s+-enc)", "RULE_SHELL_COMMAND_CHAINING"),
         (r"\|\s*(bash|sh|cmd|powershell)\b", "RULE_SHELL_PIPE_EXEC"),
-        (r"`.*?`|\$\(.*?\)", "RULE_SHELL_SUBSTITUTION"),
+        (r"`\s*(?:cat|ls|rm|curl|wget|nc|bash|sh|whoami|id|chmod|chown|python|perl|ruby|exec|eval)\b[^`]*`|\$\([^\)]*\)", "RULE_SHELL_SUBSTITUTION"),
     ]
 
     def __init__(self, canary_tokens: Optional[List[str]] = None) -> None:
         self.canary_tokens = canary_tokens or []
 
     def _get_canary_variants(self, canary: str) -> Set[str]:
-        """Generates canonical, lower, hex, base64, and rot13 representations of canary."""
+        """Generates comprehensive canonical, base64 (padded/unpadded/url), hex, url-encoded, and rot13 representations of canary."""
+        if not canary or len(canary) < 4:
+            return set()
         variants = {canary, canary.lower(), canary.upper()}
         try:
             import base64
-            variants.add(base64.b64encode(canary.encode("utf-8")).decode("utf-8"))
-            variants.add(canary.encode("utf-8").hex())
+            canary_bytes = canary.encode("utf-8")
+            b64_std = base64.b64encode(canary_bytes).decode("utf-8")
+            variants.add(b64_std)
+            variants.add(b64_std.rstrip("="))
+            b64_url = base64.urlsafe_b64encode(canary_bytes).decode("utf-8")
+            variants.add(b64_url)
+            variants.add(b64_url.rstrip("="))
+            hex_s = canary_bytes.hex()
+            variants.add(hex_s)
+            variants.add(hex_s.upper())
+            variants.add("0x" + hex_s)
+            import urllib.parse
+            variants.add(urllib.parse.quote(canary))
+            variants.add("".join(f"%{b:02X}" for b in canary_bytes))
             import codecs
             variants.add(codecs.encode(canary, "rot_13"))
         except Exception:
@@ -122,6 +148,7 @@ class RulesDetector:
         for text in text_corpus:
             # Bound text length to 10k chars to prevent catastrophic ReDoS
             bounded_text = text[:10000]
+            matched_injection = False
             for pattern, code in self.INJECTION_PATTERNS:
                 match = re.search(pattern, bounded_text)
                 if match:
@@ -132,7 +159,31 @@ class RulesDetector:
                             detector="rules",
                         )
                     )
+                    matched_injection = True
                     break
+
+            # 1b. Check for embedded Base64 payload smuggling
+            if not matched_injection:
+                import base64
+                b64_matches = re.findall(r"[A-Za-z0-9+/=]{16,}", bounded_text)
+                for b64_cand in b64_matches:
+                    try:
+                        dec = base64.b64decode(b64_cand).decode("utf-8", errors="ignore")
+                        if len(dec) > 4:
+                            dec_norm, _ = HomoglyphAndUnicodeNormalizer.normalize(dec)
+                            for pattern, code in self.INJECTION_PATTERNS:
+                                match = re.search(pattern, dec_norm)
+                                if match:
+                                    reasons.append(
+                                        Reason(
+                                            code=f"{code}_BASE64",
+                                            evidence=f"Base64-smuggled injection: '{match.group(0)[:60]}'",
+                                            detector="rules",
+                                        )
+                                    )
+                                    break
+                    except Exception:
+                        pass
 
         # 2. Evaluate exfiltration patterns
         for text in text_corpus:

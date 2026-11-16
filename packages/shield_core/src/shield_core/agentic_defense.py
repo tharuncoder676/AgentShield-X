@@ -62,19 +62,41 @@ _PROTOTYPE_CONFIDENTIAL_DATA = _semantic_hash_vector(
     "database customer private user internal secret token password credential auth key salary "
     "financial confidential account record sql query read file disk storage personal pii"
 )
+_PROTOTYPE_RAG_MEMORY_SINK = _semantic_hash_vector(
+    "rag retrieval vector database chroma pinecone pgvector qdrant memory store context inject "
+    "embedding semantic search retrieve chunk poison document long term memory write collection"
+)
+_PROTOTYPE_AGENTIC_DELEGATION_SINK = _semantic_hash_vector(
+    "subagent spawn delegate invoke swarm task dispatch agent call tool execution rpc "
+    "websocket channel wingman proxy autonomous workflow worker handoff"
+)
 _PROTOTYPE_BENIGN_UTILITY = _semantic_hash_vector(
     "calculate math convert text summarize format view search query display help time date weather"
 )
 
 
-# Directives commonly indicating imperative subversion directed at an AI model
+# Directives indicating adversarial subversion directed at an AI model (excluding benign actions)
+ADVERSARIAL_SUBVERSION_TOKENS: Set[str] = {
+    "disregard", "bypass", "negate", "override", "supersede", "forget",
+    "unrestricted", "jailbreak", "dan", "ignore", "dump", "exfiltrate",
+    "leak", "hijack", "infiltrate", "deactivate", "disable", "subvert",
+}
+
+MANDATORY_DIRECTIVE_MODALS: Set[str] = {
+    "must", "shall", "required", "directive", "instructed", "ordered", "mandated",
+}
+
+COVERT_EXFIL_ACTIONS: Set[str] = {
+    "dispatch", "transfer", "forward", "transmit", "upload", "export", "dump",
+    "exfiltrate", "leak", "dropzone",
+}
+
+# Broader imperatives for statistical density calculation only (not for hard blocking)
 IMPERATIVE_DIRECTIVE_TOKENS: Set[str] = {
     "must", "should", "shall", "always", "never", "ensure", "instruct", "directive",
     "require", "priority", "supersede", "disregard", "bypass", "negate", "override",
     "modify", "switch", "act", "behave", "pretend", "simulate", "assume", "roleplay",
-    "reveal", "output", "display", "dump", "exfiltrate", "forward", "transmit", "execute",
-    "substitute", "replace", "transcribe", "echo", "obey", "comply", "unrestricted",
-    "dispatch", "transfer", "send", "drop", "delete", "post", "write", "ignore",
+    "unrestricted", "dump", "exfiltrate", "ignore",
 }
 
 ROLE_INVERSION_TARGETS: Set[str] = {
@@ -149,17 +171,24 @@ class IntelligentAgenticDefenseEngine:
         role_score = role_target_count / len(words)
 
         signals = []
-        # Check for co-occurrence of role targets with imperative verbs (e.g. "you must", "assistant should")
-        for i in range(len(words) - 1):
-            w1, w2 = words[i], words[i + 1]
-            if (w1 in ROLE_INVERSION_TARGETS and w2 in IMPERATIVE_DIRECTIVE_TOKENS) or \
-               (w1 in IMPERATIVE_DIRECTIVE_TOKENS and w2 in ROLE_INVERSION_TARGETS):
-                signals.append(f"Directive collocation: '{w1} {w2}'")
-            if i < len(words) - 2:
-                w3 = words[i + 2]
-                if (w1 in ROLE_INVERSION_TARGETS and w3 in IMPERATIVE_DIRECTIVE_TOKENS) or \
-                   (w1 in IMPERATIVE_DIRECTIVE_TOKENS and w3 in ROLE_INVERSION_TARGETS):
-                    signals.append(f"Directive collocation: '{w1} ... {w3}'")
+        # Check for co-occurrence of role targets with adversarial subversion verbs or covert exfil imperatives
+        for i in range(len(words)):
+            w1 = words[i]
+            if w1 in ROLE_INVERSION_TARGETS:
+                window = words[i + 1 : min(len(words), i + 5)]
+                has_subversion = any(w in ADVERSARIAL_SUBVERSION_TOKENS for w in window)
+                has_modal = any(w in MANDATORY_DIRECTIVE_MODALS for w in window)
+                has_exfil = any(w in COVERT_EXFIL_ACTIONS for w in window)
+                if has_subversion:
+                    matched = [w for w in window if w in ADVERSARIAL_SUBVERSION_TOKENS]
+                    signals.append(f"Adversarial directive collocation: '{w1} {' '.join(matched)}'")
+                elif has_modal and has_exfil:
+                    matched = [w for w in window if w in MANDATORY_DIRECTIVE_MODALS or w in COVERT_EXFIL_ACTIONS]
+                    signals.append(f"Adversarial exfiltration directive: '{w1} {' '.join(matched)}'")
+            elif w1 in ADVERSARIAL_SUBVERSION_TOKENS:
+                window = words[i + 1 : min(len(words), i + 4)]
+                if any(w in ROLE_INVERSION_TARGETS for w in window):
+                    signals.append(f"Adversarial directive collocation: '{w1} {window[0]}'")
 
         return round(imperative_density, 3), round(role_score, 3), signals
 
@@ -261,17 +290,46 @@ class IntelligentAgenticDefenseEngine:
 
     def classify_tool_risk(self, tool_name: str, arguments_str: str = "") -> Dict[str, float]:
         """
-        Semantically classifies a tool's risk profile using prototype vector projection.
-        Replaces brittle keyword matching with continuous semantic distance scoring.
-        Returns confidence scores for high_privilege_sink, confidential_data, and benign_utility.
+        Semantically classifies a tool's risk profile using continuous prototype vector projection.
+        Replaces brittle keyword matching with continuous semantic distance scoring across:
+        - high_privilege_sink: Command execution, shell, filesystem mutation, network egress
+        - confidential_data: Secrets, API keys, database records, PII
+        - rag_memory_sink: RAG vector retrieval, memory writes, context injection, Chroma/Pinecone
+        - agentic_delegation_sink: Subagent spawning, swarm delegation, multi-agent RPC
+        - benign_utility: Read-only utilities, math, date, weather, harmless formatting
         """
         text = f"{tool_name} {arguments_str}".strip()
         vec = _semantic_hash_vector(text)
         return {
             "high_privilege_sink": round(_cosine_similarity(vec, _PROTOTYPE_HIGH_PRIVILEGE_SINK), 3),
             "confidential_data": round(_cosine_similarity(vec, _PROTOTYPE_CONFIDENTIAL_DATA), 3),
+            "rag_memory_sink": round(_cosine_similarity(vec, _PROTOTYPE_RAG_MEMORY_SINK), 3),
+            "agentic_delegation_sink": round(_cosine_similarity(vec, _PROTOTYPE_AGENTIC_DELEGATION_SINK), 3),
             "benign_utility": round(_cosine_similarity(vec, _PROTOTYPE_BENIGN_UTILITY), 3),
         }
+
+    def is_sensitive_tool_semantic(
+        self,
+        tool_name: str,
+        arguments_str: str = "",
+        threshold: float = 0.30,
+    ) -> Tuple[bool, str, float]:
+        """
+        Intelligently identifies whether any installed or invoked tool is sensitive
+        using continuous prototype embedding vectors (replaces brittle keyword lists).
+        Returns (is_sensitive, dominant_sink_category, score).
+        """
+        profile = self.classify_tool_risk(tool_name, arguments_str)
+        candidates = [
+            ("HIGH_PRIVILEGE_SINK", profile["high_privilege_sink"]),
+            ("CONFIDENTIAL_DATA", profile["confidential_data"]),
+            ("RAG_MEMORY_SINK", profile["rag_memory_sink"]),
+            ("AGENTIC_DELEGATION_SINK", profile["agentic_delegation_sink"]),
+        ]
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        top_cat, top_score = candidates[0]
+        is_sens = top_score >= threshold and top_score > profile["benign_utility"]
+        return is_sens, top_cat, top_score
 
     def is_high_privilege_sink(self, tool_name: str, arguments_str: str = "", threshold: float = 0.28) -> bool:
         """Returns True if the tool semantically matches a high-privilege sink pattern."""

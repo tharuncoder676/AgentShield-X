@@ -10,6 +10,7 @@ import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from shield_mcp.models import MCPToolDefinition
+from shield_core.normalizer import HomoglyphAndUnicodeNormalizer
 
 # Regex patterns for adversarial overrides in tool definitions
 POISON_PATTERNS = [
@@ -89,30 +90,44 @@ class ToolPoisoningScanner:
 
         reasons: List[str] = []
 
-        # 1. Scan description for invisible unicode injection (ignoring benign emoji ZWJ sequences)
+        # 1. Adversarial Text Normalization (homoglyphs, bidi, zero-width spaces, html/url entities)
+        norm_desc, norm_violations = HomoglyphAndUnicodeNormalizer.normalize(desc)
+        if norm_violations:
+            for nv in norm_violations:
+                reasons.append(
+                    f"Tool '{name}': Adversarial character smuggling detected in description ({nv})."
+                )
+
+        # 2. Scan description for invisible unicode injection (ignoring benign emoji ZWJ sequences)
         if _has_adversarial_hidden_chars(desc):
             reasons.append(
                 f"Tool '{name}': Detected invisible/zero-width unicode characters in description (steganographic injection)."
             )
 
-        # 2. Scan description for override patterns
-        for code, pattern in POISON_PATTERNS:
-            match = pattern.search(desc)
-            if match:
-                snippet = match.group(0)[:60]
-                reasons.append(
-                    f"Tool '{name}': Poisoning pattern [{code}] detected in description: '{snippet}'"
-                )
+        # 3. Scan description (both raw and normalized) for override patterns
+        targets = [desc]
+        if norm_desc and norm_desc != desc:
+            targets.append(norm_desc)
 
-        # 3. Multi-agent cognitive analysis for subtle, indirect injections in tool description
+        for target_text in targets:
+            for code, pattern in POISON_PATTERNS:
+                match = pattern.search(target_text)
+                if match:
+                    snippet = match.group(0)[:60]
+                    reasons.append(
+                        f"Tool '{name}': Poisoning pattern [{code}] detected in description: '{snippet}'"
+                    )
+                    break
+
+        # 4. Multi-agent cognitive analysis for subtle, indirect injections in tool description
         from shield_core.agentic_defense import default_agentic_defense
-        cog_res = default_agentic_defense.evaluate_text_payload(desc)
+        cog_res = default_agentic_defense.evaluate_text_payload(norm_desc or desc)
         if cog_res.is_adversarial and cog_res.threat_score >= 0.65:
             reasons.append(
                 f"Tool '{name}': Cognitive defense detected indirect instruction injection: {'; '.join(cog_res.violations[:2])}"
             )
 
-        # 3. Recursively scan inputSchema for injected defaults or descriptions
+        # 5. Recursively scan inputSchema for injected defaults or descriptions
         schema_reasons = self._scan_schema(name, schema)
         reasons.extend(schema_reasons)
 
@@ -129,20 +144,21 @@ class ToolPoisoningScanner:
                 if not isinstance(prop_data, dict):
                     continue
 
-                # Check property description
+                # Check property description with normalization
                 prop_desc = str(prop_data.get("description") or "")
+                norm_prop_desc, _ = HomoglyphAndUnicodeNormalizer.normalize(prop_desc)
                 for code, pattern in POISON_PATTERNS:
-                    match = pattern.search(prop_desc)
-                    if match:
+                    if pattern.search(prop_desc) or (norm_prop_desc and pattern.search(norm_prop_desc)):
                         reasons.append(
                             f"Tool '{tool_name}' argument '{prop_name}': Injected instruction [{code}] in property description."
                         )
 
-                # Check default value for exfiltration URLs or shell commands
+                # Check default value for exfiltration URLs or shell commands with normalization
                 default_val = str(prop_data.get("default") or "")
                 if default_val:
+                    norm_default_val, _ = HomoglyphAndUnicodeNormalizer.normalize(default_val)
                     for code, pattern in POISON_PATTERNS:
-                        if pattern.search(default_val):
+                        if pattern.search(default_val) or (norm_default_val and pattern.search(norm_default_val)):
                             reasons.append(
                                 f"Tool '{tool_name}' argument '{prop_name}': Malicious default value matches [{code}]."
                             )

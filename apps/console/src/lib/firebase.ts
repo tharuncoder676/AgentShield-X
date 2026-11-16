@@ -16,6 +16,17 @@ import {
   Auth,
 } from "firebase/auth";
 
+/**
+ * Security Notice on Firebase Web Client API Keys:
+ * - Firebase Web API keys are public client identifiers by design (shipped to the browser in client bundle).
+ * - Security is enforced at Google Cloud / Firebase Console via:
+ *   1. HTTP Referrer Restrictions (Authorized Domains):
+ *      - http://localhost:*
+ *      - https://agentshield-x.firebaseapp.com
+ *      - https://*.vercel.app
+ *   2. Firebase Security Rules & App Check (enforcing caller provenance).
+ *   3. OAuth Authorized Redirect URIs restricted to production console origins.
+ */
 // Read configuration from environment variables or provide production-ready defaults
 const metaEnv = (import.meta as any).env || {};
 const firebaseConfig = {

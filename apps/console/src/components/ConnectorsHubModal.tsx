@@ -27,6 +27,7 @@ import {
   Send,
 } from "lucide-react";
 import { CONNECTORS_DATA, CATEGORIES, Connector } from "../data/connectorsCatalog";
+import { SecureTokenVault } from "../lib/secureVault";
 
 interface ConnectorsHubModalProps {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
   const [telegramTokenInput, setTelegramTokenInput] = useState("");
   const [telegramChatIdInput, setTelegramChatIdInput] = useState("");
   const [slackWebhookInput, setSlackWebhookInput] = useState("");
-  const [nvidiaKeyInput, setNvidiaKeyInput] = useState(() => localStorage.getItem("agentshield_nvidia_key") || "");
+  const [nvidiaKeyInput, setNvidiaKeyInput] = useState(() => SecureTokenVault.getSecret("agentshield_nvidia_key"));
 
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<{
@@ -143,16 +144,16 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
     // Prepopulate saved values
     if (connector.id === "github") {
       setGithubRepoInput(localStorage.getItem("agentshield_github_repo") || "tharuncoder676/AgentShield-X");
-      setGithubTokenInput(localStorage.getItem("agentshield_github_token") || "");
+      setGithubTokenInput(SecureTokenVault.getSecret("agentshield_github_token"));
     } else if (connector.id === "telegram") {
-      setTelegramTokenInput(localStorage.getItem("agentshield_telegram_token") || "");
-      setTelegramChatIdInput(localStorage.getItem("agentshield_telegram_chat_id") || "");
+      setTelegramTokenInput(SecureTokenVault.getSecret("agentshield_telegram_token"));
+      setTelegramChatIdInput(SecureTokenVault.getSecret("agentshield_telegram_chat_id"));
     } else if (connector.id === "slack") {
-      setSlackWebhookInput(localStorage.getItem("agentshield_slack_webhook") || "");
+      setSlackWebhookInput(SecureTokenVault.getSecret("agentshield_slack_webhook"));
     } else if (connector.id === "nvidia") {
-      setNvidiaKeyInput(localStorage.getItem("agentshield_nvidia_key") || "");
+      setNvidiaKeyInput(SecureTokenVault.getSecret("agentshield_nvidia_key"));
     } else {
-      const savedKey = localStorage.getItem(`agentshield_conn_key_${connector.id}`);
+      const savedKey = SecureTokenVault.getSecret(`agentshield_conn_key_${connector.id}`);
       setApiKeyInput(savedKey || "");
     }
   };
@@ -245,7 +246,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
 
         const latency = Math.round(performance.now() - startMs) || 18;
         localStorage.setItem("agentshield_github_repo", repo);
-        if (token) localStorage.setItem("agentshield_github_token", token);
+        if (token) SecureTokenVault.setSecret("agentshield_github_token", token);
         localStorage.setItem("agentshield_conn_github", "true");
 
         setVerifyStatus({
@@ -275,9 +276,9 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
               if (data.bot_username) botName = `@${data.bot_username}`;
             }
           } catch {}
-          localStorage.setItem("agentshield_telegram_token", token);
+          SecureTokenVault.setSecret("agentshield_telegram_token", token);
         }
-        if (chatId) localStorage.setItem("agentshield_telegram_chat_id", chatId);
+        if (chatId) SecureTokenVault.setSecret("agentshield_telegram_chat_id", chatId);
         localStorage.setItem("agentshield_conn_telegram", "true");
 
         const latency = Math.round(performance.now() - startMs) || 24;
@@ -292,7 +293,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
         // Real NVIDIA NIM Verification
         const key = nvidiaKeyInput.trim();
         if (key) {
-          localStorage.setItem("agentshield_nvidia_key", key);
+          SecureTokenVault.setSecret("agentshield_nvidia_key", key);
           try {
             await fetch("/v1/shieldwing/verify-nvidia", {
               method: "POST",
@@ -314,7 +315,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
         // Real Slack Webhook configuration
         const webhook = slackWebhookInput.trim();
         if (webhook) {
-          localStorage.setItem("agentshield_slack_webhook", webhook);
+          SecureTokenVault.setSecret("agentshield_slack_webhook", webhook);
         }
         localStorage.setItem("agentshield_conn_slack", "true");
         const latency = Math.round(performance.now() - startMs) || 22;
@@ -328,7 +329,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
       } else {
         // Universal Connector (Google, AWS, Supabase, Jira, Stripe, etc.)
         if (apiKeyInput.trim()) {
-          localStorage.setItem(`agentshield_conn_key_${connector.id}`, apiKeyInput.trim());
+          SecureTokenVault.setSecret(`agentshield_conn_key_${connector.id}`, apiKeyInput.trim());
         }
         try {
           await fetch(`/v1/shieldwing/connectors/${connector.id}/toggle`, {
@@ -375,11 +376,25 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
       }).catch(() => {});
     } catch {}
 
+    SecureTokenVault.removeSecret(`agentshield_conn_key_${connector.id}`);
     localStorage.removeItem(`agentshield_conn_key_${connector.id}`);
-    if (connector.id === "github") localStorage.removeItem("agentshield_conn_github");
-    if (connector.id === "telegram") localStorage.removeItem("agentshield_conn_telegram");
-    if (connector.id === "slack") localStorage.removeItem("agentshield_conn_slack");
-    if (connector.id === "nvidia") localStorage.removeItem("agentshield_conn_nvidia");
+    if (connector.id === "github") {
+      SecureTokenVault.removeSecret("agentshield_github_token");
+      localStorage.removeItem("agentshield_conn_github");
+    }
+    if (connector.id === "telegram") {
+      SecureTokenVault.removeSecret("agentshield_telegram_token");
+      SecureTokenVault.removeSecret("agentshield_telegram_chat_id");
+      localStorage.removeItem("agentshield_conn_telegram");
+    }
+    if (connector.id === "slack") {
+      SecureTokenVault.removeSecret("agentshield_slack_webhook");
+      localStorage.removeItem("agentshield_conn_slack");
+    }
+    if (connector.id === "nvidia") {
+      SecureTokenVault.removeSecret("agentshield_nvidia_key");
+      localStorage.removeItem("agentshield_conn_nvidia");
+    }
 
     const updated = connectorsState.map((c) =>
       c.id === connector.id ? { ...c, connected: false } : c

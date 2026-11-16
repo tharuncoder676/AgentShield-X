@@ -61,7 +61,7 @@ def signup(req: SignUpRequest) -> AuthResponse:
     # Automatically create default organization
     org_id = f"org_{uuid.uuid4().hex[:12]}"
     org_display_name = req.get_org_name()
-    slug = org_display_name.lower().replace(" ", "-") + f"-{secrets_hex(4)}"
+    slug = org_display_name.lower().replace(" ", "-") + f"-{uuid.uuid4().hex[:4]}"
     db.create_org(org_id, org_display_name, slug, "enterprise", user_id, now)
 
     token = create_token(user_id, req.email, "owner")

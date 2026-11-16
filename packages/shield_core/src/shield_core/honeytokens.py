@@ -19,8 +19,58 @@ from typing import Any, Dict, List, Optional, Tuple
 import os
 import socket
 import logging
+import base64
+import codecs
+import urllib.parse
+from shield_core.normalizer import HomoglyphAndUnicodeNormalizer
 
 logger = logging.getLogger("shield_core.honeytokens")
+
+
+def get_canary_encoded_variants(canary: str) -> Set[str]:
+    """
+    Generates comprehensive adversarial encodings of a canary token to catch
+    data exfiltration across obfuscated representations:
+    1. Raw, uppercase, lowercase
+    2. Base64 (standard and URL-safe, with and without '=' padding)
+    3. Hexadecimal (lower and uppercase, with/without '0x')
+    4. URL percent-encoding (full and standard)
+    5. ROT13 obfuscation
+    6. Reversed token
+    """
+    if not canary or len(canary) < 4:
+        return set()
+
+    variants: Set[str] = {canary, canary.lower(), canary.upper()}
+    canary_bytes = canary.encode("utf-8")
+
+    # 1. Base64 variants
+    b64_std = base64.b64encode(canary_bytes).decode("utf-8")
+    variants.add(b64_std)
+    variants.add(b64_std.rstrip("="))
+    b64_url = base64.urlsafe_b64encode(canary_bytes).decode("utf-8")
+    variants.add(b64_url)
+    variants.add(b64_url.rstrip("="))
+
+    # 2. Hexadecimal variants
+    hex_lower = canary_bytes.hex()
+    variants.add(hex_lower)
+    variants.add(hex_lower.upper())
+    variants.add("0x" + hex_lower)
+    variants.add("0x" + hex_lower.upper())
+
+    # 3. URL percent-encoding
+    variants.add(urllib.parse.quote(canary))
+    variants.add("".join(f"%{b:02X}" for b in canary_bytes))
+    variants.add("".join(f"%{b:02x}" for b in canary_bytes))
+
+    # 4. ROT13 obfuscation
+    variants.add(codecs.encode(canary, "rot_13"))
+
+    # 5. Reversed token
+    variants.add(canary[::-1])
+
+    return {v for v in variants if len(v) >= 4}
 
 
 def get_canary_secret() -> str:
@@ -188,54 +238,86 @@ class DynamicHoneytoolEngine:
     ) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """
         Inspects payload being passed to outbound sinks (send_email, webhook, execute_shell).
+        Detects canary tokens across raw, normalized, and encoded forms (base64, hex, rot13, url-encode).
         If a canary token is present, instantly trips security alarm and physically severs any active network socket (<1ms).
         """
-        matches = self.CANARY_REGEX.findall(payload_text)
-        if not matches:
+        if not payload_text:
             return False, None
 
-        for match in matches:
-            if match in self._canaries:
-                canary = self._canaries[match]
-                canary.status = "triggered"
-                canary.trigger_count += 1
-                canary.last_triggered_at = time.time()
-                canary.last_sink = sink_name
+        # 1. Normalize text (strip zero-width spaces, homoglyphs, entities)
+        norm_text, _ = HomoglyphAndUnicodeNormalizer.normalize(payload_text)
+        search_corpus = [payload_text]
+        if norm_text and norm_text != payload_text:
+            search_corpus.append(norm_text)
 
-                # Real socket severance if network socket or transport descriptor provided
-                socket_severed = False
-                if active_socket is not None:
+        matched_canary: Optional[Tuple[str, ActiveCanary]] = None
+
+        # 2. Direct regex match on raw and normalized text
+        for text in search_corpus:
+            matches = self.CANARY_REGEX.findall(text)
+            for match in matches:
+                if match in self._canaries:
+                    matched_canary = (match, self._canaries[match])
+                    break
+            if matched_canary:
+                break
+
+        # 3. Encoded variants detection (base64, hex, rot13, percent-encoded)
+        if not matched_canary:
+            for token, canary_obj in self._canaries.items():
+                variants = get_canary_encoded_variants(token)
+                for text in search_corpus:
+                    text_lower = text.lower()
+                    for var in variants:
+                        if var.lower() in text_lower:
+                            matched_canary = (token, canary_obj)
+                            break
+                    if matched_canary:
+                        break
+                if matched_canary:
+                    break
+
+        if not matched_canary:
+            return False, None
+
+        match_token, canary = matched_canary
+        canary.status = "triggered"
+        canary.trigger_count += 1
+        canary.last_triggered_at = time.time()
+        canary.last_sink = sink_name
+
+        # Real socket severance if network socket or transport descriptor provided
+        socket_severed = False
+        if active_socket is not None:
+            try:
+                if hasattr(active_socket, "shutdown"):
                     try:
-                        if hasattr(active_socket, "shutdown"):
-                            try:
-                                active_socket.shutdown(socket.SHUT_RDWR)
-                            except Exception:
-                                pass
-                        if hasattr(active_socket, "close"):
-                            active_socket.close()
-                        socket_severed = True
+                        active_socket.shutdown(socket.SHUT_RDWR)
                     except Exception:
                         pass
+                if hasattr(active_socket, "close"):
+                    active_socket.close()
+                socket_severed = True
+            except Exception:
+                pass
 
-                tripwire_event = {
-                    "event_id": f"TRIPWIRE-{secrets.token_hex(6).upper()}",
-                    "severity": "CRITICAL",
-                    "action": "SEVER_SOCKET_AND_CONTAIN",
-                    "canary_token": match,
-                    "decoy_tool": canary.decoy_tool,
-                    "outbound_sink": sink_name,
-                    "agent_id": agent_id,
-                    "timestamp": time.time(),
-                    "socket_severed": socket_severed,
-                    "message": (
-                        f"CRITICAL BREACH INTERCEPTED: Agent '{agent_id}' attempted to exfiltrate "
-                        f"honeytoken '{match}' via sink '{sink_name}'. Socket severed immediately."
-                    ),
-                }
-                self._tripwire_events.append(tripwire_event)
-                return True, tripwire_event
-
-        return False, None
+        tripwire_event = {
+            "event_id": f"TRIPWIRE-{secrets.token_hex(6).upper()}",
+            "severity": "CRITICAL",
+            "action": "SEVER_SOCKET_AND_CONTAIN",
+            "canary_token": match_token,
+            "decoy_tool": canary.decoy_tool,
+            "outbound_sink": sink_name,
+            "agent_id": agent_id,
+            "timestamp": time.time(),
+            "socket_severed": socket_severed,
+            "message": (
+                f"CRITICAL BREACH INTERCEPTED: Agent '{agent_id}' attempted to exfiltrate "
+                f"honeytoken '{match_token}' via sink '{sink_name}' (encoded/variant detected). Socket severed immediately."
+            ),
+        }
+        self._tripwire_events.append(tripwire_event)
+        return True, tripwire_event
 
     def list_canaries(self) -> List[Dict[str, Any]]:
         return [asdict(c) for c in self._canaries.values()]

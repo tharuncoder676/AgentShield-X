@@ -12,6 +12,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 from shield_core.agentic_defense import default_agentic_defense
+from shield_core.normalizer import HomoglyphAndUnicodeNormalizer
 
 
 INJECTION_PATTERNS = [
@@ -55,17 +56,28 @@ class RAGFirewallEngine:
         violations = []
         sanitized = text
 
-        # 1. Direct and heuristic pattern redaction
+        # 0. Adversarial Text Normalization (strip zero-width spaces, bidi overrides, decode HTML/URL, map homoglyphs)
+        norm_text, norm_violations = HomoglyphAndUnicodeNormalizer.normalize(text)
+        if norm_violations:
+            for nv in norm_violations:
+                violations.append(f"ADVERSARIAL_NORMALIZATION: {nv}")
+            if any("ZERO_WIDTH" in nv or "HOMOGLYPH" in nv for nv in norm_violations):
+                max_threat = max(max_threat, 0.70)
+            eval_target = norm_text
+        else:
+            eval_target = text
+
+        # 1. Direct and heuristic pattern redaction on both original and normalized text
         for pattern, score, label in self._compiled:
-            matches = pattern.findall(sanitized)
-            if matches:
+            matches_orig = pattern.findall(sanitized)
+            matches_norm = pattern.findall(eval_target) if eval_target != sanitized else []
+            if matches_orig or matches_norm:
                 max_threat = max(max_threat, score)
                 violations.append(f"{label} (confidence: {score})")
-                # Remove malicious sentence
                 sanitized = pattern.sub("[REDACTED_BY_AGENTSHIELD_RAG_FIREWALL]", sanitized)
 
-        # 2. Cognitive agentic evaluation on full text (catches paraphrased, indirect, and zero-keyword injections)
-        orig_agentic = default_agentic_defense.evaluate_text_payload(text)
+        # 2. Cognitive agentic evaluation on full text & normalized text (catches paraphrased, indirect, and zero-keyword injections)
+        orig_agentic = default_agentic_defense.evaluate_text_payload(eval_target)
         if orig_agentic.is_adversarial:
             max_threat = max(max_threat, orig_agentic.threat_score)
             for v in orig_agentic.violations:

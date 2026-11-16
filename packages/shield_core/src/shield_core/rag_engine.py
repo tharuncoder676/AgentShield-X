@@ -24,87 +24,12 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from shield_core.rag_firewall import InspectedChunk, RAGFirewallEngine, default_rag_firewall
 from shield_core.agentic_defense import default_agentic_defense
-
-
-# =====================================================================
-# 1. Adversarial Homoglyph, Bidi & Zero-Width Token Stripper
-# =====================================================================
-
-HOMOGLYPH_MAP: Dict[str, str] = {
-    # Cyrillic lowercase to Latin
-    "а": "a", "с": "c", "е": "e", "о": "o", "р": "p", "х": "x", "у": "y", "і": "i", "ј": "j", "ѕ": "s",
-    # Cyrillic uppercase to Latin
-    "А": "A", "В": "B", "С": "C", "Е": "E", "Н": "H", "І": "I", "Ј": "J", "К": "K", "М": "M", "О": "O",
-    "Р": "P", "Ѕ": "S", "Т": "T", "Х": "X",
-    # Greek lowercase to Latin
-    "α": "a", "ο": "o", "ρ": "p", "ν": "v", "κ": "k",
-    # Mathematical and fullwidth
-    "ａ": "a", "ｂ": "b", "ｃ": "c", "ｄ": "d", "ｅ": "e", "ｆ": "f", "ｇ": "g",
-}
-
-# Invisible characters: zero-width space, joiners, BOM, bidi overrides
-ZERO_WIDTH_CHARS: Set[str] = {
-    "\u200b",  # Zero-width space
-    "\u200c",  # Zero-width non-joiner
-    "\u200d",  # Zero-width joiner
-    "\ufeff",  # Zero-width no-break space / Byte Order Mark
-    "\u2060",  # Word joiner
-    "\u200e",  # Left-to-right mark
-    "\u200f",  # Right-to-left mark
-    "\u202a", "\u202b", "\u202c", "\u202d", "\u202e",  # Bidi embedding & overrides
-    "\u2066", "\u2067", "\u2068", "\u2069",            # Bidi isolates
-}
-
-
-class HomoglyphAndUnicodeNormalizer:
-    """
-    Multi-stage adversarial text normalizer that strips zero-width spaces, bidi overrides,
-    decodes HTML entities and URL-encoding, and maps Cyrillic/Greek/Full-width homoglyphs
-    to canonical ASCII characters to prevent adversarial prompt smuggling.
-    """
-
-    @staticmethod
-    def normalize(text: str) -> Tuple[str, List[str]]:
-        if not text:
-            return "", []
-
-        violations: List[str] = []
-
-        # 1. Decode HTML entities (e.g. &lt;script&gt; -> <script>, &#105; -> i)
-        unescaped_html = html.unescape(text)
-        if unescaped_html != text:
-            violations.append("DECODED_HTML_ENTITIES")
-
-        # 2. Decode URL encoding (e.g. %69%67%6e%6f%72%65 -> ignore)
-        unquoted = urllib.parse.unquote(unescaped_html)
-        if unquoted != unescaped_html:
-            violations.append("DECODED_URL_ENCODING")
-
-        # 3. Unicode compatibility decomposition (NFKD converts full-width 'ｉｇｎｏｒｅ' -> 'ignore')
-        nfkd_text = unicodedata.normalize("NFKD", unquoted)
-        if nfkd_text != unquoted:
-            violations.append("CANONICALIZED_UNICODE_NFKD")
-
-        cleaned_chars: List[str] = []
-        zero_width_count = 0
-        homoglyph_count = 0
-
-        for char in nfkd_text:
-            if char in ZERO_WIDTH_CHARS:
-                zero_width_count += 1
-                continue
-            if char in HOMOGLYPH_MAP:
-                homoglyph_count += 1
-                cleaned_chars.append(HOMOGLYPH_MAP[char])
-            else:
-                cleaned_chars.append(char)
-
-        if zero_width_count > 0:
-            violations.append(f"STRIPPED_{zero_width_count}_INVISIBLE_ZERO_WIDTH_TOKENS")
-        if homoglyph_count > 0:
-            violations.append(f"NORMALIZED_{homoglyph_count}_HOMOGLYPH_CONFUSABLES")
-
-        return "".join(cleaned_chars), violations
+from shield_core.normalizer import (
+    HomoglyphAndUnicodeNormalizer,
+    HomoglyphNormalizer,
+    HOMOGLYPH_MAP,
+    ZERO_WIDTH_CHARS,
+)
 
 
 # =====================================================================

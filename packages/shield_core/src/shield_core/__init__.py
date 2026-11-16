@@ -31,11 +31,14 @@ from shield_core.attestation import A2AAttestationEngine, default_attestation_en
 from shield_core.honeytokens import DynamicHoneytoolEngine, default_honeytoken_engine
 from shield_core.sandbox import EphemeralSandboxGuard, default_sandbox_guard
 from shield_core.rag_firewall import RAGFirewallEngine, default_rag_firewall
+from shield_core.normalizer import (
+    HomoglyphAndUnicodeNormalizer,
+    HomoglyphNormalizer,
+)
 from shield_core.rag_engine import (
     EnterpriseRAGPipeline,
     default_rag_pipeline,
     SemanticVectorStore,
-    HomoglyphAndUnicodeNormalizer,
     JITContextMasker,
     CitationAttestationEngine,
     MultiHopTaintTracker,
@@ -229,6 +232,8 @@ __all__ = [
     "default_sandbox_guard",
     "RAGFirewallEngine",
     "default_rag_firewall",
+    "HomoglyphAndUnicodeNormalizer",
+    "HomoglyphNormalizer",
     "GitOpsPolicyEngine",
     "default_gitops_engine",
     "ContinuousImmunityEngine",
