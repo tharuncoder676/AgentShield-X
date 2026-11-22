@@ -70,12 +70,6 @@
       }
     },
     {
-      "source": "/downloads/(.*)",
-      "destination": {
-        "service": "control_api"
-      }
-    },
-    {
       "source": "/health",
       "destination": {
         "service": "control_api"

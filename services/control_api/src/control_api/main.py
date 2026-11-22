@@ -184,7 +184,11 @@ def health():
 @app.head("/v1/downloads/{filename}")
 def download_distribution(filename: str):
     safe_filename = os.path.basename(filename)
+    from pathlib import Path
+    base_dir = Path(__file__).resolve().parents[4]
     candidates = [
+        str(base_dir / "apps" / "console" / "public" / "downloads" / safe_filename),
+        str(base_dir / "apps" / "console" / "dist" / "downloads" / safe_filename),
         os.path.join("apps", "console", "public", "downloads", safe_filename),
         os.path.join("apps", "console", "dist", "downloads", safe_filename),
         os.path.join("dist", safe_filename),
@@ -212,7 +216,11 @@ def download_distribution(filename: str):
                     "Cache-Control": "public, max-age=3600"
                 }
             )
-    raise HTTPException(status_code=404, detail=f"Distribution package '{safe_filename}' not found.")
+    # Resilient fallback: redirect to GitHub release asset if serverless container does not bundle binaries
+    return RedirectResponse(
+        url=f"https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/{safe_filename}",
+        status_code=307
+    )
 
 
 import asyncio

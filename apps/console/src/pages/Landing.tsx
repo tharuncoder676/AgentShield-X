@@ -66,23 +66,20 @@ import { Key } from "lucide-react";
 export const Landing: React.FC = () => {
 
   const handleDirectDownload = (filename: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    // If invoked without native event, trigger download via synthetic link
     const directUrl = `/downloads/${filename}`;
-    const link = document.createElement("a");
-    link.href = directUrl;
-    link.setAttribute("download", filename);
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      try {
-        document.body.removeChild(link);
-      } catch {}
-    }, 1000);
+    if (!e) {
+      const link = document.createElement("a");
+      link.href = directUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(link);
+        } catch {}
+      }, 500);
+    }
   };
 
   // Navigation & Interactive states
@@ -838,18 +835,13 @@ export const Landing: React.FC = () => {
                     ? "/downloads/AgentShield-X-1.0.0.AppImage"
                     : "/downloads/AgentShield-X-1.0.0-universal.dmg"
                 }
-                onClick={(e) => {
-                  const targetFile =
-                    detectedOS === "windows"
-                      ? "AgentShield-X-Setup-1.0.0.exe"
-                      : detectedOS === "linux"
-                      ? "AgentShield-X-1.0.0.AppImage"
-                      : "AgentShield-X-1.0.0-universal.dmg";
-                  handleDirectDownload(targetFile, e);
-                }}
-                target="_blank"
-                rel="noopener noreferrer"
-                download
+                download={
+                  detectedOS === "windows"
+                    ? "AgentShield-X-Setup-1.0.0.exe"
+                    : detectedOS === "linux"
+                    ? "AgentShield-X-1.0.0.AppImage"
+                    : "AgentShield-X-1.0.0-universal.dmg"
+                }
                 className="px-7 py-3.5 rounded-full bg-white text-black font-sans font-bold text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_35px_rgba(168,85,247,0.65),0_0_15px_rgba(192,132,252,0.4)] hover:scale-[1.02] transition-all flex items-center space-x-2 border border-purple-200 cursor-pointer"
               >
                 <Download className="w-4 h-4 text-[#a855f7]" />
@@ -2297,10 +2289,7 @@ export const Landing: React.FC = () => {
             <p className="text-xs text-[#a9a9aa] mb-4">Apple Silicon (M1/M2/M3/M4) & Intel x86_64 Universal .dmg</p>
             <a
               href="/downloads/AgentShield-X-1.0.0-universal.dmg"
-              onClick={(e) => handleDirectDownload("AgentShield-X-1.0.0-universal.dmg", e)}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
+              download="AgentShield-X-1.0.0-universal.dmg"
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
               <Download className="w-3.5 h-3.5" />
@@ -2332,10 +2321,7 @@ export const Landing: React.FC = () => {
             <p className="text-xs text-[#a9a9aa] mb-4">Windows 10/11 64-bit Installer & Portable .exe</p>
             <a
               href="/downloads/AgentShield-X-Setup-1.0.0.exe"
-              onClick={(e) => handleDirectDownload("AgentShield-X-Setup-1.0.0.exe", e)}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
+              download="AgentShield-X-Setup-1.0.0.exe"
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
               <Download className="w-3.5 h-3.5" />
@@ -2367,10 +2353,7 @@ export const Landing: React.FC = () => {
             <p className="text-xs text-[#a9a9aa] mb-4">Universal .AppImage, Debian .deb, and Arch tar.gz</p>
             <a
               href="/downloads/AgentShield-X-1.0.0.AppImage"
-              onClick={(e) => handleDirectDownload("AgentShield-X-1.0.0.AppImage", e)}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
+              download="AgentShield-X-1.0.0.AppImage"
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
               <Download className="w-3.5 h-3.5" />
