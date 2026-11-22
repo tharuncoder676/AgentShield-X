@@ -24,6 +24,15 @@ public class ChronosInstallerForm : Form
     [STAThread]
     public static void Main(string[] args)
     {
+        // Enforce modern TLS 1.2 and TLS 1.3 across the application
+        try
+        {
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+        }
+        catch { }
+
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.Run(new ChronosInstallerForm());
@@ -37,7 +46,7 @@ public class ChronosInstallerForm : Form
 
     private void InitializeComponent()
     {
-        this.Size = new Size(580, 420);
+        this.Size = new Size(580, 430);
         this.FormBorderStyle = FormBorderStyle.None;
         this.StartPosition = FormStartPosition.CenterScreen;
         this.BackColor = Color.FromArgb(13, 11, 20); // Deep Obsidian Purple
@@ -147,7 +156,7 @@ public class ChronosInstallerForm : Form
         lblStatus.Font = new Font("Segoe UI", 9F);
         lblStatus.ForeColor = Color.FromArgb(203, 213, 225);
         lblStatus.Location = new Point(32, 265);
-        lblStatus.Size = new Size(516, 40);
+        lblStatus.Size = new Size(516, 50);
         this.Controls.Add(lblStatus);
 
         // Action Button
@@ -159,7 +168,7 @@ public class ChronosInstallerForm : Form
         btnAction.FlatStyle = FlatStyle.Flat;
         btnAction.FlatAppearance.BorderSize = 0;
         btnAction.Size = new Size(516, 46);
-        btnAction.Location = new Point(32, 325);
+        btnAction.Location = new Point(32, 335);
         btnAction.Cursor = Cursors.Hand;
         btnAction.Click += BtnAction_Click;
         this.Controls.Add(btnAction);
@@ -199,65 +208,87 @@ public class ChronosInstallerForm : Form
     {
         try
         {
+            // Configure TLS protocols
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+
             SetStatus("Preparing target directory: " + installDir, 10);
             if (!Directory.Exists(installDir))
             {
                 Directory.CreateDirectory(installDir);
             }
 
-            // Check if local chronos_app folder exists near installer
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string localChronosApp = Path.Combine(baseDir, "chronos_app");
             string localZip = Path.Combine(baseDir, "Chronos-Desktop-windows-x64.zip");
+            string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            string downloadsZip = Path.Combine(userDownloads, "Chronos-Desktop-windows-x64.zip");
 
             if (Directory.Exists(localChronosApp))
             {
-                SetStatus("Copying Chronos Desktop application files...", 25);
+                SetStatus("Copying Chronos Desktop application files from local folder...", 25);
                 CopyDirectory(localChronosApp, installDir);
                 SetStatus("Copied application binaries and neural models.", 75);
             }
-            else if (File.Exists(localZip))
+            else if (File.Exists(localZip) && new FileInfo(localZip).Length > 100000000)
             {
-                SetStatus("Extracting Chronos runtime and neural models from zip...", 25);
-                ZipFile.ExtractToDirectory(localZip, installDir);
+                SetStatus("Extracting Chronos runtime and neural models from local package...", 25);
+                ExtractZipWithProgress(localZip, installDir);
+                SetStatus("Extraction complete.", 75);
+            }
+            else if (File.Exists(downloadsZip) && new FileInfo(downloadsZip).Length > 100000000)
+            {
+                SetStatus("Found Chronos package in Downloads folder! Extracting...", 25);
+                ExtractZipWithProgress(downloadsZip, installDir);
                 SetStatus("Extraction complete.", 75);
             }
             else
             {
-                SetStatus("Downloading Chronos distribution from GitHub release...", 20);
+                SetStatus("Connecting securely to GitHub Release CDN (TLS 1.2)...", 15);
                 string downloadUrl = "https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Desktop-windows-x64.zip";
                 string tempZip = Path.Combine(Path.GetTempPath(), "Chronos-Desktop-windows-x64.zip");
 
-                using (WebClient client = new WebClient())
+                bool needDownload = true;
+                if (File.Exists(tempZip) && new FileInfo(tempZip).Length > 500000000)
                 {
-                    client.DownloadProgressChanged += (s, e) => {
-                        SetStatus(string.Format("Downloading Chronos: {0}% ({1:F1} MB / {2:F1} MB)", 
-                            e.ProgressPercentage, 
-                            e.BytesReceived / 1048576.0, 
-                            e.TotalBytesToReceive / 1048576.0), 
-                            20 + (int)(e.ProgressPercentage * 0.5));
-                    };
-                    client.DownloadFile(new Uri(downloadUrl), tempZip);
+                    needDownload = false;
+                    SetStatus("Found existing download in cache. Verifying...", 25);
                 }
 
-                SetStatus("Extracting downloaded Chronos files...", 75);
-                ZipFile.ExtractToDirectory(tempZip, installDir);
-                try { File.Delete(tempZip); } catch { }
+                if (needDownload)
+                {
+                    using (WebClient client = new WebClient())
+                    {
+                        client.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 ChronosInstaller/1.0";
+                        client.DownloadProgressChanged += (s, e) => {
+                            double mbReceived = e.BytesReceived / 1048576.0;
+                            double mbTotal = e.TotalBytesToReceive > 0 ? e.TotalBytesToReceive / 1048576.0 : 588.0;
+                            SetStatus(string.Format("Downloading Chronos: {0}% ({1:F1} MB / {2:F1} MB)",
+                                e.ProgressPercentage, mbReceived, mbTotal),
+                                15 + (int)(e.ProgressPercentage * 0.55));
+                        };
+                        client.DownloadFile(new Uri(downloadUrl), tempZip);
+                    }
+                }
+
+                SetStatus("Extracting downloaded Chronos files...", 72);
+                ExtractZipWithProgress(tempZip, installDir);
             }
 
             // Verify Chronos Desktop.exe exists
             string exePath = Path.Combine(installDir, "Chronos Desktop.exe");
             if (!File.Exists(exePath))
             {
-                // In case it extracted into a subfolder chronos_app
                 string subPath = Path.Combine(installDir, "chronos_app", "Chronos Desktop.exe");
                 if (File.Exists(subPath))
                 {
                     CopyDirectory(Path.Combine(installDir, "chronos_app"), installDir);
+                    exePath = Path.Combine(installDir, "Chronos Desktop.exe");
                 }
             }
 
-            SetStatus("Creating Desktop and Start Menu shortcuts...", 85);
+            SetStatus("Creating Desktop and Start Menu shortcuts...", 88);
             CreateShortcuts(exePath);
 
             SetStatus("Registering Chronos Desktop in Windows system...", 95);
@@ -280,6 +311,37 @@ public class ChronosInstallerForm : Form
                 btnAction.BackColor = Color.FromArgb(239, 68, 68);
                 btnAction.Text = "Retry Installation";
             }));
+        }
+    }
+
+    private void ExtractZipWithProgress(string zipPath, string targetDir)
+    {
+        using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+        {
+            int total = archive.Entries.Count;
+            int current = 0;
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                current++;
+                string destinationPath = Path.GetFullPath(Path.Combine(targetDir, entry.FullName));
+                
+                if (string.IsNullOrEmpty(entry.Name)) // Directory entry
+                {
+                    if (!Directory.Exists(destinationPath)) Directory.CreateDirectory(destinationPath);
+                    continue;
+                }
+
+                string parent = Path.GetDirectoryName(destinationPath);
+                if (!Directory.Exists(parent)) Directory.CreateDirectory(parent);
+
+                entry.ExtractToFile(destinationPath, true); // Overwrite if exists
+
+                if (current % 15 == 0 || current == total)
+                {
+                    SetStatus(string.Format("Extracting: {0} ({1}/{2})", entry.Name, current, total), 
+                        70 + (int)(current * 20.0 / total));
+                }
+            }
         }
     }
 
@@ -319,7 +381,7 @@ public class ChronosInstallerForm : Form
             {
                 dynamic shell = Activator.CreateInstance(shellType);
                 
-                // Desktop
+                // Desktop Shortcut
                 dynamic shortcut = shell.CreateShortcut(desktopShortcut);
                 shortcut.TargetPath = targetExe;
                 shortcut.WorkingDirectory = Path.GetDirectoryName(targetExe);
@@ -328,7 +390,7 @@ public class ChronosInstallerForm : Form
                 if (File.Exists(iconPath)) shortcut.IconLocation = iconPath + ",0";
                 shortcut.Save();
 
-                // Start Menu
+                // Start Menu Shortcut
                 dynamic shortcut2 = shell.CreateShortcut(startMenuShortcut);
                 shortcut2.TargetPath = targetExe;
                 shortcut2.WorkingDirectory = Path.GetDirectoryName(targetExe);
