@@ -57,47 +57,15 @@ export const Signup: React.FC = () => {
       });
       navigate("/overview");
     } catch (err: any) {
-      if (cleanEmail.includes("@")) {
-        localStorage.setItem("agentshield_token", "dev_operator_session_token");
-        navigate("/overview");
-      } else {
-        setError(err.message || "Sign-up failed. Please review your details.");
-      }
+      setError(err.message || "Sign-up failed. Please review your details.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOAuthSuccess = async (profile: { email: string; name: string; provider: "google" }) => {
+  const handleOAuthSuccess = async () => {
     setActiveOAuthProvider(null);
-    setLoading(true);
-    const cleanEmail = profile.email.trim().toLowerCase();
-    localStorage.setItem("agentshield_user_email", cleanEmail);
-    localStorage.setItem("agentshield_user_name", profile.name);
-
-    try {
-      const res = await fetch(`${""}/v1/auth/oauth`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: profile.provider,
-          email: cleanEmail,
-          name: profile.name,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("agentshield_token", data.token);
-        localStorage.setItem("agentshield_tier", "pro");
-      } else {
-        localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
-      }
-    } catch {
-      localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
-    } finally {
-      setLoading(false);
-      navigate("/overview");
-    }
+    setError("Google sign-in is unavailable until verified server-side identity exchange is configured.");
   };
 
   return (

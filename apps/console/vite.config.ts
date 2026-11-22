@@ -13,21 +13,22 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    strictPort: true,
     watch: {
       ignored: ["**/downloads/**", "**/*.mp4", "**/*.exe", "**/*.dmg", "**/*.AppImage", "**/*.zip", "**/*.tar.gz"],
     },
     proxy: {
       "/v1": {
-        target: "http://127.0.0.1:8002",
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
         ws: true,
       },
       "/api": {
-        target: "http://127.0.0.1:8002",
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
       "/downloads": {
-        target: "http://127.0.0.1:8002",
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
     },

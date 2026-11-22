@@ -22,6 +22,7 @@
    - 5.7 [MCP Schema Scanner & Dynamic Tool Rug-Pull Guard (`shield_mcp`)](#57-mcp-schema-scanner--dynamic-tool-rug-pull-guard)
    - 5.8 [Shadow Execution & Speculative Tool Sandboxing (`shield_core.shadow_agent`)](#58-shadow-execution--speculative-tool-sandboxing)
    - 5.9 [Tamper-Evident SHA-256 WAL Audit Ledger (`services.ingest`)](#59-tamper-evident-sha-256-wal-audit-ledger)
+   - 5.10 [Nūs Desktop AI Agent Subsystem (`control_api.routes.nus_agent`)](#510-nūs-desktop-ai-agent-subsystem)
 6. [Web Console & UI Applications (`apps/console`)](#6-web-console--ui-applications)
    - 6.1 [Cyberpunk Purple Theme Design System](#61-cyberpunk-purple-theme-design-system)
    - 6.2 [ShieldWing Studio](#62-shieldwing-studio)
@@ -318,6 +319,15 @@ The core runtime decision engine (`services/decision/src/decision/service.py`) p
 ### 5.9 Tamper-Evident SHA-256 WAL Audit Ledger (`services.ingest`)
 - **Cryptographic Hash Chaining:** Every audit entry records `previous_hash`, `timestamp`, `event_payload`, `decision`, and calculates a deterministic `current_hash = SHA256(prev_hash + payload + decision)`.
 - **SQLite WAL High-Throughput Persistence:** Employs Write-Ahead Logging (WAL) ensuring thread-safe, lock-free concurrent writes with sub-millisecond commitment.
+
+### 5.10 Nūs Desktop AI Agent Subsystem (`control_api.routes.nus_agent`)
+- **Replication of `potlakai/nus-desktop`:** Full autonomous desktop organizer agent integrated into Wingman and ShieldWing Studio.
+- **Local-First & Zero Data Leakage:** Ingestion, parsing, and scheduling are executed locally on the workstation with BYOI (Claude 3.5 Sonnet, Gemini 2.0 Flash, Local Ollama Wingshield, NVIDIA Nemotron).
+- **Automated Syllabus & Document Intelligence:** Parses course syllabi, assignments, and project briefs to extract living chronological timelines, exam dates, grading weight percentages, and estimated focus hours.
+- **Human-in-the-Loop "Approve First" Pattern:** Generates structured action proposals (focus blocks, calendar sync, conflict triage). The AI never blindly mutates calendars or tasks without explicit user approval.
+- **"The Knot" Floating Companion Overlay:** Screen-aware, voice-enabled desktop companion with shortcut `Ctrl+Shift+T`, microphone speech-to-text listener, and floating approval tray.
+- **Inbound Context Taint Tracking:** Syllabi and third-party documents are scanned with `HomoglyphAndUnicodeNormalizer` and `RagFirewall` to prevent indirect prompt injection attacks embedded in coursework materials.
+- **1-Click Standard iCalendar (.ics) Export:** Generates RFC 5545 compliant `.ics` calendar files for instant sync to Google Calendar, Apple Calendar, and Microsoft Outlook.
 
 ---
 

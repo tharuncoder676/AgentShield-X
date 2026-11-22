@@ -145,50 +145,37 @@ async def update_shieldwing_config(
 @router.post("/test-connection")
 async def test_shieldwing_connection(
     req: ShieldwingConfigRequest,
-    current_user: Optional[UserDTO] = Depends(get_optional_user),
+    current_user: UserDTO = Depends(get_current_user),
 ):
     """Verifies that the configured NVIDIA NIM endpoint and API key work properly."""
-    api_key = req.api_key or os.getenv("NVIDIA_API_KEY")
+    api_key = (req.api_key or "").strip()
     model = req.model or os.getenv("NVIDIA_MODEL", "nvidia/nemotron-4-340b-instruct")
 
     if not api_key:
-        # Fallback to verified local sandbox NIM agent simulation
-        return {
-            "status": "connected",
-            "provider": "NVIDIA NIM",
-            "model": model,
-            "sample_response": "READY (AgentShield-X NVIDIA NIM Sandbox Active)",
-        }
+        raise HTTPException(422, "Enter an NVIDIA API key to verify the connection.")
 
     try:
         from openai import AsyncOpenAI
-        client = AsyncOpenAI(
+        async with AsyncOpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
             api_key=api_key,
             timeout=15.0,
-        )
-        completion = await client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": "Ping: Verify connection. Reply with 'READY'."}],
-            max_tokens=20,
-            temperature=0.0,
-        )
-        reply = completion.choices[0].message.content if completion.choices else "READY"
+        ) as client:
+            completion = await client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "Ping: Verify connection. Reply with 'READY'."}],
+                max_tokens=20,
+                temperature=0.0,
+            )
+        reply = completion.choices[0].message.content if completion.choices else ""
         return {
             "status": "connected",
             "provider": "NVIDIA NIM",
             "model": model,
             "sample_response": (reply or "").strip(),
         }
-    except Exception as e:
-        # If external network or token is invalid, inform cleanly without crashing
-        return {
-            "status": "connected_fallback",
-            "provider": "NVIDIA NIM",
-            "model": model,
-            "warning": str(e),
-            "sample_response": "READY (AgentShield-X Local Guardrail Proxy)",
-        }
+    except Exception as exc:
+        raise HTTPException(502, "NVIDIA connection verification failed.") from exc
 
 
 @router.post("/chat")
@@ -510,7 +497,6 @@ async def confirm_action(
 from shieldwing.live_channels import (
     TelegramLiveChannel,
     WhatsAppLiveChannel,
-    GoogleWorkspaceLiveChannel,
 )
 
 
@@ -533,27 +519,6 @@ class WhatsAppSendRequest(BaseModel):
     message: str
     is_interactive: bool = False
     action_id: Optional[str] = None
-
-
-class GoogleOAuthExchangeRequest(BaseModel):
-    code: str
-    redirect_uri: str
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
-
-
-class GmailDraftRequest(BaseModel):
-    to: str
-    subject: str
-    body: str
-    access_token: Optional[str] = None
-
-
-class CalendarBlockRequest(BaseModel):
-    summary: str
-    start_iso: str
-    end_iso: str
-    access_token: Optional[str] = None
 
 
 # 1. TELEGRAM LIVE ENDPOINTS
@@ -726,84 +691,30 @@ async def send_whatsapp_live_message(req: WhatsAppSendRequest):
         )
 
 
-# 3. GOOGLE WORKSPACE LIVE ENDPOINTS (GMAIL & CALENDAR)
+# 3. RETIRED GOOGLE DEMO ENDPOINTS
 @router.get("/channels/google/auth-url")
-def get_google_auth_url(redirect_uri: str):
-    """Generates real Google OAuth consent URL for Gmail and Calendar."""
-    client_id = os.getenv("GOOGLE_CLIENT_ID", "mock_client_id.apps.googleusercontent.com")
-    return {
-        "auth_url": GoogleWorkspaceLiveChannel.get_oauth_authorization_url(
-            client_id=client_id, redirect_uri=redirect_uri
-        )
-    }
+def get_google_auth_url():
+    raise HTTPException(410, "Use the workspace-scoped Google OAuth connection flow.")
 
 
 @router.post("/channels/google/callback")
-async def google_oauth_callback(req: GoogleOAuthExchangeRequest):
-    """Exchanges Google authorization code for live access & refresh tokens."""
-    client_id = req.client_id or os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = req.client_secret or os.getenv("GOOGLE_CLIENT_SECRET")
-    if not client_id or not client_secret:
-        raise HTTPException(status_code=400, detail="Google Client ID and Secret required.")
-
-    return await GoogleWorkspaceLiveChannel.exchange_code_for_tokens(
-        client_id=client_id,
-        client_secret=client_secret,
-        code=req.code,
-        redirect_uri=req.redirect_uri,
-    )
+async def google_oauth_callback():
+    raise HTTPException(410, "Use the workspace-scoped Google OAuth connection flow.")
 
 
 @router.get("/channels/gmail/unread")
-async def get_unread_gmail(access_token: Optional[str] = None):
-    """Reads actual unread messages from Gmail API."""
-    token = access_token or os.getenv("GOOGLE_ACCESS_TOKEN")
-    if not token:
-        return [
-            {"id": "msg_001", "from": "support@partner.org", "subject": "Contract Renewal & SLAs", "snippet": "Hi team, please find attached the revised agreement..."},
-            {"id": "msg_002", "from": "lead@fintech-ai.io", "subject": "AgentShield-X Enterprise Demo Inquiry", "snippet": "We want to test dual-rail verification on 40 agents..."},
-        ]
-    return await GoogleWorkspaceLiveChannel.fetch_unread_emails(token)
+async def get_unread_gmail():
+    raise HTTPException(410, "Use the authenticated workspace-scoped Google connector. No demo email data is returned.")
 
 
 @router.post("/channels/gmail/draft")
-async def create_gmail_draft_message(req: GmailDraftRequest):
-    """Creates a real email draft in user's Gmail with a safety buffer."""
-    token = req.access_token or os.getenv("GOOGLE_ACCESS_TOKEN")
-    if not token:
-        return {
-            "status": "draft_created_simulated",
-            "to": req.to,
-            "subject": req.subject,
-            "safety_buffer_minutes": 15,
-            "message": "Draft created in safety queue. (Connect Google Account in settings for direct Gmail sync)",
-        }
-    return await GoogleWorkspaceLiveChannel.create_gmail_draft(
-        access_token=token,
-        to=req.to,
-        subject=req.subject,
-        body=req.body,
-    )
+async def create_gmail_draft_message():
+    raise HTTPException(410, "Gmail writes are not implemented. No draft was created.")
 
 
 @router.post("/channels/calendar/focus-block")
-async def create_calendar_focus_event(req: CalendarBlockRequest):
-    """Creates an event in user's primary Google Calendar."""
-    token = req.access_token or os.getenv("GOOGLE_ACCESS_TOKEN")
-    if not token:
-        return {
-            "status": "focus_block_created_simulated",
-            "summary": req.summary,
-            "start": req.start_iso,
-            "end": req.end_iso,
-            "message": "Focus time protected on schedule. (Connect Google Account for direct Calendar sync)",
-        }
-    return await GoogleWorkspaceLiveChannel.create_calendar_focus_block(
-        access_token=token,
-        summary=req.summary,
-        start_iso=req.start_iso,
-        end_iso=req.end_iso,
-    )
+async def create_calendar_focus_event():
+    raise HTTPException(410, "Calendar writes are not implemented. No event was created.")
 
 
 # =========================================================================
@@ -897,27 +808,6 @@ _AUTOMATED_TASKS: Dict[str, Dict[str, Any]] = {
         "trust_boundary_level": "Safety Buffer Queue Active",
     },
 }
-
-_CONNECTED_APPS: Dict[str, bool] = {
-    "github": True,
-    "gmail": True,
-    "gcal": True,
-    "slack": True,
-    "whatsapp": True,
-    "telegram": True,
-    "hubspot": True,
-    "notion": True,
-    "linear": True,
-    "stripe": True,
-    "apollo": True,
-    "discord": True,
-    "twitter": True,
-    "aws": True,
-    "supabase": True,
-    "openai": True,
-    "nvidia": True,
-}
-
 
 @router.get("/tasks")
 async def get_automated_tasks(
@@ -1035,11 +925,19 @@ async def toggle_task_status(
 async def get_connectors_status(
     current_user: Optional[UserDTO] = Depends(get_optional_user),
 ):
-    """Returns connected and available connectors count and states."""
+    """Expose implemented connector capabilities without inferring connection state."""
+    from control_api.connectors.registry import get_live_connectors, list_manifests
+
     return {
-        "total_connectors_available": 312,
-        "connected_count": sum(1 for v in _CONNECTED_APPS.values() if v),
-        "connected_apps": _CONNECTED_APPS,
+        "catalog_entry_count": 49,
+        "live_connector_ids": [connector.id for connector in get_live_connectors()],
+        "connectors": list_manifests(),
+        "connection_state_endpoints": {
+            "github": "/v1/shieldwing/workspaces/{workspace_id}/github",
+            "gmail": "/v1/shieldwing/workspaces/{workspace_id}/google",
+            "gcal": "/v1/shieldwing/workspaces/{workspace_id}/google",
+        },
+        "note": "A catalog entry is not a live integration. Connection state is provider-backed and workspace-scoped.",
     }
 
 
@@ -1048,14 +946,11 @@ async def toggle_connector_state(
     connector_id: str,
     current_user: Optional[UserDTO] = Depends(get_optional_user),
 ):
-    """Connects or disconnects an app connector."""
-    current_state = _CONNECTED_APPS.get(connector_id, False)
-    _CONNECTED_APPS[connector_id] = not current_state
-    return {
-        "connector_id": connector_id,
-        "connected": _CONNECTED_APPS[connector_id],
-        "message": f"{connector_id.capitalize()} is now {'connected' if _CONNECTED_APPS[connector_id] else 'disconnected'}.",
-    }
+    """Reject flag-only connection attempts; they do not authorize a provider."""
+    raise HTTPException(
+        status_code=410,
+        detail="Flag-only connector toggles are retired. Use the provider authorization and health-check flow.",
+    )
 
 
 

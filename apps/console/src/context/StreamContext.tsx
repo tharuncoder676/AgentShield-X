@@ -6,6 +6,7 @@ import {
   ToolCallEvent,
 } from "@agentshield/api-client";
 import { useAuth } from "./AuthContext";
+import { getWsUrl } from "../lib/api";
 
 export interface StreamItem {
   id: string;
@@ -28,7 +29,7 @@ const StreamContext = createContext<StreamContextType | undefined>(undefined);
 export const StreamProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { token } = useAuth();
+  const { token, user, isLoading } = useAuth();
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [events, setEvents] = useState<StreamItem[]>([]);
   const [isPaused, setIsPaused] = useState<boolean>(false);
@@ -37,17 +38,16 @@ export const StreamProvider: React.FC<{ children: React.ReactNode }> = ({
   isPausedRef.current = isPaused;
 
   useEffect(() => {
-    // Determine ws url
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.origin.includes("localhost:3000")
-      ? "localhost:8002"
-      : window.location.host;
-    const wsUrl =
-      (import.meta as any).env?.VITE_WS_URL ||
-      `${protocol}//${host}/v1/ws/decisions`;
+    // AuthContext validates the persisted session via /me first. Avoid opening
+    // an unauthenticated socket during startup or after a session expires.
+    if (isLoading) return;
+    if (!token || !user) {
+      setStatus("disconnected");
+      return;
+    }
 
     const client = new DecisionStreamClient({
-      wsUrl,
+      wsUrl: getWsUrl(),
       token,
       autoReconnect: true,
       maxReconnectIntervalMs: 10000,
@@ -80,7 +80,7 @@ export const StreamProvider: React.FC<{ children: React.ReactNode }> = ({
       client.disconnect();
       streamClientRef.current = null;
     };
-  }, [token]);
+  }, [token, user?.id, isLoading]);
 
   const togglePause = () => {
     setIsPaused((prev) => !prev);

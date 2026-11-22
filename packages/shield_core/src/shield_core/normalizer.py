@@ -96,17 +96,17 @@ class HomoglyphAndUnicodeNormalizer:
         # 4. C-accelerated str.translate for zero-width stripping & homoglyph mapping
         translated = nfkd_text.translate(_FAST_TRANS_TABLE)
 
-        # 5. Strip combining diacritical marks (Mn category) so accented letters canonicalize to base ASCII
+        stripped_count = len(nfkd_text) - len(translated)
+        if stripped_count:
+            violations.append(f"STRIPPED_{stripped_count}_INVISIBLE_ZERO_WIDTH_TOKENS")
+
+        if translated != nfkd_text and any(c in HOMOGLYPH_MAP for c in nfkd_text):
+            violations.append("NORMALIZED_HOMOGLYPH_CONFUSABLES")
+
+        # 5. Report combining marks separately from zero-width controls.
         if any(unicodedata.category(c) == "Mn" for c in translated):
             translated = "".join(c for c in translated if unicodedata.category(c) != "Mn")
             violations.append("CANONICALIZED_UNICODE_ACCENTS")
-
-        if len(translated) != len(nfkd_text):
-            stripped_count = len(nfkd_text) - len(translated)
-            violations.append(f"STRIPPED_{stripped_count}_INVISIBLE_ZERO_WIDTH_TOKENS")
-
-        if translated != nfkd_text and len(translated) == len(nfkd_text):
-            violations.append("NORMALIZED_HOMOGLYPH_CONFUSABLES")
 
         return translated, violations
 

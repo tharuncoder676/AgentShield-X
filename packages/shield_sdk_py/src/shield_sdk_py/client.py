@@ -1,6 +1,6 @@
 """
 AgentShield-X Python Client SDK
-Provides thread-safe, low-latency agent defense client with local caching,
+Provides thread-safe, low-latency agent defense client with
 retries, offline mode, and per-tool fail-closed / fail-open semantics.
 """
 
@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import hashlib
-import json
 import os
 import time
 import uuid
@@ -56,13 +54,10 @@ class AgentShield:
         self.enabled = enabled
         self.fail_mode = fail_mode
         self.timeout_seconds = timeout_seconds
+        if max_retries < 0:
+            raise ValueError("max_retries must be non-negative")
         self.max_retries = max_retries
         self.raise_on_block = raise_on_block
-        self._cache: Dict[str, Decision] = {}
-
-    def _cache_key(self, tool_name: str, arguments: Dict[str, Any]) -> str:
-        canonical = json.dumps({"tool": tool_name, "args": arguments}, sort_keys=True)
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     async def evaluate_async(
         self,
@@ -82,12 +77,6 @@ class AgentShield:
                 latency_ms=0.0,
             )
 
-        cache_k = self._cache_key(tool_name, arguments)
-        if cache_k in self._cache:
-            decision = self._cache[cache_k]
-            self._handle_action(decision, tool_name)
-            return decision
-
         event = ToolCallEvent(
             tenant_id=self.tenant_id,
             agent_id=self.agent_id,
@@ -106,41 +95,42 @@ class AgentShield:
         start_time = time.perf_counter()
         decision: Optional[Decision] = None
 
-        for attempt in range(self.max_retries + 1):
+        rejected = False
+        for _ in range(self.max_retries + 1):
             try:
                 async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-                    resp = await client.post(
+                    response = await client.post(
                         f"{self.endpoint}/v1/events/tool-call",
                         json=event.model_dump(),
                         headers=headers,
                     )
-                    if resp.status_code == 200:
-                        decision = Decision.model_validate(resp.json())
-                        break
-            except Exception:
-                if attempt == self.max_retries:
-                    # Apply fail_mode
-                    is_sensitive = sensitivity in {ToolSensitivity.HIGH, ToolSensitivity.CRITICAL}
-                    action = (
-                        ShieldAction.BLOCK
-                        if (is_sensitive and self.fail_mode == "closed")
-                        else ShieldAction.ALLOW
-                    )
-                    decision = Decision(
-                        decision_id=str(uuid.uuid4()),
-                        event_id=event.event_id,
-                        action=action,
-                        risk=0.5 if action == ShieldAction.BLOCK else 0.0,
-                        reasons=[Reason(code="SDK_GATEWAY_TIMEOUT_DEGRADED", evidence="Gateway failed", detector="sdk")],
-                        degraded=True,
-                        latency_ms=(time.perf_counter() - start_time) * 1000.0,
-                    )
+                if response.status_code == 200:
+                    decision = Decision.model_validate(response.json())
+                    break
+                if response.status_code != 429 and response.status_code < 500:
+                    rejected = True
+                    break
+            except (httpx.RequestError, ValueError):
+                continue
 
-        assert decision is not None
-
-        # Cache safe allows
-        if decision.action == ShieldAction.ALLOW and not decision.degraded:
-            self._cache[cache_k] = decision
+        if decision is None:
+            sensitive = sensitivity in {ToolSensitivity.HIGH, ToolSensitivity.CRITICAL}
+            blocked = rejected or (sensitive and self.fail_mode == "closed")
+            decision = Decision(
+                decision_id=str(uuid.uuid4()),
+                event_id=event.event_id,
+                action=ShieldAction.BLOCK if blocked else ShieldAction.ALLOW,
+                risk=0.5 if blocked else 0.0,
+                reasons=[
+                    Reason(
+                        code="SDK_GATEWAY_REJECTED" if rejected else "SDK_GATEWAY_TIMEOUT_DEGRADED",
+                        evidence="Gateway rejected the evaluation" if rejected else "Gateway evaluation unavailable",
+                        detector="sdk",
+                    )
+                ],
+                degraded=True,
+                latency_ms=(time.perf_counter() - start_time) * 1000.0,
+            )
 
         self._handle_action(decision, tool_name)
         return decision
@@ -183,6 +173,16 @@ class AgentShield:
             msg = f"AgentShield blocked tool '{tool_name}': {reasons_summary} (Risk: {decision.risk})"
             raise ShieldBlockedException(msg, decision=decision)
 
+    @staticmethod
+    def _require_allow(decision: Decision, tool_name: str) -> None:
+        # Evaluation-only callers can inspect non-allow decisions. A wrapper
+        # must never execute the original inputs on an escalation or sanitize.
+        if decision.action != ShieldAction.ALLOW:
+            raise ShieldBlockedException(
+                f"AgentShield withheld execution of '{tool_name}': {decision.action.value}",
+                decision=decision,
+            )
+
     def tool(
         self,
         name: Optional[str] = None,
@@ -202,7 +202,8 @@ class AgentShield:
                 bound_args = kwargs.copy()
                 if args:
                     bound_args["_positional_args"] = list(args)
-                self.evaluate_sync(tool_name, bound_args, sensitivity=sensitivity)
+                decision = self.evaluate_sync(tool_name, bound_args, sensitivity=sensitivity)
+                self._require_allow(decision, tool_name)
                 return fn(*args, **kwargs)
 
             @functools.wraps(fn)
@@ -210,7 +211,8 @@ class AgentShield:
                 bound_args = kwargs.copy()
                 if args:
                     bound_args["_positional_args"] = list(args)
-                await self.evaluate_async(tool_name, bound_args, sensitivity=sensitivity)
+                decision = await self.evaluate_async(tool_name, bound_args, sensitivity=sensitivity)
+                self._require_allow(decision, tool_name)
                 return await fn(*args, **kwargs)
 
             if asyncio.iscoroutinefunction(fn):

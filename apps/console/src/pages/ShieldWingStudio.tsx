@@ -46,10 +46,14 @@ import {
   CheckSquare,
   Search,
   Activity,
+  GraduationCap,
 } from "lucide-react";
 import { ConnectorsHubModal } from "../components/ConnectorsHubModal";
+import { NusDesktopView } from "../components/NusDesktopView";
+import { TheKnotOverlay } from "../components/TheKnotOverlay";
 import { Connector, CONNECTORS_DATA, CATEGORIES } from "../data/connectorsCatalog";
 import { SecureTokenVault } from "../lib/secureVault";
+import { useAuth } from "../context/AuthContext";
 
 interface TaskItem {
   id: string;
@@ -72,6 +76,20 @@ export interface AttachedFile {
   content?: string;
 }
 
+interface GitHubActionPreview {
+  method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+  endpoint: string;
+  query: Record<string, string | number | boolean>;
+  body: Record<string, unknown>;
+}
+
+interface GitHubApproval {
+  id: string;
+  repository: string;
+  action: GitHubActionPreview;
+  expiresAt: string;
+}
+
 interface ChatMessage {
   id: string;
   sender: "user" | "agent";
@@ -80,6 +98,8 @@ interface ChatMessage {
   modelBadge?: string;
   attachments?: AttachedFile[];
   thinkingSteps?: string[];
+  liveGithub?: boolean;
+  githubApproval?: GitHubApproval;
   toolCalls?: Array<{
     tool: string;
     args: Record<string, any>;
@@ -95,9 +115,10 @@ interface ChatMessage {
 export const ShieldWingStudio: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { token: sessionToken, org } = useAuth();
 
-  // Navigation & View tabs (Emergent Wingman Structure)
-  const [activeTab, setActiveTab] = useState<"chat" | "tasks" | "tools" | "channels">("chat");
+  // Navigation & View tabs (Emergent Wingman Structure + Nūs Desktop Agent)
+  const [activeTab, setActiveTab] = useState<"chat" | "tasks" | "tools" | "channels" | "nus">("chat");
   const [agentName, setAgentName] = useState("Wingman");
   const [selectedAIModel, setSelectedAIModel] = useState("nvidia/nemotron-4-340b-instruct");
   const [nvidiaApiKey, setNvidiaApiKey] = useState(() => SecureTokenVault.getSecret("agentshield_nvidia_key"));
@@ -122,6 +143,8 @@ export const ShieldWingStudio: React.FC = () => {
       setActiveTab("channels");
     } else if (path.includes("task") || tabParam === "tasks") {
       setActiveTab("tasks");
+    } else if (path.includes("nus") || path.includes("syllabus") || tabParam === "nus") {
+      setActiveTab("nus");
     }
   }, [location.pathname, location.search]);
 
@@ -165,15 +188,29 @@ export const ShieldWingStudio: React.FC = () => {
   const [copiedReport, setCopiedReport] = useState(false);
 
   // Connected apps tracking
-  const [connectedAppsMap, setConnectedAppsMap] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem("agentshield_connected_connectors");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
+  const [connectedAppsMap, setConnectedAppsMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!sessionToken || !org?.id) {
+      setConnectedAppsMap({});
+      return;
     }
-    return { github: true, slack: true, nvidia: true };
-  });
+    const headers = { Authorization: `Bearer ${sessionToken}` };
+    const base = `/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}`;
+    Promise.all([
+      fetch(`${base}/github`, { headers }),
+      fetch(`${base}/google`, { headers }),
+    ]).then(async ([githubResponse, googleResponse]) => {
+      if (!githubResponse.ok || !googleResponse.ok) return;
+      const [github, google] = await Promise.all([githubResponse.json(), googleResponse.json()]);
+      const services = new Set<string>(google.services || []);
+      setConnectedAppsMap({
+        github: Boolean(github.repository),
+        gmail: services.has("gmail"),
+        gcal: services.has("calendar"),
+      });
+    }).catch(() => undefined);
+  }, [sessionToken, org?.id]);
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -271,7 +308,6 @@ export const ShieldWingStudio: React.FC = () => {
   const handleConnectorConnected = (connector: Connector) => {
     setConnectedAppsMap((prev) => {
       const next = { ...prev, [connector.id]: true };
-      localStorage.setItem("agentshield_connected_connectors", JSON.stringify(next));
       return next;
     });
 
@@ -279,7 +315,7 @@ export const ShieldWingStudio: React.FC = () => {
     const alertMsg: ChatMessage = {
       id: `agent-conn-${Date.now()}`,
       sender: "agent",
-      text: `✅ **Successfully authorized ${connector.name}!**\n\n• **Connected Actions:** ${connector.routineActions.join(", ")}\n• **Consequential Guardrail:** ${connector.trustBoundaryRule}\n• **Status:** Live & deterministic proxy active on port 8002.\n\nYou can now ask me to run tasks using ${connector.name} or schedule recurring automations!`,
+      text: `✅ **${connector.name} connection verified.**\n\n• **Access:** Supported repository actions, limited by the GitHub token's actual permissions\n• **Approval:** Each action must be approved once before execution\n• **Storage:** Encrypted server-side for this workspace\n• **Status:** Connected and ready for the live ShieldWing tools page.`,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       modelBadge: "NVIDIA Nemotron-4 340B",
     };
@@ -356,80 +392,42 @@ export const ShieldWingStudio: React.FC = () => {
 
   // Toggle quick connect app
   const toggleQuickAppConnect = (appId: string, appName: string) => {
-    const isCurrentlyConnected = !!connectedAppsMap[appId];
-    const nextVal = !isCurrentlyConnected;
-
-    setConnectedAppsMap((prev) => {
-      const next = { ...prev, [appId]: nextVal };
-      localStorage.setItem("agentshield_connected_connectors", JSON.stringify(next));
-      return next;
-    });
-
-    if (nextVal) {
-      localStorage.setItem(`agentshield_conn_${appId}`, "true");
-      if (appId === "github") {
-        localStorage.setItem("agentshield_github_repo", "tharuncoder676/AgentShield-X");
-      }
-
-      setQuickConnectToast(`🎉 Connected to ${appName}!`);
-      setTimeout(() => setQuickConnectToast(null), 3000);
-
-      const alertMsg: ChatMessage = {
-        id: `quick-conn-${Date.now()}`,
-        sender: "agent",
-        text: `✅ **Successfully authorized ${appName}!**\n\n• **Status**: Live deterministic proxy connected.\n• **Security Gate**: Dual-Rail Sentinels enforced.\n\nYou can now run tasks with ${appName} or schedule automated workflows!`,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        modelBadge: "NVIDIA Nemotron-4 340B",
-      };
-      setMessages((prev) => [...prev, alertMsg]);
-    } else {
-      localStorage.removeItem(`agentshield_conn_${appId}`);
-      setQuickConnectToast(`Disconnected ${appName}`);
-      setTimeout(() => setQuickConnectToast(null), 2000);
+    if (["github", "gmail", "gcal"].includes(appId)) {
+      setTargetConnectorId(appId);
+      setIsConnectorsModalOpen(true);
+      return;
     }
+    setQuickConnectToast(`${appName} is coming soon. Browse the connector catalog for current availability.`);
+    setTimeout(() => setQuickConnectToast(null), 3500);
   };
 
   // Connect all core apps at once
   const handleConnectAllCoreApps = () => {
-    const coreApps = ["github", "twitter", "slack", "telegram", "nvidia", "gmail"];
-    const updatedMap: Record<string, boolean> = { ...connectedAppsMap };
-    coreApps.forEach((id) => {
-      updatedMap[id] = true;
-      localStorage.setItem(`agentshield_conn_${id}`, "true");
-    });
-    localStorage.setItem("agentshield_github_repo", "tharuncoder676/AgentShield-X");
-    localStorage.setItem("agentshield_connected_connectors", JSON.stringify(updatedMap));
-    setConnectedAppsMap(updatedMap);
     setShowQuickConnectPopover(false);
-
-    setQuickConnectToast("⚡ Connected all 6 Core Apps in 1 Click!");
-    setTimeout(() => setQuickConnectToast(null), 3000);
-
-    const alertMsg: ChatMessage = {
-      id: `quick-all-${Date.now()}`,
-      sender: "agent",
-      text: `⚡ **All Core Tools Authorized in 1 Click!**\n\n• **Connected**: GitHub, Twitter / X, Slack, Telegram, NVIDIA NIM, Gmail\n• **Inference Latency**: 16.4ms\n• **Trust Boundary**: Sub-0.18ms Dual-Rail AST Sentinels active\n\nYou're fully set up to automate daily summaries, security linters, and team alerts.`,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      modelBadge: "NVIDIA Nemotron-4 340B",
-    };
-    setMessages((prev) => [...prev, alertMsg]);
+    setTargetConnectorId(null);
+    setIsConnectorsModalOpen(true);
   };
 
   // Test live proxy for any connector with genuine network RTT latency measurement
   const handleTestConnectorProxy = async (connector: Connector) => {
+    if (!connectedAppsMap[connector.id] || !["github", "gmail", "gcal"].includes(connector.id) || !sessionToken || !org?.id) {
+      setQuickConnectToast(`${connector.name} is not connected to a live provider yet.`);
+      setTimeout(() => setQuickConnectToast(null), 3000);
+      return;
+    }
     setToolsTestingMap((prev) => ({ ...prev, [connector.id]: { testing: true } }));
     const t0 = performance.now();
-    let isSuccess = true;
+    let isSuccess = false;
 
     try {
-      if (connector.id === "github") {
-        await fetch("https://api.github.com/repos/tharuncoder676/AgentShield-X", { method: "HEAD", mode: "no-cors" });
-      } else {
-        const res = await fetch(`/v1/shieldwing/connectors/${connector.id}/status`);
-        if (!res.ok) isSuccess = true;
-      }
+      const base = `/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}`;
+      const endpoint = connector.id === "github" ? `${base}/github/pull-requests`
+        : connector.id === "gmail" ? `${base}/google/gmail/messages`
+        : `${base}/google/calendar/events`;
+      const response = await fetch(endpoint, { headers: { Authorization: `Bearer ${sessionToken}` } });
+      isSuccess = response.ok;
     } catch {
-      // Caught network latency
+      isSuccess = false;
     }
 
     const measuredLatency = Math.max(7, Math.round(performance.now() - t0));
@@ -437,7 +435,9 @@ export const ShieldWingStudio: React.FC = () => {
       ...prev,
       [connector.id]: { testing: false, latency: measuredLatency, success: isSuccess },
     }));
-    setQuickConnectToast(`⚡ Proxy Live for ${connector.name} (${measuredLatency}ms)`);
+    setQuickConnectToast(isSuccess
+      ? `⚡ ${connector.name} provider check passed (${measuredLatency}ms)`
+      : `${connector.name} provider check failed. Reconnect and try again.`);
     setTimeout(() => setQuickConnectToast(null), 3000);
   };
 
@@ -473,6 +473,11 @@ export const ShieldWingStudio: React.FC = () => {
 
   // Real Run Automation Now
   const handleRunTask = async (task: TaskItem) => {
+    if (task.connectors.some((connector) => connector.toLowerCase() === "github") || /github|repository|pull request|\bpr\b/i.test(task.prompt)) {
+      handleSendMessage(task.prompt || `Review GitHub activity for task: ${task.name}`);
+      setRunningTaskId(null);
+      return;
+    }
     setRunningTaskId(task.id);
     const startMs = performance.now();
 
@@ -584,80 +589,9 @@ All deterministic outputs verified against AgentShield-X safety policies with su
     }, 600);
   };
 
-  // Apply starter prompt & bridge directly to real automation
+  // Route the GitHub portion of the starter through the real connected provider.
   const handleApplyStarterPrompt = () => {
-    // 1. Ensure the Daily Briefing task is active in tasks list
-    const hasBriefing = tasks.some((t) => t.id === "task_daily_briefing");
-    if (!hasBriefing) {
-      setTasks((prev) => [
-        {
-          id: "task_daily_briefing",
-          name: "Daily Morning Briefing (NVIDIA Nemotron Synthesizer)",
-          schedule: "0 7 * * *",
-          scheduleHuman: "7:30 AM every morning",
-          enabled: true,
-          connectors: ["GitHub", "Slack", "Gmail", "Jira", "NVIDIA NIM"],
-          lastRun: "Just now",
-          lastStatus: "success",
-          runsCount: 1,
-          prompt: "Synthesize pull requests, unread Slack alerts, top Jira blockers, and emails from yesterday into an executive brief using NVIDIA Nemotron.",
-        },
-        ...prev,
-      ]);
-    }
-
-    // 2. Add message to chat and immediately execute real briefing
-    const starterPrompt =
-      "Set up a recurring Daily Briefing for me at 7:30 AM every morning in my local time zone, and send me one right now for yesterday. Use yesterday's date for news, market close, and emails received yesterday. Title it 'Yesterday's Briefing — Today'.";
-
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      sender: "user",
-      text: starterPrompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsThinking(true);
-
-    setTimeout(() => {
-      setIsThinking(false);
-
-      const agentMsg: ChatMessage = {
-        id: `agent-${Date.now()}`,
-        sender: "agent",
-        modelBadge: "NVIDIA Nemotron-4 340B NIM",
-        text: `### ☀️ Yesterday's Briefing — ${new Date(Date.now() - 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}\n\n**1. Codebase & Pull Requests (GitHub: tharuncoder676/AgentShield-X):**\n- 4 PRs merged into \`main\` (Purple theme, NVIDIA Nemotron integration, auth routing fixes).\n- AST Taint Linter: **0 vulnerabilities detected** across all inspected commit diffs.\n\n**2. System & AI Security Telemetry:**\n- 14 prompt injection attacks neutralized by dual-rail guardrails.\n- NVIDIA NIM inference latency: **18.2ms average**.\n\n**3. Communication & Focus Blocks:**\n- 4 unread messages prioritized in Gmail. Zero customer escalations.\n- 2.5-hour Focus Block scheduled on calendar from 10:00 AM - 12:30 PM.\n\n---\n*✅ **Scheduled Workflow Registered**: Runs daily at 7:30 AM in your local time zone.*`,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        thinkingSteps: [
-          "[NVIDIA Nemotron-4 340B] Parsed natural language scheduling directive: '7:30 AM daily'",
-          "[AgentShield-X AST Sentinel] Registered cron schedule '0 7 * * *' into Tasks Engine",
-          "[Connector: GitHub] Queried repository 'tharuncoder676/AgentShield-X' commits in past 24 hours",
-          "[Connector: Slack & Gmail] Filtered unread incident alerts & executive communications",
-          "[NVIDIA NeMo Guardrails] Validated output safety and sealed decision in Merkle tree",
-        ],
-        toolCalls: [
-          {
-            tool: "cron.schedule_task",
-            args: { schedule: "0 7 * * *", name: "Daily Morning Briefing" },
-            status: "success",
-            result: "Task registered in Tasks Engine",
-          },
-          {
-            tool: "github.list_prs",
-            args: { repo: "tharuncoder676/AgentShield-X", state: "all" },
-            status: "success",
-            result: "Fetched recent commits & PR diffs",
-          },
-        ],
-        actionButton: {
-          label: "View Scheduled Automation in Tasks Tab",
-          onClick: () => setActiveTab("tasks"),
-        },
-      };
-
-      setMessages((prev) => [...prev, agentMsg]);
-    }, 700);
+    handleSendMessage("Summarize recent activity and pull requests in my connected GitHub repository using live GitHub data. Do not claim a security scan unless you inspect the files.");
   };
 
   // Send message
@@ -665,6 +599,15 @@ All deterministic outputs verified against AgentShield-X safety policies with su
     const query = (customText || inputValue).trim();
     const filesToSend = [...attachedFiles];
     if (!query && filesToSend.length === 0) return;
+    const lower = query.toLowerCase();
+    const isConnectionIntent = /\b(connect|authorize|link)\b/.test(lower);
+    const useLiveGitHub = filesToSend.length === 0 && !isConnectionIntent && (
+      lower.includes("github") || lower.includes("repository") || lower.includes("repo") ||
+      lower.includes("pull request") || /\bpr\b/.test(lower) || lower.includes("commit") ||
+      lower.includes("branch") || lower.includes("codebase") ||
+      lower.includes("security") || lower.includes("lint") ||
+      (lower.includes("scan") && (lower.includes("code") || lower.includes("project")))
+    );
 
     setAttachedFiles([]);
     if (!customText) setInputValue("");
@@ -676,13 +619,12 @@ All deterministic outputs verified against AgentShield-X safety policies with su
       sender: "user",
       text: userMsgText,
       attachments: filesToSend,
+      liveGithub: useLiveGitHub,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setIsThinking(true);
-
-    const lower = query.toLowerCase();
 
     setTimeout(async () => {
       setIsThinking(false);
@@ -711,6 +653,69 @@ All deterministic outputs verified against AgentShield-X safety policies with su
           ],
         };
         setMessages((prev) => [...prev, agentMsg]);
+        return;
+      }
+
+      // Use only the saved, workspace-scoped GitHub credential for GitHub
+      // requests. The server prepares the exact provider action and requires
+      // one-time approval before it reads or writes repository data.
+      if (useLiveGitHub) {
+        setIsThinking(true);
+        try {
+          if (!sessionToken || !org?.id) {
+            throw new Error("Sign in to a workspace before using the connected GitHub repository.");
+          }
+          const history = messages
+            .filter((message) => message.liveGithub && !message.githubApproval)
+            .slice(-12)
+            .map((message) => ({
+              role: message.sender === "user" ? "user" as const : "assistant" as const,
+              content: message.text,
+            }));
+          const response = await fetch(
+            `/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/github/chat`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
+              body: JSON.stringify({ message: query, history }),
+            },
+          );
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            const detail = Array.isArray(payload.detail)
+              ? payload.detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join("; ")
+              : payload.detail;
+            throw new Error(detail || "The connected GitHub request failed.");
+          }
+          const agentMsg: ChatMessage = {
+            id: `agent-${Date.now()}`,
+            sender: "agent",
+            modelBadge: payload.model || "ShieldWing · connected GitHub",
+            text: payload.approval_required
+              ? `I prepared a GitHub action for **${payload.repository}**. Review the exact request below; it will run only if you approve it.`
+              : (payload.message || "GitHub returned no summary."),
+            liveGithub: true,
+            githubApproval: payload.approval_required && payload.approval_id && payload.action ? {
+              id: payload.approval_id,
+              repository: payload.repository,
+              action: payload.action,
+              expiresAt: payload.expires_at,
+            } : undefined,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+          setMessages((prev) => [...prev, agentMsg]);
+        } catch (error) {
+          setMessages((prev) => [...prev, {
+            id: `agent-${Date.now()}`,
+            sender: "agent",
+            modelBadge: "Connected GitHub",
+            text: `GitHub request failed: ${(error as Error).message}`,
+            liveGithub: true,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          }]);
+        } finally {
+          setIsThinking(false);
+        }
         return;
       }
 
@@ -836,68 +841,22 @@ All deterministic outputs verified against AgentShield-X safety policies with su
         return;
       }
 
-      // 4. GITHUB / PRS / SECURITY AUDIT
-      if (lower.includes("pr") || lower.includes("github") || lower.includes("security") || lower.includes("lint")) {
-        let repoStars = 1;
-        let repoBranch = "main";
-        try {
-          const repoRes = await fetch("https://api.github.com/repos/tharuncoder676/AgentShield-X");
-          if (repoRes.ok) {
-            const repoData = await repoRes.json();
-            repoStars = repoData.stargazers_count ?? 1;
-            repoBranch = repoData.default_branch ?? "main";
-          }
-        } catch {}
-
-        const agentMsg: ChatMessage = {
-          id: `agent-${Date.now()}`,
-          sender: "agent",
-          modelBadge: "NVIDIA Nemotron-4 340B NIM",
-          text: `### 🛡️ Live Security & PR Audit: \`github.com/tharuncoder676/AgentShield-X\`\n\n- **Target Branch**: \`${repoBranch}\` (Latest commit validated)\n- **Repository Health**: ${repoStars} ⭐ stars &bull; CI/CD build passing\n- **AST Taint Propagation**: **0 leaks detected** across modified source files\n- **Secret Scanning**: PASS (Zero API tokens, private keys, or passwords detected)\n- **Dual-Rail Policy**: Read operations cleared. Production deployments gated.\n\n**Clearance Status**: ✅ **MERGE AUTHORIZED**`,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          thinkingSteps: [
-            "[Connector: GitHub] Fetched live repository telemetry for 'tharuncoder676/AgentShield-X'",
-            "[AgentShield-X AST Linter] Analyzed AST trees across 12 modified files",
-            "[NVIDIA NeMo Guardrails] Validated taint boundaries and signed Merkle root",
-          ],
-          toolCalls: [
-            {
-              tool: "github.inspect_repository",
-              args: { repo: "tharuncoder676/AgentShield-X" },
-              status: "success",
-              result: "Repository live & passing",
-            },
-          ],
-        };
-        setMessages((prev) => [...prev, agentMsg]);
-        return;
-      }
-
-      // 5. CONNECT APP REQUEST
+      // CONNECT APP REQUEST
       if (lower.includes("connect")) {
-        let targetTool = "Universal Tools";
-        let toolId = "custom";
-        if (lower.includes("github")) { targetTool = "GitHub"; toolId = "github"; }
-        else if (lower.includes("slack")) { targetTool = "Slack"; toolId = "slack"; }
-        else if (lower.includes("telegram")) { targetTool = "Telegram"; toolId = "telegram"; }
-        else if (lower.includes("twitter") || lower.includes(" x ")) { targetTool = "Twitter / X"; toolId = "twitter"; }
-        else if (lower.includes("nvidia")) { targetTool = "NVIDIA NIM"; toolId = "nvidia"; }
-
-        // Auto-connect it!
-        setConnectedAppsMap((prev) => {
-          const next = { ...prev, [toolId]: true };
-          localStorage.setItem("agentshield_connected_connectors", JSON.stringify(next));
-          return next;
-        });
+        const targetTool = lower.includes("github") ? "GitHub"
+          : lower.includes("gmail") ? "Gmail"
+          : lower.includes("calendar") ? "Google Calendar"
+          : "a connector";
+        setIsConnectorsModalOpen(true);
 
         const agentMsg: ChatMessage = {
           id: `agent-${Date.now()}`,
           sender: "agent",
-          modelBadge: "NVIDIA Nemotron-4 340B NIM",
-          text: `### ⚡ Connected to **${targetTool}**!\n\nI've authorized **${targetTool}** via AgentShield-X deterministic security proxy with dual-rail guardrails.\n\nYou can now run autonomous tasks or ask me to schedule recurring actions with ${targetTool}.`,
+          modelBadge: "ShieldWing Connectors",
+          text: `### Connector setup opened\n\nChoose ${targetTool} in the catalog to start its real authorization flow. GitHub, Gmail, and Google Calendar are available; the other catalog entries are coming soon.`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           actionButton: {
-            label: "Open 312 Connectors Hub",
+            label: "Open connector catalog",
             onClick: () => setIsConnectorsModalOpen(true),
           },
         };
@@ -947,6 +906,50 @@ All deterministic outputs verified against AgentShield-X safety policies with su
       };
       setMessages((prev) => [...prev, agentMsg]);
     }, 600);
+  };
+
+  const handleGitHubApproval = async (messageId: string, approve: boolean) => {
+    const pendingMessage = messages.find((message) => message.id === messageId);
+    const approval = pendingMessage?.githubApproval;
+    if (!approval || !sessionToken || !org?.id || isThinking) return;
+    setIsThinking(true);
+    try {
+      const response = await fetch(
+        `/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/github/actions/${encodeURIComponent(approval.id)}/decision`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
+          body: JSON.stringify({ approve }),
+        },
+      );
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = Array.isArray(result.detail)
+          ? result.detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join("; ")
+          : result.detail;
+        throw new Error(detail || "GitHub could not complete the approved action.");
+      }
+      setMessages((current) => current.map((message) => message.id === messageId ? {
+        ...message,
+        text: result.message || (approve ? "GitHub action completed." : "GitHub action denied; nothing was executed."),
+        modelBadge: result.model || message.modelBadge,
+        githubApproval: undefined,
+        toolCalls: approve ? [{
+          tool: `github.${approval.action.method.toLowerCase()}`,
+          args: { repository: approval.repository, endpoint: approval.action.endpoint, query: approval.action.query, body: approval.action.body },
+          status: "success",
+          result: `HTTP ${result.http_status ?? "completed"}`,
+        }] : undefined,
+      } : message));
+    } catch (error) {
+      setMessages((current) => current.map((message) => message.id === messageId ? {
+        ...message,
+        text: `GitHub action failed: ${(error as Error).message}`,
+        githubApproval: undefined,
+      } : message));
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   const handleVoiceToggle = () => {
@@ -1104,7 +1107,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
             <Zap size={14} />
             <span>Connected Tools</span>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-600/30 text-purple-200 border border-purple-500/40 font-mono">
-              {Object.values(connectedAppsMap).filter(Boolean).length} / 312
+              {Object.values(connectedAppsMap).filter(Boolean).length} / {CONNECTORS_DATA.length}
             </span>
           </button>
 
@@ -1118,12 +1121,30 @@ All deterministic outputs verified against AgentShield-X safety policies with su
             <span>Channels</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </button>
+
+          <button
+            onClick={() => setActiveTab("nus")}
+            className={`flex items-center gap-2 py-2 text-xs font-medium transition-colors relative ${
+              activeTab === "nus" ? "text-cyan-300 font-bold" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                activeTab === "nus" ? "bg-cyan-400 shadow-[0_0_8px_#22d3ee]" : "bg-transparent"
+              }`}
+            />
+            <GraduationCap size={14} className="text-cyan-400" />
+            <span>Nūs Desktop</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-600/30 text-cyan-200 border border-cyan-500/40 font-mono">
+              AI Agent
+            </span>
+          </button>
         </div>
 
         <div className="flex items-center gap-4 text-xs text-slate-400">
           <span className="flex items-center gap-1.5 text-[11px] font-mono text-purple-300">
             <Shield size={12} className="text-purple-400" />
-            <span>Dual-Rail Guard Active &bull; 312 Connectors</span>
+            <span>Dual-Rail Guard Active &bull; {CONNECTORS_DATA.length} catalog entries</span>
           </span>
           <button
             onClick={() => setIsGuideModalOpen(true)}
@@ -1183,7 +1204,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                   ? "bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-600/40"
                   : "border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
               }`}
-              title="Connected Tools (312 Connectors)"
+              title={`Connected Tools (${CONNECTORS_DATA.length} catalog entries)`}
             >
               <Zap size={14} />
             </button>
@@ -1199,6 +1220,19 @@ All deterministic outputs verified against AgentShield-X safety policies with su
               title="Wingman Channels (WhatsApp, Telegram, Slack)"
             >
               <Radio size={14} />
+            </button>
+
+            {/* Nūs Desktop Direct Rail Button */}
+            <button
+              onClick={() => setActiveTab("nus")}
+              className={`w-8 h-8 rounded-full border transition-colors flex items-center justify-center cursor-pointer ${
+                activeTab === "nus"
+                  ? "bg-cyan-600 text-white border-cyan-400 shadow-md shadow-cyan-600/40"
+                  : "border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
+              }`}
+              title="Nūs Desktop • Local-First Semester & Task Organizer Agent"
+            >
+              <GraduationCap size={14} />
             </button>
           </div>
 
@@ -1276,7 +1310,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                   </div>
 
                   <p className="text-center text-xs text-purple-300/60">
-                    Click the card above or type a command below. Powered by NVIDIA Nemotron-4 340B with 312 universal connectors.
+                    Click the card above or type a command below. Browse the connector catalog; GitHub, Gmail, and Google Calendar have live authorization flows.
                   </p>
 
                   {/* End-to-End Facilitator Guide Banner */}
@@ -1390,6 +1424,32 @@ All deterministic outputs verified against AgentShield-X safety policies with su
 
                         <div className="whitespace-pre-wrap">{msg.text}</div>
 
+                        {msg.githubApproval && (
+                          <div className="mt-3 rounded-lg border border-amber-400/40 bg-amber-950/25 p-3 text-xs">
+                            <div className="font-semibold text-amber-200">Review GitHub action</div>
+                            <div className="mt-2 break-all font-mono text-slate-100">
+                              {msg.githubApproval.action.method} /repos/{msg.githubApproval.repository}{msg.githubApproval.action.endpoint}
+                            </div>
+                            {Object.keys(msg.githubApproval.action.query).length > 0 && (
+                              <pre className="mt-2 max-h-32 overflow-auto rounded bg-black/30 p-2 text-[10px] text-slate-200">
+                                Query: {JSON.stringify(msg.githubApproval.action.query, null, 2)}
+                              </pre>
+                            )}
+                            {Object.keys(msg.githubApproval.action.body).length > 0 && (
+                              <pre className="mt-2 max-h-48 overflow-auto rounded bg-black/30 p-2 text-[10px] text-slate-200">
+                                Body: {JSON.stringify(msg.githubApproval.action.body, null, 2)}
+                              </pre>
+                            )}
+                            <p className="mt-2 text-slate-300">
+                              One-time approval for this request only. Expires {new Date(msg.githubApproval.expiresAt).toLocaleTimeString()}.
+                            </p>
+                            <div className="mt-3 flex gap-2">
+                              <button type="button" disabled={isThinking} onClick={() => void handleGitHubApproval(msg.id, true)} className="rounded bg-amber-600 px-3 py-1.5 font-semibold text-white disabled:opacity-50">Allow once</button>
+                              <button type="button" disabled={isThinking} onClick={() => void handleGitHubApproval(msg.id, false)} className="rounded border border-slate-500 px-3 py-1.5 text-slate-200 disabled:opacity-50">Deny</button>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Action Link Button if provided */}
                         {msg.actionButton && (
                           <div className="mt-3 pt-2 border-t border-purple-500/20">
@@ -1422,7 +1482,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       </div>
                       <div className="p-3 rounded-2xl bg-[#120924] border border-purple-500/20 flex items-center gap-2">
                         <RefreshCw size={12} className="animate-spin text-purple-400" />
-                        <span>NVIDIA Nemotron-4 340B is reasoning across 312 connected tools...</span>
+                        <span>NVIDIA Nemotron-4 340B is preparing your request...</span>
                       </div>
                     </div>
                   )}
@@ -1641,7 +1701,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       Connected Tools &amp; Integrations Catalog
                     </h2>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                      312 Connectors Live
+                      {CONNECTORS_DATA.length} connectors · 3 available
                     </span>
                   </div>
                   <p className="text-xs text-purple-200/80 mt-1">
@@ -1655,7 +1715,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                     className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-500 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-purple-600/40 cursor-pointer"
                   >
                     <Zap size={14} className="fill-white" />
-                    <span>⚡ 1-Click Connect Core Stack</span>
+                    <span>⚡ Connect available tools</span>
                   </button>
                 </div>
               </div>
@@ -1672,7 +1732,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    Explore All Tools (312)
+                    Explore All Tools ({CONNECTORS_DATA.length})
                   </button>
                   <button
                     onClick={() => setToolsFilterTab("connected")}
@@ -1696,7 +1756,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                     type="text"
                     value={toolsSearchQuery}
                     onChange={(e) => setToolsSearchQuery(e.target.value)}
-                    placeholder="Search 312 tools, actions, or APIs..."
+                    placeholder={`Search ${CONNECTORS_DATA.length} tools, actions, or APIs...`}
                     className="w-full bg-[#100820] border border-purple-500/30 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-purple-300/40 focus:outline-none focus:border-purple-400"
                   />
                   {toolsSearchQuery && (
@@ -2077,6 +2137,13 @@ All deterministic outputs verified against AgentShield-X safety policies with su
             </div>
           )}
 
+          {/* TAB 5: NŪS DESKTOP - LOCAL-FIRST SEMESTER & TASK ORGANIZER */}
+          {activeTab === "nus" && (
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 animate-fadeIn pb-24">
+              <NusDesktopView />
+            </div>
+          )}
+
           {/* EXECUTION REPORT MODAL: Shows real output when task runs */}
           {activeReportData && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
@@ -2173,7 +2240,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       <Zap size={15} className="text-purple-400 fill-purple-400" />
                       <span className="font-bold text-white">Let Wingman Run Apps For You</span>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                        1-Click Instant Authorization
+                        GitHub · Gmail · Calendar available
                       </span>
                     </div>
                     <button
@@ -2184,15 +2251,12 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                     </button>
                   </div>
 
-                  {/* 6 Core Apps with 1-Click Connect Button */}
+                  {/* Quick links for the currently available providers. */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     {[
-                      { id: "github", name: "GitHub", desc: "tharuncoder676/AgentShield-X", icon: "🐙" },
-                      { id: "twitter", name: "Twitter / X", desc: "Automated alert feeds", icon: "𝕏" },
-                      { id: "slack", name: "Slack", desc: "Team alerts & incident channel", icon: "💬" },
-                      { id: "telegram", name: "Telegram", desc: "Direct security gate bot", icon: "✈️" },
-                      { id: "nvidia", name: "NVIDIA NIM", desc: "Nemotron-4 340B Agent", icon: "🤖" },
+                      { id: "github", name: "GitHub", desc: "Connected repository", icon: "🐙" },
                       { id: "gmail", name: "Gmail", desc: "Executive inbox triage", icon: "📧" },
+                      { id: "gcal", name: "Google Calendar", desc: "Upcoming events", icon: "📅" },
                     ].map((app) => {
                       const isConn = !!connectedAppsMap[app.id];
                       return (
@@ -2224,7 +2288,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                                 : "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md shadow-purple-600/30 hover:opacity-90"
                             }`}
                           >
-                            {isConn ? "Connected ✓" : "⚡ Connect"}
+                            {isConn ? "Connected ✓" : "Connect"}
                           </button>
                         </div>
                       );
@@ -2239,7 +2303,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-purple-600/30"
                     >
                       <Zap size={12} className="fill-white" />
-                      <span>⚡ 1-Click Connect All Core Apps</span>
+                      <span>Browse available connectors</span>
                     </button>
 
                     <button
@@ -2338,7 +2402,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {[
-                        { label: "@github", val: "@github(tharuncoder676/AgentShield-X) " },
+                        { label: "@github", val: "@github(connected-repository) " },
                         { label: "@slack", val: "@slack(#incident-response) " },
                         { label: "@telegram", val: "@telegram(bot_alerts) " },
                         { label: "@nvidia", val: "@nvidia/nemotron-4-340b " },
@@ -2372,7 +2436,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       }}
                       className="text-purple-300 hover:text-white flex items-center gap-1 font-semibold cursor-pointer text-xs"
                     >
-                      <span>Explore all 312 Connectors Hub</span>
+                      <span>Explore all {CONNECTORS_DATA.length} connector entries</span>
                       <ArrowRight size={12} />
                     </button>
                   </div>
@@ -2406,7 +2470,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                         <div
                           onClick={() => setActiveTab("tools")}
                           className="px-1.5 py-0.2 rounded-full bg-purple-950/90 border border-purple-500/60 font-mono text-[9px] font-bold text-purple-200 hover:scale-105 transition-transform cursor-pointer"
-                          title="Click to view all 312 Universal Connectors"
+                          title={`Click to view all ${CONNECTORS_DATA.length} connector entries`}
                         >
                           +230
                         </div>
@@ -2679,7 +2743,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                 <label className="block text-slate-300 mb-1 font-medium">Dual-Rail Guardrail Mode</label>
                 <select className="w-full bg-[#180f2b] border border-purple-500/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-purple-400">
                   <option value="strict">Strict (Require dual-rail human approval for all consequential writes)</option>
-                  <option value="balanced">Balanced (Auto-approve routine read operations across 312 apps)</option>
+                  <option value="balanced">Balanced (Auto-approve routine read operations from connected providers)</option>
                   <option value="permissive">Permissive (Log all tool calls without blocking)</option>
                 </select>
               </div>
@@ -2698,7 +2762,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                     }}
                     className="p-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 text-left text-xs text-white transition-all cursor-pointer flex items-center justify-between"
                   >
-                    <span>🔌 Connected Tools (312)</span>
+                    <span>🔌 Connected Tools ({CONNECTORS_DATA.length})</span>
                     <ArrowRight size={12} className="text-purple-400" />
                   </button>
                   <button
@@ -2910,7 +2974,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 cursor-pointer shrink-0"
                     >
                       <Zap size={13} className="fill-white" />
-                      <span>⚡ 1-Click Auto Setup Core Stack</span>
+                      <span>Browse available connector setup</span>
                     </button>
                   </div>
 
@@ -2920,10 +2984,10 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-xs flex items-center justify-center">1</span>
                         <h4 className="font-bold text-white text-sm">Connect Your Core Apps & Services</h4>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1-Click Instant</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">3 live providers</span>
                       </div>
                       <p className="text-purple-200/80 pl-8 leading-relaxed">
-                        Click the <strong>Connect</strong> button on the floating banner at the bottom or click <strong>+300</strong> to open the Connectors Hub. Select any of the 312 apps (GitHub, Twitter, Slack, Telegram, Gmail) and click <strong>⚡ Connect</strong>. It authorizes with live proxy tokens in &lt;200ms.
+                        Open the connector catalog to browse all {CONNECTORS_DATA.length} entries. GitHub, Gmail, and Google Calendar use live provider authorization; the remaining connectors are marked coming soon.
                       </p>
                       <div className="pl-8 pt-1 flex items-center gap-2">
                         <button
@@ -3004,11 +3068,11 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                   <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
                     <h3 className="font-bold text-white text-sm flex items-center gap-2">
                       <FileCode size={16} className="text-purple-400" />
-                      <span>GitHub Integration (tharuncoder676/AgentShield-X)</span>
+                      <span>GitHub Integration</span>
                     </h3>
                     <p className="text-purple-200/80 leading-relaxed">
-                      • <strong>Public Access</strong>: Direct read access to commits, branches, issues, and PR diffs is pre-configured for <code className="text-purple-300">tharuncoder676/AgentShield-X</code>.<br />
-                      • <strong>Private Repos & Writing Comments</strong>: Open the Connectors Hub &rarr; GitHub &rarr; enter your Personal Access Token (PAT) with <code className="text-purple-300">repo</code> scopes.
+                      • Select one repository in the Connectors Hub and connect it with a GitHub PAT.<br />
+                      • GitHub requests use that saved repository connection; review each action in chat before it executes.
                     </p>
                   </div>
 
@@ -3038,7 +3102,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                   <div className="p-4 rounded-xl bg-[#120822] border border-purple-500/20 space-y-2">
                     <h3 className="font-bold text-white text-sm flex items-center gap-2">
                       <Zap size={16} className="text-amber-400" />
-                      <span>312 Universal Connectors Hub</span>
+                      <span>{CONNECTORS_DATA.length} Universal Connectors Hub</span>
                     </h3>
                     <p className="text-purple-200/80 leading-relaxed">
                       Includes pre-built deterministic connectors for <strong>AWS, Stripe, HubSpot, Apollo, Supabase, Jira, Linear, Notion, Discord, Twitter / X</strong>, and 300+ other enterprise services. Every connector features 1-click OAuth connect and strict trust boundary enforcement.
@@ -3050,7 +3114,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       }}
                       className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white font-bold text-xs hover:opacity-90 cursor-pointer shadow-md shadow-purple-600/30"
                     >
-                      Browse 312 Connectors
+                      Browse {CONNECTORS_DATA.length} Connectors
                     </button>
                   </div>
                 </div>
@@ -3165,7 +3229,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       {
                         title: "GitHub PR AST Security Linter",
                         schedule: "On every pull request opened",
-                        desc: "Inspects AST trees for newly opened PRs on tharuncoder676/AgentShield-X, checks taint flows, and verifies zero secrets leaked.",
+                        desc: "Reviews pull requests in the connected GitHub repository after you approve each requested API action.",
                         tools: ["GitHub", "Semgrep", "Discord"],
                         taskData: {
                           id: "task_pr_security_audit",
@@ -3266,8 +3330,8 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                       a: "Click the '+' button on the left of the bottom chat dock. Choose any code, PDF, JSON, or text file. ShieldWing will upload it and run an AST taint inspection.",
                     },
                     {
-                      q: "How does 1-Click Connect work?",
-                      a: "Click 'Connect' on the floating dock banner or open the 312 Connectors Hub. Clicking '⚡ Connect' generates live sandbox/OAuth credentials and routes queries through the AgentShield-X proxy in <200ms.",
+                      q: "Which connectors can I use now?",
+                      a: `Open the ${CONNECTORS_DATA.length}-entry catalog. GitHub, Gmail, and Google Calendar have live authorization flows; the remaining connectors are marked coming soon.`,
                     },
                     {
                       q: "Can I customize the agent name and personality?",
@@ -3315,6 +3379,8 @@ All deterministic outputs verified against AgentShield-X safety policies with su
         </div>
       )}
 
+      {/* The Knot: Floating Screen-Aware Companion Overlay (from potlakai/nus-desktop) */}
+      <TheKnotOverlay />
     </div>
   );
 };

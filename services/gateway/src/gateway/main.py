@@ -34,6 +34,8 @@ from control_api.routes.audit import router as audit_router
 from control_api.routes.billing import router as billing_router
 from control_api.routes.architecture import router as architecture_router
 from control_api.routes.shieldwing import router as shieldwing_router
+from control_api.routes.shieldwing_github import router as shieldwing_github_router
+from control_api.routes.shieldwing_google import router as shieldwing_google_router
 from control_api.routes.scanner import router as scanner_router
 from control_api.routes.mcp import router as mcp_router
 from control_api.routes.swarm import router as swarm_router
@@ -78,6 +80,8 @@ app.include_router(audit_router)
 app.include_router(billing_router)
 app.include_router(architecture_router)
 app.include_router(shieldwing_router)
+app.include_router(shieldwing_github_router)
+app.include_router(shieldwing_google_router)
 app.include_router(scanner_router)
 app.include_router(mcp_router)
 app.include_router(swarm_router)
@@ -171,7 +175,18 @@ async def ws_decisions(websocket: WebSocket):
     WebSocket endpoint streaming live decisions from the internal EventBus
     to connected browser dashboards with heartbeat support.
     """
-    await websocket.accept()
+    from control_api.auth import decode_token
+
+    credential_prefix = "agentshield.bearer."
+    credential = next((
+        protocol[len(credential_prefix):]
+        for protocol in websocket.scope.get("subprotocols", [])
+        if protocol.startswith(credential_prefix)
+    ), None)
+    if not credential or not decode_token(credential):
+        await websocket.close(code=1008)
+        return
+    await websocket.accept(subprotocol="agentshield")
     queue: asyncio.Queue = asyncio.Queue()
 
     async def event_handler(record: dict):

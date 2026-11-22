@@ -46,11 +46,6 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
   const [waSendStatus, setWaSendStatus] = useState<string | null>(null);
   const [waLoading, setWaLoading] = useState(false);
 
-  // Google state
-  const [googleStatus, setGoogleStatus] = useState<string | null>(null);
-  const [gmailUnreadResult, setGmailUnreadResult] = useState<any[] | null>(null);
-  const [gmailLoading, setGmailLoading] = useState(false);
-
   if (!isOpen) return null;
 
   // 1. Test Telegram Token via real backend API
@@ -143,40 +138,6 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
     }
   };
 
-  // 4. Test Gmail Unread Scanner
-  const handleFetchGmailUnread = async () => {
-    setGmailLoading(true);
-    try {
-      const res = await fetch("/v1/shieldwing/channels/gmail/unread");
-      const data = await res.json();
-      setGmailLoading(false);
-      setGmailUnreadResult(data);
-    } catch (err: any) {
-      setGmailLoading(false);
-      setGoogleStatus(`Error fetching emails: ${err.message}`);
-    }
-  };
-
-  // 5. Test Creating Real Draft in Gmail
-  const handleCreateGmailDraft = async () => {
-    setGoogleStatus("Creating email draft with 15-minute safety buffer...");
-    try {
-      const res = await fetch("/v1/shieldwing/channels/gmail/draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: "partner@enterprise.com",
-          subject: "ShieldWing Automated Follow-up (Safety Buffer Active)",
-          body: "Hello! ShieldWing prepared this response autonomously with a 15-minute safety buffer before sending."
-        })
-      });
-      const data = await res.json();
-      setGoogleStatus(`✅ Draft created successfully: ${data.message || "Saved in Drafts folder"}`);
-    } catch (err: any) {
-      setGoogleStatus(`Error: ${err.message}`);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-[#141518] border border-[#2a2d34] rounded-[28px] p-6 sm:p-8 shadow-2xl shadow-purple-950/40 text-left my-6 max-h-[90vh] overflow-y-auto">
@@ -199,7 +160,7 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
             Connect Real Channels
           </h2>
           <p className="text-xs sm:text-sm text-[#9ba1a6] leading-relaxed font-sans">
-            Configure and test live messaging webhooks for Telegram, WhatsApp, and Google Workspace (Gmail + Calendar).
+            Configure messaging webhooks or review scoped Google account access.
           </p>
         </div>
 
@@ -412,57 +373,10 @@ export const ChannelSetupModal: React.FC<ChannelSetupModalProps> = ({
                 <span className="w-2 h-2 rounded-full bg-[#f59e0b]" />
                 <span>Google Workspace (Gmail & Calendar API)</span>
               </div>
-              <p className="text-[#9ba1a6] text-[11px] leading-relaxed">
-                Connect your Google account via OAuth 2.0 to scan unreplied messages, write drafts to your Drafts folder with a 15-minute safety buffer, and balance daily focus time blocks.
-              </p>
+              <p className="text-[#9ba1a6] text-[11px] leading-relaxed">Google connection now requests Gmail read-only and Calendar event read-only access separately. Gmail drafts and Calendar writes are not enabled.</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleFetchGmailUnread}
-                disabled={gmailLoading}
-                className="p-3 rounded-xl bg-[#141518] border border-[#2a2d34] hover:border-[#a855f7] text-white text-xs font-sans text-left transition-all space-y-1"
-              >
-                <div className="font-bold flex items-center justify-between">
-                  <span>Scan Unread Emails</span>
-                  {gmailLoading && <RefreshCw className="w-3 h-3 animate-spin text-[#a855f7]" />}
-                </div>
-                <div className="text-[10px] text-[#9ba1a6]">Fetches unreplied client emails via Gmail API</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCreateGmailDraft}
-                className="p-3 rounded-xl bg-[#141518] border border-[#2a2d34] hover:border-[#a855f7] text-white text-xs font-sans text-left transition-all space-y-1"
-              >
-                <div className="font-bold">Save Draft with Safety Buffer</div>
-                <div className="text-[10px] text-[#9ba1a6]">Creates contextual response in Drafts folder</div>
-              </button>
-            </div>
-
-            {googleStatus && (
-              <div className="p-2.5 rounded-lg bg-[#141518] border border-[#a855f7]/40 text-xs font-mono text-[#c084fc]">
-                {googleStatus}
-              </div>
-            )}
-
-            {gmailUnreadResult && (
-              <div className="space-y-2 pt-2">
-                <div className="text-[11px] font-mono text-[#9ba1a6] uppercase tracking-wider">
-                  Unread Messages Scanned:
-                </div>
-                {gmailUnreadResult.map((email: any, idx: number) => (
-                  <div key={idx} className="p-2.5 rounded-xl bg-[#08090b] border border-[#2a2d34] text-xs font-sans">
-                    <div className="text-white font-medium">{email.subject}</div>
-                    <div className="text-[#a9a9aa] text-[10px] flex justify-between mt-0.5">
-                      <span>From: {email.from}</span>
-                      <span className="text-[#a855f7] font-mono">Unreplied</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="text-xs text-[#9ba1a6]">Sign in to AgentShield, then open Connected tools to review the exact Google services and approve them on Google's consent screen.</p>
+            <button type="button" onClick={() => window.location.assign("/login")} className="px-4 py-2 rounded-xl bg-[#7c3aed] text-white text-xs font-bold">Sign in to connect Google</button>
           </div>
         )}
 

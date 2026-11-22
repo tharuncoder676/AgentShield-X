@@ -91,60 +91,12 @@ class OAuthRequest(BaseModel):
 
 @router.post("/oauth", response_model=AuthResponse)
 def oauth_login(req: OAuthRequest) -> AuthResponse:
-    email = req.email.strip().lower()
-    if not email or "@" not in email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A valid email address is required for social sign-in",
-        )
-
-    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    user = db.get_user_by_email(email)
-    
-    if not user:
-        user_id = f"usr_{uuid.uuid4().hex[:12]}"
-        db.create_user(user_id, email, f"oauth_{req.provider}_token", "owner", now)
-        user = {"id": user_id, "email": email, "role": "owner", "created_at": now}
-        
-        # Provision primary organization
-        org_id = f"org_{uuid.uuid4().hex[:12]}"
-        org_display = req.name or f"{email.split('@')[0]}'s Workspace"
-        slug = f"org-{secrets_hex(4)}"
-        db.create_org(org_id, org_display, slug, "enterprise", user_id, now)
-        primary_org = {"id": org_id, "name": org_display, "slug": slug, "plan": "enterprise", "user_role": "owner", "owner_id": user_id, "created_at": now}
-    else:
-        orgs = db.get_orgs_for_user(user["id"])
-        primary_org = orgs[0] if orgs else {"id": "org_default", "name": "Default Org", "slug": "default", "plan": "enterprise", "user_role": "owner", "owner_id": user["id"], "created_at": now}
-
-    # Issue verified session token
-    token = create_token(user["id"], user["email"], user.get("role", "owner"))
-    
-    # Sync with Supabase PostgreSQL if available
-    try:
-        pg = db.get_pg_connection()
-        if pg:
-            with pg:
-                cur = pg.cursor()
-                cur.execute(
-                    'INSERT INTO "users" (id, email, password_hash, role, created_at) VALUES (%s, %s, %s, %s, %s) ON CONFLICT ("email") DO NOTHING;',
-                    (user["id"], email, f"oauth_{req.provider}", user.get("role", "owner"), now)
-                )
-    except Exception:
-        pass
-
-    return AuthResponse(
-        token=token,
-        user=UserDTO(id=user["id"], email=user["email"], role=user.get("role", "owner"), created_at=user["created_at"]),
-        org=OrgDTO(
-            id=primary_org["id"],
-            name=primary_org["name"],
-            slug=primary_org["slug"],
-            plan=primary_org.get("plan", "enterprise"),
-            user_role=primary_org.get("user_role", "owner"),
-            owner_id=primary_org.get("owner_id") or user["id"],
-            created_at=primary_org.get("created_at") or user["created_at"],
-        ),
+    # Re-enable only when provider identity is verified and account linking is explicit.
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail="Social sign-in is unavailable. Sign in with your email and password.",
     )
+
 
 @router.post("/login", response_model=AuthResponse)
 def login(req: LoginRequest) -> AuthResponse:

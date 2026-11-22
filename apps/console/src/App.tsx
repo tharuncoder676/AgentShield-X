@@ -33,6 +33,7 @@ import { Immunity } from "./pages/Immunity";
 import { RAGFirewall } from "./pages/RAGFirewall";
 import { WingmanCommandCenter } from "./pages/WingmanCommandCenter";
 import { ShieldWingStudio } from "./pages/ShieldWingStudio";
+import { ShieldWingStudio as ShieldWingLiveTools } from "./pages/ShieldWingLiveStudio";
 import { Genome } from "./pages/Genome";
 import { Federation } from "./pages/Federation";
 import { Forensics } from "./pages/Forensics";
@@ -106,7 +107,7 @@ const ComingSoon: React.FC<{ feature: string; phase: string }> = ({
 
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <StreamProvider>
           <Routes>
@@ -129,7 +130,7 @@ export const App: React.FC = () => {
               }
             />
 
-            {/* Dedicated ShieldWing / Wingman AI Studio (300+ Connectors & Automation) */}
+            {/* ShieldWing legacy studio remains the primary experience. */}
             <Route
               path="/wing"
               element={
@@ -158,7 +159,7 @@ export const App: React.FC = () => {
               path="/connected-tools"
               element={
                 <ProtectedRoute>
-                  <ShieldWingStudio />
+                  <ShieldWingLiveTools />
                 </ProtectedRoute>
               }
             />
@@ -202,6 +203,22 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/nus"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nus-desktop"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Authenticated Console Routes */}
             <Route
@@ -214,11 +231,13 @@ export const App: React.FC = () => {
               <Route path="wing" element={<ShieldWingStudio />} />
               <Route path="wingman" element={<ShieldWingStudio />} />
               <Route path="shieldwing" element={<ShieldWingStudio />} />
-              <Route path="connected-tools" element={<ShieldWingStudio />} />
+              <Route path="connected-tools" element={<ShieldWingLiveTools />} />
               <Route path="connect" element={<ShieldWingStudio />} />
               <Route path="tools" element={<ShieldWingStudio />} />
               <Route path="integrations" element={<ShieldWingStudio />} />
               <Route path="channels" element={<ShieldWingStudio />} />
+              <Route path="nus" element={<ShieldWingStudio />} />
+              <Route path="nus-desktop" element={<ShieldWingStudio />} />
               <Route path="overview" element={<Overview />} />
               <Route path="terminal" element={<Terminal />} />
               <Route path="live" element={<LiveFeed />} />

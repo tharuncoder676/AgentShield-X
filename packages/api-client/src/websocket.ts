@@ -99,13 +99,13 @@ export class DecisionStreamClient {
     this.setStatus(this.reconnectAttempts > 0 ? "reconnecting" : "connecting");
 
     let url = this.wsUrl;
-    if (this.token) {
-      const separator = url.includes("?") ? "&" : "?";
-      url = `${url}${separator}token=${encodeURIComponent(this.token)}`;
-    }
 
     try {
-      this.ws = new WebSocket(url);
+      // Keep session credentials out of the URL, where browser and proxy logs can expose them.
+      const protocols = this.token
+        ? ["agentshield", `agentshield.bearer.${this.token}`]
+        : ["agentshield"];
+      this.ws = new WebSocket(url, protocols);
     } catch (err: any) {
       this.handleSocketError(err);
       this.scheduleReconnect();

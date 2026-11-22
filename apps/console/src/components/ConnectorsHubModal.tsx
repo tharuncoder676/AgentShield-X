@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   X,
   Search,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 import { CONNECTORS_DATA, CATEGORIES, Connector } from "../data/connectorsCatalog";
 import { SecureTokenVault } from "../lib/secureVault";
+import { useAuth } from "../context/AuthContext";
 
 interface ConnectorsHubModalProps {
   isOpen: boolean;
@@ -44,22 +46,13 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
   onConnectorConnected,
   initialConnectorId,
 }) => {
+  const navigate = useNavigate();
+  const { token: sessionToken, org } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [connectorsState, setConnectorsState] = useState<Connector[]>(() => {
-    const saved = localStorage.getItem("agentshield_connected_connectors");
-    if (saved) {
-      try {
-        const savedMap: Record<string, boolean> = JSON.parse(saved);
-        return CONNECTORS_DATA.map((c) => ({
-          ...c,
-          connected: savedMap[c.id] !== undefined ? savedMap[c.id] : c.connected,
-        }));
-      } catch {
-        return CONNECTORS_DATA;
-      }
-    }
-    return CONNECTORS_DATA;
+    // Legacy local flags were written without provider verification; never trust them.
+    return CONNECTORS_DATA.map((c) => ({ ...c, connected: false }));
   });
 
   const [filterConnectedOnly, setFilterConnectedOnly] = useState(false);
@@ -71,8 +64,9 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
 
   // Specific Credential Inputs
   const [apiKeyInput, setApiKeyInput] = useState("");
-  const [githubRepoInput, setGithubRepoInput] = useState("tharuncoder676/AgentShield-X");
+  const [githubRepoInput, setGithubRepoInput] = useState("");
   const [githubTokenInput, setGithubTokenInput] = useState("");
+  const [githubReadAuthorized, setGithubReadAuthorized] = useState(false);
   const [telegramTokenInput, setTelegramTokenInput] = useState("");
   const [telegramChatIdInput, setTelegramChatIdInput] = useState("");
   const [slackWebhookInput, setSlackWebhookInput] = useState("");
@@ -90,28 +84,44 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
 
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testSuccessId, setTestSuccessId] = useState<string | null>(null);
-  const [connectedToast, setConnectedToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !org?.id || !sessionToken) return;
+    const headers = { Authorization: `Bearer ${sessionToken}` };
+    const githubPath = `/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/github`;
+    const googlePath = `/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/google`;
+    Promise.all([fetch(githubPath, { headers }), fetch(googlePath, { headers })]).then(async ([githubResponse, googleResponse]) => {
+      if (!githubResponse.ok || !googleResponse.ok) return;
+      const [githubData, googleData] = await Promise.all([githubResponse.json(), googleResponse.json()]);
+      const googleServices = new Set<string>(googleData.services || []);
+      const updated = CONNECTORS_DATA.map((c) => ({
+        ...c,
+        connected: c.id === "github" ? Boolean(githubData.repository)
+          : c.id === "gmail" ? googleServices.has("gmail")
+          : c.id === "gcal" ? googleServices.has("calendar")
+          : false,
+      }));
+      setConnectorsState(updated);
+      if (githubData.repository) setGithubRepoInput(githubData.repository);
+    }).catch(() => undefined);
+  }, [isOpen, org?.id, sessionToken]);
+
+  const openProviderSetup = (connector: Connector) => {
+    if (connector.id === "gmail" || connector.id === "gcal") {
+      onClose();
+      navigate("/connected-tools");
+      return;
+    }
+    handleOpenAuthWizard(connector);
+  };
 
   // If opened for a specific connector ID
   useEffect(() => {
     if (initialConnectorId) {
       const target = connectorsState.find((c) => c.id === initialConnectorId);
-      if (target) {
-        handleOpenAuthWizard(target);
-      }
+      if (target) openProviderSetup(target);
     }
   }, [initialConnectorId, connectorsState]);
-
-  if (!isOpen) return null;
-
-  // Persist connected map to localStorage
-  const saveConnectedState = (updatedList: Connector[]) => {
-    const map: Record<string, boolean> = {};
-    updatedList.forEach((c) => {
-      map[c.id] = c.connected;
-    });
-    localStorage.setItem("agentshield_connected_connectors", JSON.stringify(map));
-  };
 
   // Filter connectors
   const filteredConnectors = useMemo(() => {
@@ -133,6 +143,8 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
     return connectorsState.filter((c) => c.connected).length;
   }, [connectorsState]);
 
+  if (!isOpen) return null;
+
   // Open Auth Wizard
   const handleOpenAuthWizard = (connector: Connector, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -140,10 +152,11 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
     setAuthMode("oauth");
     setSelectedConnectorDetail(null);
     setVerifyStatus(null);
+    setGithubReadAuthorized(false);
 
     // Prepopulate saved values
     if (connector.id === "github") {
-      setGithubRepoInput(localStorage.getItem("agentshield_github_repo") || "tharuncoder676/AgentShield-X");
+      setGithubRepoInput(localStorage.getItem("agentshield_github_repo") || "");
       setGithubTokenInput(SecureTokenVault.getSecret("agentshield_github_token"));
     } else if (connector.id === "telegram") {
       setTelegramTokenInput(SecureTokenVault.getSecret("agentshield_telegram_token"));
@@ -161,63 +174,19 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
   // 1-Click Instant Connect for any tool
   const handleQuickConnect = async (connector: Connector, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setIsVerifying(true);
-    setVerifyStatus(null);
-    const latency = Math.floor(Math.random() * 15) + 12;
-
-    // Persist connection flag
-    localStorage.setItem(`agentshield_conn_${connector.id}`, "true");
-    if (connector.id === "github") {
-      localStorage.setItem("agentshield_github_repo", "tharuncoder676/AgentShield-X");
+    if (connector.id === "gmail" || connector.id === "gcal") {
+      openProviderSetup(connector);
+      return;
     }
-
-    const updated = connectorsState.map((c) =>
-      c.id === connector.id ? { ...c, connected: true } : c
-    );
-    setConnectorsState(updated);
-    saveConnectedState(updated);
-
-    if (onConnectorConnected) {
-      onConnectorConnected({ ...connector, connected: true });
-    }
-
-    try {
-      await fetch(`/v1/shieldwing/connectors/${connector.id}/toggle`, { method: "POST" });
-    } catch {}
-
-    setTimeout(() => {
-      setIsVerifying(false);
+    handleOpenAuthWizard(connector);
+    if (connector.id !== "github") {
       setVerifyStatus({
-        success: true,
-        message: `Connected to ${connector.name} via AgentShield-X Proxy`,
-        details: `Dual-rail sentinels enforced. ${connector.routineActions.length} routine actions auto-approved.`,
-        latencyMs: latency,
+        success: false,
+        message: `${connector.name} is catalog-only and is not connected yet.`,
+        details: "This provider has no complete credential, health-check, and tool-execution flow in this release.",
+        latencyMs: 0,
       });
-      setConnectedToast(`🎉 Successfully connected to ${connector.name}!`);
-      setTimeout(() => setConnectedToast(null), 3000);
-    }, 250);
-  };
-
-  // 1-Click Connect Top 10 Core Stack
-  const handleAutoConnectEssentials = () => {
-    const essentialIds = ["github", "slack", "telegram", "twitter", "nvidia", "gmail", "notion", "jira", "discord", "supabase"];
-    const updated = connectorsState.map((c) =>
-      essentialIds.includes(c.id) ? { ...c, connected: true } : c
-    );
-    setConnectorsState(updated);
-    saveConnectedState(updated);
-    localStorage.setItem("agentshield_github_repo", "tharuncoder676/AgentShield-X");
-    
-    essentialIds.forEach((id) => {
-      localStorage.setItem(`agentshield_conn_${id}`, "true");
-      const found = connectorsState.find((c) => c.id === id);
-      if (found && onConnectorConnected) {
-        onConnectorConnected({ ...found, connected: true });
-      }
-    });
-
-    setConnectedToast("⚡ Successfully connected 10 Core Stack Tools in 1 Click!");
-    setTimeout(() => setConnectedToast(null), 3500);
+    }
   };
 
   // Perform Real Live Verification and Authorization
@@ -228,122 +197,33 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
 
     try {
       if (connector.id === "github") {
-        // Real GitHub Repository & Auth Check
-        const repo = githubRepoInput.trim() || "tharuncoder676/AgentShield-X";
+        const repo = githubRepoInput.trim();
         const token = githubTokenInput.trim();
-        let repoData: any = null;
-
-        try {
-          const res = await fetch(`https://api.github.com/repos/${repo}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          if (res.ok) {
-            repoData = await res.json();
-          }
-        } catch {
-          // Network fallback
+        if (!org?.id || !sessionToken) throw new Error("Sign in and select a workspace before connecting GitHub.");
+        if (!repo || !token) throw new Error("Repository and fine-grained GitHub token are required.");
+        const response = await fetch(`/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/github`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
+          body: JSON.stringify({ repository: repo, token, authorization_confirmed: githubReadAuthorized }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const detail = Array.isArray(payload.detail)
+            ? payload.detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join("; ")
+            : payload.detail;
+          throw new Error(detail || "GitHub rejected the connection.");
         }
-
-        const latency = Math.round(performance.now() - startMs) || 18;
-        localStorage.setItem("agentshield_github_repo", repo);
-        if (token) SecureTokenVault.setSecret("agentshield_github_token", token);
-        localStorage.setItem("agentshield_conn_github", "true");
+        localStorage.setItem("agentshield_github_repo", payload.repository);
+        SecureTokenVault.removeSecret("agentshield_github_token");
 
         setVerifyStatus({
           success: true,
-          message: `Connected to GitHub repository: ${repo}`,
-          details: repoData
-            ? `Default branch: ${repoData.default_branch} | Open Issues: ${repoData.open_issues_count} | Visibility: ${repoData.visibility || 'public'}`
-            : "Repository authenticated & deterministic AST linter active.",
-          latencyMs: latency,
+          message: `Verified access to ${payload.repository}`,
+          details: "Credential was verified with GitHub and stored encrypted for this workspace. Repository actions use the token's actual permissions and require one-time approval.",
+          latencyMs: Math.round(performance.now() - startMs),
         });
-
-      } else if (connector.id === "telegram") {
-        // Real Telegram Bot verification
-        const token = telegramTokenInput.trim();
-        const chatId = telegramChatIdInput.trim();
-        let botName = "AgentShield Alerts";
-
-        if (token) {
-          try {
-            const res = await fetch("/v1/shieldwing/channels/telegram/test", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ bot_token: token }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.bot_username) botName = `@${data.bot_username}`;
-            }
-          } catch {}
-          SecureTokenVault.setSecret("agentshield_telegram_token", token);
-        }
-        if (chatId) SecureTokenVault.setSecret("agentshield_telegram_chat_id", chatId);
-        localStorage.setItem("agentshield_conn_telegram", "true");
-
-        const latency = Math.round(performance.now() - startMs) || 24;
-        setVerifyStatus({
-          success: true,
-          message: `Connected to Telegram Bot (${botName})`,
-          details: "Automated briefing summaries and security gates will route to this chat.",
-          latencyMs: latency,
-        });
-
-      } else if (connector.id === "nvidia") {
-        // Real NVIDIA NIM Verification
-        const key = nvidiaKeyInput.trim();
-        if (key) {
-          SecureTokenVault.setSecret("agentshield_nvidia_key", key);
-          try {
-            await fetch("/v1/shieldwing/verify-nvidia", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ api_key: key, model: "nvidia/nemotron-4-340b-instruct" }),
-            });
-          } catch {}
-        }
-        localStorage.setItem("agentshield_conn_nvidia", "true");
-        const latency = Math.round(performance.now() - startMs) || 16;
-        setVerifyStatus({
-          success: true,
-          message: "Connected to NVIDIA NIM Cloud Inference",
-          details: "Model: NVIDIA Nemotron-4 340B Instruct (integrate.api.nvidia.com) &bull; Sub-second latency active.",
-          latencyMs: latency,
-        });
-
-      } else if (connector.id === "slack") {
-        // Real Slack Webhook configuration
-        const webhook = slackWebhookInput.trim();
-        if (webhook) {
-          SecureTokenVault.setSecret("agentshield_slack_webhook", webhook);
-        }
-        localStorage.setItem("agentshield_conn_slack", "true");
-        const latency = Math.round(performance.now() - startMs) || 22;
-        setVerifyStatus({
-          success: true,
-          message: "Connected to Slack Workspace",
-          details: "Webhook route confirmed. Consequential action alerts and incident briefings enabled.",
-          latencyMs: latency,
-        });
-
       } else {
-        // Universal Connector (Google, AWS, Supabase, Jira, Stripe, etc.)
-        if (apiKeyInput.trim()) {
-          SecureTokenVault.setSecret(`agentshield_conn_key_${connector.id}`, apiKeyInput.trim());
-        }
-        try {
-          await fetch(`/v1/shieldwing/connectors/${connector.id}/toggle`, {
-            method: "POST",
-          });
-        } catch {}
-
-        const latency = Math.round(performance.now() - startMs) || 19;
-        setVerifyStatus({
-          success: true,
-          message: `Connected to ${connector.name} via AgentShield-X Proxy`,
-          details: `Dual-rail sentinels enforced. ${connector.routineActions.length} routine actions auto-approved.`,
-          latencyMs: latency,
-        });
+        throw new Error(`${connector.name} does not have a live connector implementation yet.`);
       }
 
       // Mark connector connected in state & localStorage
@@ -351,7 +231,6 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
         c.id === connector.id ? { ...c, connected: true } : c
       );
       setConnectorsState(updated);
-      saveConnectedState(updated);
 
       if (onConnectorConnected) {
         onConnectorConnected({ ...connector, connected: true });
@@ -370,11 +249,15 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
 
   // Disconnect
   const handleDisconnect = async (connector: Connector) => {
-    try {
-      await fetch(`/v1/shieldwing/connectors/${connector.id}/toggle`, {
-        method: "POST",
-      }).catch(() => {});
-    } catch {}
+    if (connector.id === "github" && org?.id && sessionToken) {
+      const response = await fetch(`/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/github`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${sessionToken}` },
+      });
+      if (!response.ok) {
+        setVerifyStatus({ success: false, message: "GitHub disconnect failed.", latencyMs: 0 });
+        return;
+      }
+    }
 
     SecureTokenVault.removeSecret(`agentshield_conn_key_${connector.id}`);
     localStorage.removeItem(`agentshield_conn_key_${connector.id}`);
@@ -400,18 +283,21 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
       c.id === connector.id ? { ...c, connected: false } : c
     );
     setConnectorsState(updated);
-    saveConnectedState(updated);
     setAuthDrawerConnector(null);
   };
 
   const handleTestLatency = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (id !== "github" || !org?.id || !sessionToken) return;
     setTestingId(id);
-    setTimeout(() => {
-      setTestingId(null);
+    fetch(`/v1/shieldwing/workspaces/${encodeURIComponent(org.id)}/github/pull-requests`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    }).then((response) => {
+      if (!response.ok) throw new Error("Provider check failed");
       setTestSuccessId(id);
       setTimeout(() => setTestSuccessId(null), 3000);
-    }, 500);
+    }).catch(() => setVerifyStatus({ success: false, message: "GitHub health check failed.", latencyMs: 0 }))
+      .finally(() => setTestingId(null));
   };
 
   return (
@@ -430,7 +316,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                   Universal Connectors & Tools Hub
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  312 Available
+                  {CONNECTORS_DATA.length} Catalog Entries
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -438,7 +324,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-purple-300/80">
-                Grant ShieldWing live authorized access with real tokens, verified repositories, and dual-rail trust boundary enforcement.
+                GitHub, Gmail, and Google Calendar are available. The remaining catalog connectors are coming soon.
               </p>
             </div>
           </div>
@@ -459,7 +345,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 312 tools, apps, and actions (e.g. GitHub, Slack, Telegram, AWS)..."
+              placeholder={`Search ${CONNECTORS_DATA.length} catalog entries (e.g. GitHub, Gmail, Slack, VS Code)...`}
               className="w-full bg-[#180f2b] border border-purple-500/20 rounded-lg pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder-purple-300/40 focus:outline-none focus:border-purple-400 transition-colors"
             />
             {searchQuery && (
@@ -473,15 +359,6 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
           </div>
 
           <div className="flex items-center gap-3 text-xs">
-            <button
-              onClick={handleAutoConnectEssentials}
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-500 hover:opacity-90 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 cursor-pointer"
-              title="Instantly connect GitHub, Slack, Telegram, Twitter, NVIDIA, Gmail, Notion, Jira"
-            >
-              <Zap size={13} className="fill-white" />
-              <span>⚡ Auto-Connect Core Stack (10 Tools)</span>
-            </button>
-
             <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white select-none ml-2">
               <input
                 type="checkbox"
@@ -529,8 +406,8 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
             return (
               <div
                 key={connector.id}
-                onClick={() => handleOpenAuthWizard(connector)}
-                className={`group p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between cursor-pointer ${
+                onClick={() => ["github", "gmail", "gcal"].includes(connector.id) && openProviderSetup(connector)}
+                className={`group p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between ${["github", "gmail", "gcal"].includes(connector.id) ? "cursor-pointer" : "cursor-default"} ${
                   connector.connected
                     ? "bg-[#140b26]/90 border-purple-500/40 hover:border-purple-400 shadow-md shadow-purple-950/40"
                     : "bg-[#0f081c]/80 border-white/5 hover:border-purple-500/20 hover:bg-[#130b22]"
@@ -576,19 +453,17 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                         <div className="flex items-center gap-1">
                           <button
                             onClick={(e) => handleQuickConnect(connector, e)}
-                            className="px-3 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-md shadow-purple-600/30 transition-all flex items-center gap-1 cursor-pointer"
-                            title="1-Click Instant Connect (OAuth)"
+                            disabled={!['github', 'gmail', 'gcal'].includes(connector.id)}
+                            className="px-3 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-md shadow-purple-600/30 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={["github", "gmail", "gcal"].includes(connector.id) ? "Connect this provider" : "Coming soon"}
                           >
-                            <Zap size={11} className="fill-white" />
-                            <span>Connect</span>
+                            {!["github", "gmail", "gcal"].includes(connector.id) ? <span>Coming soon</span> : <><Zap size={11} className="fill-white" /><span>{connector.id === "gmail" || connector.id === "gcal" ? "Setup" : "Connect"}</span></>}
                           </button>
-                          <button
+                          {["github", "gmail", "gcal"].includes(connector.id) && <button
                             onClick={(e) => handleOpenAuthWizard(connector, e)}
                             className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-purple-300 hover:text-white border border-purple-500/20 transition-all cursor-pointer"
-                            title="Configure Custom API Key or Token"
-                          >
-                            <Key size={12} />
-                          </button>
+                            title="Configure connection"
+                          ><Key size={12} /></button>}
                         </div>
                       )}
                     </div>
@@ -627,7 +502,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                         <RefreshCw size={10} className="animate-spin" />
                       ) : isTestedOk ? (
                         <>
-                          <Check size={10} /> 16ms
+                          <Check size={10} /> Live
                         </>
                       ) : (
                         "Ping"
@@ -640,7 +515,9 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                         if (onSelectConnector) onSelectConnector(connector);
                         onClose();
                       }}
-                      className="text-purple-400 hover:text-purple-300 flex items-center gap-0.5"
+                      disabled={!connector.connected}
+                      className="text-purple-400 hover:text-purple-300 disabled:text-slate-600 disabled:cursor-not-allowed flex items-center gap-0.5"
+                      title={connector.connected ? "Use this connected provider" : "Connect this provider before using it"}
                     >
                       Use <ExternalLink size={10} />
                     </button>
@@ -696,7 +573,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                   }`}
                 >
                   <Zap size={13} className="fill-white" />
-                  <span>⚡ 1-Click Instant Connect (OAuth)</span>
+                  <span>Provider authorization</span>
                 </button>
                 <button
                   type="button"
@@ -717,29 +594,63 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                 <div className="space-y-3 p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 text-xs text-slate-300">
                   <div className="flex items-center gap-2 text-white font-semibold">
                     <Shield size={15} className="text-purple-400" />
-                    <span>Instant Authorization via AgentShield-X Security Gateway</span>
+                    <span>Authorize {authDrawerConnector.name} through its provider flow</span>
                   </div>
 
-                  <p className="text-purple-200/80 leading-relaxed text-[11px]">
-                    Connects Wingman / ShieldWing Studio directly to <strong>{authDrawerConnector.name}</strong> with live proxy credentials and deterministic trust boundaries.
-                  </p>
+                  {authDrawerConnector.id === "github" ? (
+                    <div className="space-y-3 rounded-lg border border-purple-500/20 bg-black/20 p-3">
+                      <label className="block text-slate-300">
+                        <span className="mb-1 block font-medium">Repository (owner/repo or GitHub URL)</span>
+                        <input
+                          type="text"
+                          value={githubRepoInput}
+                          onChange={(event) => setGithubRepoInput(event.target.value)}
+                          placeholder="owner/repository or https://github.com/owner/repository"
+                          autoComplete="off"
+                          className="w-full rounded-lg border border-purple-500/30 bg-[#180f2b] px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
+                        />
+                      </label>
+                      <label className="block text-slate-300">
+                          <span className="mb-1 block font-medium">GitHub personal access token</span>
+                        <input
+                          type="password"
+                          value={githubTokenInput}
+                          onChange={(event) => setGithubTokenInput(event.target.value)}
+                          placeholder="github_pat_… or ghp_…"
+                          autoComplete="new-password"
+                          className="w-full rounded-lg border border-purple-500/30 bg-[#180f2b] px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
+                        />
+                      </label>
+                      <p className="text-[10px] leading-relaxed text-purple-200/70">Fine-grained tokens are recommended: restrict one to this repository and grant only the needed read/write permissions. Classic ghp_ tokens are accepted but may have broader grants. AgentShield verifies repository access and stores the token encrypted. GitHub enforces the token's permissions.</p>
+                      <label className="flex items-start gap-2 text-slate-300">
+                        <input type="checkbox" checked={githubReadAuthorized} onChange={(event) => setGithubReadAuthorized(event.target.checked)} />
+                        <span>I authorize repository-scoped read and write API actions. ShieldWing will show each exact action for one-time approval.</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <p className="text-purple-200/80 leading-relaxed text-[11px]">
+                      GitHub, Gmail, and Google Calendar have live connector flows in this release. Other catalog entries are coming soon.
+                    </p>
+                  )}
 
                   <div className="space-y-1.5 text-[11px] font-mono">
                     <div className="flex items-center gap-2 text-emerald-300">
                       <CheckCircle2 size={13} />
-                      <span>Auto-Approved Routine Actions: {authDrawerConnector.routineActions.slice(0, 3).join(", ")}</span>
+                      <span>{authDrawerConnector.id === "github" ? "Repository API access, limited by the token" : `Available read actions: ${authDrawerConnector.routineActions.slice(0, 3).join(", ")}`}</span>
                     </div>
                     <div className="flex items-center gap-2 text-amber-300">
                       <Lock size={13} />
-                      <span>Consequential Trust Boundary: {authDrawerConnector.trustBoundaryRule}</span>
+                      <span>{authDrawerConnector.id === "github" ? "Every action requires one-time approval; sensitive admin endpoints are blocked" : `Trust boundary: ${authDrawerConnector.trustBoundaryRule}`}</span>
                     </div>
                   </div>
 
                   <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => handleQuickConnect(authDrawerConnector)}
-                      disabled={isVerifying}
+                      onClick={() => authDrawerConnector.id === "github"
+                        ? void handleAuthorizeConnection(authDrawerConnector)
+                        : void handleQuickConnect(authDrawerConnector)}
+                      disabled={isVerifying || (authDrawerConnector.id === "github" && (!githubReadAuthorized || !githubRepoInput.trim() || !githubTokenInput.trim()))}
                       className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-500 hover:opacity-90 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-600/40 cursor-pointer"
                     >
                       {isVerifying ? (
@@ -750,7 +661,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                       ) : (
                         <>
                           <Zap size={14} className="fill-white" />
-                          <span>{authDrawerConnector.connected ? "Re-authorize & Refresh Token" : `Authorize & Connect ${authDrawerConnector.name} Instantly`}</span>
+                          <span>{verifyStatus?.success ? "Connected" : authDrawerConnector.id === "github" ? "Verify token & connect GitHub" : authDrawerConnector.connected ? "Re-authorize & Refresh Token" : `Authorize & Connect ${authDrawerConnector.name}`}</span>
                         </>
                       )}
                     </button>
@@ -766,32 +677,36 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                     <div className="space-y-3 p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/30">
                       <div>
                         <label className="block text-slate-300 font-medium mb-1">
-                          Target GitHub Repository (Owner / Repo):
+                          Target GitHub Repository (Owner / Repo or GitHub URL):
                         </label>
                         <input
                           type="text"
                           value={githubRepoInput}
                           onChange={(e) => setGithubRepoInput(e.target.value)}
-                          placeholder="tharuncoder676/AgentShield-X"
+                          placeholder="owner/repo or https://github.com/owner/repo"
                           className="w-full bg-[#180f2b] border border-purple-500/30 rounded-lg px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-purple-400"
                         />
                         <span className="text-[10px] text-purple-300/60 mt-0.5 block">
-                          Direct connection reads public issues, PR diffs, and AST trees.
+                          ShieldWing can use supported read and write APIs in this one repository. GitHub enforces the token's permissions; every action requires one-time approval.
                         </span>
                       </div>
 
                       <div>
                         <label className="block text-slate-300 font-medium mb-1">
-                          GitHub Personal Access Token (Optional for public, required for private repos/PR write):
+                          GitHub PAT (fine-grained recommended; ghp_ classic accepted):
                         </label>
                         <input
                           type="password"
                           value={githubTokenInput}
                           onChange={(e) => setGithubTokenInput(e.target.value)}
-                          placeholder="ghp_..."
+                          placeholder="github_pat_... or ghp_..."
                           className="w-full bg-[#180f2b] border border-purple-500/30 rounded-lg px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-purple-400"
                         />
                       </div>
+                      <label className="flex items-start gap-2 text-slate-300">
+                        <input type="checkbox" checked={githubReadAuthorized} onChange={(event) => setGithubReadAuthorized(event.target.checked)} />
+                        <span>I authorize repository-scoped read and write API actions with one-time approval for every action.</span>
+                      </label>
                     </div>
                   )}
 
@@ -972,8 +887,8 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
                   {authMode === "api_key" && (
                     <button
                       onClick={() => handleAuthorizeConnection(authDrawerConnector)}
-                      disabled={isVerifying}
-                      className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-500 text-white hover:opacity-90 transition-all shadow-lg shadow-purple-600/40 flex items-center gap-1.5 cursor-pointer"
+                      disabled={isVerifying || (authDrawerConnector.id === "github" && !githubReadAuthorized)}
+                      className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-500 text-white hover:opacity-90 transition-all shadow-lg shadow-purple-600/40 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isVerifying ? (
                         <>
@@ -1009,14 +924,6 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
           </div>
         )}
 
-        {/* Floating Toast Notification */}
-        {connectedToast && (
-          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs shadow-2xl shadow-emerald-950 flex items-center gap-2 animate-bounce border border-emerald-400/40">
-            <CheckCircle2 size={16} />
-            <span>{connectedToast}</span>
-          </div>
-        )}
-
         {/* Footer */}
         <div className="px-6 py-3 border-t border-purple-500/20 bg-[#0f081c] flex items-center justify-between text-xs text-purple-300/70">
           <div className="flex items-center gap-2">
@@ -1024,7 +931,7 @@ export const ConnectorsHubModal: React.FC<ConnectorsHubModalProps> = ({
             <span>AgentShield-X Dual-Rail Sentinels Active</span>
           </div>
           <div>
-            Showing <strong className="text-white">{filteredConnectors.length}</strong> of 312 connectors
+            Showing <strong className="text-white">{filteredConnectors.length}</strong> of {CONNECTORS_DATA.length} catalog entries
           </div>
         </div>
 

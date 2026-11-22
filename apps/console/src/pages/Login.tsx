@@ -77,12 +77,7 @@ export const Login: React.FC = () => {
       localStorage.setItem("agentshield_remember", "true");
       navigate("/overview");
     } catch (err: any) {
-      if (cleanEmail.includes("@")) {
-        localStorage.setItem("agentshield_token", "dev_operator_session_token");
-        navigate("/overview");
-      } else {
-        setError(err.message || "Failed to log in. Please verify your credentials.");
-      }
+      setError(err.message || "Failed to log in. Please verify your credentials.");
     } finally {
       setLoading(false);
     }
@@ -95,43 +90,15 @@ export const Login: React.FC = () => {
       await loginWithGoogle();
       navigate("/overview");
     } catch (err: any) {
-      console.warn("Firebase Google login fallback:", err);
-      setActiveOAuthProvider("google");
+      setError(err.message || "Google sign-in is unavailable.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOAuthModalSuccess = async (profile: { email: string; name: string; provider: "google" }) => {
+  const handleOAuthModalSuccess = async () => {
     setActiveOAuthProvider(null);
-    setLoading(true);
-    const cleanEmail = profile.email.trim().toLowerCase();
-    localStorage.setItem("agentshield_user_email", cleanEmail);
-    localStorage.setItem("agentshield_user_name", profile.name);
-
-    try {
-      const res = await fetch(`${""}/v1/auth/oauth`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider: profile.provider,
-          email: cleanEmail,
-          name: profile.name,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("agentshield_token", data.token);
-        localStorage.setItem("agentshield_tier", "pro");
-      } else {
-        localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
-      }
-    } catch {
-      localStorage.setItem("agentshield_token", `oauth_${profile.provider}_session_token`);
-    } finally {
-      setLoading(false);
-      navigate("/overview");
-    }
+    setError("Google sign-in is unavailable until verified server-side identity exchange is configured.");
   };
 
   return (

@@ -27,6 +27,8 @@ from control_api.routes.audit import router as audit_router
 from control_api.routes.billing import router as billing_router
 from control_api.routes.architecture import router as architecture_router
 from control_api.routes.shieldwing import router as shieldwing_router
+from control_api.routes.shieldwing_github import router as shieldwing_github_router
+from control_api.routes.shieldwing_google import router as shieldwing_google_router
 from control_api.routes.scanner import router as scanner_router
 from control_api.routes.mcp import router as mcp_router
 from control_api.routes.swarm import router as swarm_router
@@ -61,6 +63,7 @@ from control_api.routes.academy import router as academy_router
 from control_api.routes.threat_intel import router as threat_intel_router
 from control_api.routes.plugins import router as plugins_router
 from control_api.routes.benchmark import router as benchmark_router
+from control_api.routes.nus_agent import router as nus_agent_router
 from control_api.routes.ide import router as ide_router
 from control_api.routes.shieldvoice import router as shieldvoice_router
 from control_api.routes.licensing import router as licensing_router
@@ -112,6 +115,8 @@ app.include_router(audit_router)
 app.include_router(billing_router)
 app.include_router(architecture_router)
 app.include_router(shieldwing_router)
+app.include_router(shieldwing_github_router)
+app.include_router(shieldwing_google_router)
 app.include_router(scanner_router)
 app.include_router(mcp_router)
 app.include_router(swarm_router)
@@ -146,6 +151,7 @@ app.include_router(academy_router)
 app.include_router(threat_intel_router)
 app.include_router(plugins_router)
 app.include_router(benchmark_router)
+app.include_router(nus_agent_router)
 app.include_router(ide_router)
 app.include_router(shieldvoice_router)
 
@@ -219,7 +225,18 @@ async def ws_decisions(websocket: WebSocket, token: Optional[str] = None):
     WebSocket endpoint streaming live decisions to connected browser dashboards
     with heartbeat support. Accepts JWTs, OAuth tokens, and API keys.
     """
-    await websocket.accept()
+    from control_api.auth import decode_token
+
+    credential_prefix = "agentshield.bearer."
+    credential = next((
+        protocol[len(credential_prefix):]
+        for protocol in websocket.scope.get("subprotocols", [])
+        if protocol.startswith(credential_prefix)
+    ), None)
+    if not credential or not decode_token(credential):
+        await websocket.close(code=1008)
+        return
+    await websocket.accept(subprotocol="agentshield")
     try:
         await websocket.send_json({
             "type": "connection_ack",

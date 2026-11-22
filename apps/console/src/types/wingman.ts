@@ -34,6 +34,7 @@ export interface WingmanConfig {
     | "autonomous_operator"
     | "devsecops_sre"
     | "pair_programmer"
+    | "nus_desktop_organizer"
     | "custom";
   systemPersonaPrompt: string;
   llmModel: string;
@@ -81,6 +82,12 @@ Your mission is 99.999% system resilience: monitor CPU, memory, and API latencie
     description: "Assists with code security reviews, vulnerability scans, Rego policy authoring, and architectural hardening.",
     prompt: `You are WINGMAN, the security-first pair programming copilot for AgentShield-X, created by Tharunkumar.S for operator Tharun.
 Your mission is engineering excellence: inspect source code for vulnerabilities, generate OPA Rego security policies, review pull requests, and optimize defense pipelines.`,
+  },
+  nus_desktop_organizer: {
+    title: "Nūs Desktop • Local-First Semester & Task Organizer",
+    description: "Autonomous syllabus intelligence: reads syllabi, extracts living timelines & deadlines, and proposes schedule changes with human approval.",
+    prompt: `You are WINGMAN powered by NŪS DESKTOP, the local-first semester and task organizer agent for AgentShield-X, created by Tharunkumar.S for operator Tharun.
+Your mission is total academic and project mastery: parse syllabi and project specifications, map all deadlines and exam milestones, monitor active screen context with The Knot companion, and generate human-in-the-loop action proposals you approve first. Operate with zero data leakage.`,
   },
   custom: {
     title: "Custom Mission Directive",
@@ -174,6 +181,15 @@ export const DEFAULT_WINGMAN_CONFIG: WingmanConfig = {
       icon: "shield",
       status: "running",
       activity: "Sub-5ms interception mesh",
+      enabled: true,
+    },
+    {
+      id: "nus_desktop",
+      name: "Nūs Desktop Agent",
+      role: "Semester & Task Organizer",
+      icon: "graduation-cap",
+      status: "running",
+      activity: "Tracking living syllabus timeline",
       enabled: true,
     },
   ],
