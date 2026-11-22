@@ -84,6 +84,12 @@ services/data/*.db-shm
 agentshield-film/
 AgentShield-X video photos/
 OpenJarvis-main/
+chronos_app/
+Chronos-Desktop-windows-x64.zip
+Chronos-*.zip
+Chronos-*.exe
+Nus-Companion-Setup*.exe
+*.7z
 apps/console/public/downloads/*.exe
 apps/console/public/downloads/*.dmg
 apps/console/public/downloads/*.AppImage
