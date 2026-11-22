@@ -63,23 +63,12 @@ import { ChannelSetupModal } from "../components/ChannelSetupModal";
 import { ApiKeyPortalModal } from "../components/ApiKeyPortalModal";
 import { Key } from "lucide-react";
 
+const GITHUB_RELEASE_BASE = "https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0";
+
 export const Landing: React.FC = () => {
 
-  const handleDirectDownload = (filename: string, e?: React.MouseEvent) => {
-    // If invoked without native event, trigger download via synthetic link
-    const directUrl = `/downloads/${filename}`;
-    if (!e) {
-      const link = document.createElement("a");
-      link.href = directUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => {
-        try {
-          document.body.removeChild(link);
-        } catch {}
-      }, 500);
-    }
+  const handleDirectDownload = (filename: string) => {
+    window.location.href = `${GITHUB_RELEASE_BASE}/${filename}`;
   };
 
   // Navigation & Interactive states
@@ -830,10 +819,10 @@ export const Landing: React.FC = () => {
               <a
                 href={
                   detectedOS === "windows"
-                    ? "/downloads/AgentShield-X-Setup-1.0.0.exe"
+                    ? `${GITHUB_RELEASE_BASE}/AgentShield-X-Setup-1.0.0.exe`
                     : detectedOS === "linux"
-                    ? "/downloads/AgentShield-X-1.0.0.AppImage"
-                    : "/downloads/AgentShield-X-1.0.0-universal.dmg"
+                    ? `${GITHUB_RELEASE_BASE}/AgentShield-X-1.0.0.AppImage`
+                    : `${GITHUB_RELEASE_BASE}/AgentShield-X-1.0.0-universal.dmg`
                 }
                 download={
                   detectedOS === "windows"
@@ -2288,7 +2277,7 @@ export const Landing: React.FC = () => {
             <h3 className="font-bold text-xl text-white mb-1">macOS</h3>
             <p className="text-xs text-[#a9a9aa] mb-4">Apple Silicon (M1/M2/M3/M4) & Intel x86_64 Universal .dmg</p>
             <a
-              href="/downloads/AgentShield-X-1.0.0-universal.dmg"
+              href={`${GITHUB_RELEASE_BASE}/AgentShield-X-1.0.0-universal.dmg`}
               download="AgentShield-X-1.0.0-universal.dmg"
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
@@ -2320,7 +2309,7 @@ export const Landing: React.FC = () => {
             <h3 className="font-bold text-xl text-white mb-1">Windows</h3>
             <p className="text-xs text-[#a9a9aa] mb-4">Windows 10/11 64-bit Installer & Portable .exe</p>
             <a
-              href="/downloads/AgentShield-X-Setup-1.0.0.exe"
+              href={`${GITHUB_RELEASE_BASE}/AgentShield-X-Setup-1.0.0.exe`}
               download="AgentShield-X-Setup-1.0.0.exe"
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >
@@ -2352,7 +2341,7 @@ export const Landing: React.FC = () => {
             <h3 className="font-bold text-xl text-white mb-1">Linux</h3>
             <p className="text-xs text-[#a9a9aa] mb-4">Universal .AppImage, Debian .deb, and Arch tar.gz</p>
             <a
-              href="/downloads/AgentShield-X-1.0.0.AppImage"
+              href={`${GITHUB_RELEASE_BASE}/AgentShield-X-1.0.0.AppImage`}
               download="AgentShield-X-1.0.0.AppImage"
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2 mb-3 shadow-md shadow-[#a855f7]/25 hover:opacity-95 transition-all"
             >

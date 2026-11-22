@@ -44,6 +44,13 @@
       "framework": "vite"
     }
   },
+  "redirects": [
+    {
+      "source": "/downloads/:filename",
+      "destination": "https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/:filename",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/v1/events/(.*)",
