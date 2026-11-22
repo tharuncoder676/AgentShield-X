@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ChronosLogo } from "./ChronosLogo";
 import {
   Sparkles,
   Mic,
@@ -16,7 +17,9 @@ import {
   Send,
   Zap,
   Activity,
-  Check
+  Check,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 
 interface Proposal {
@@ -39,6 +42,19 @@ export const TheKnotOverlay: React.FC = () => {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [activeMode, setActiveMode] = useState<"screen" | "voice" | "tasks">("screen");
   const [approvedCount, setApprovedCount] = useState(0);
+  const [voiceSpeechEnabled, setVoiceSpeechEnabled] = useState(true);
+
+  const speakAloud = (text: string) => {
+    if (!voiceSpeechEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const clean = text.replace(/[*_#`\n]/g, " ").slice(0, 250);
+      const utter = new SpeechSynthesisUtterance(clean);
+      utter.rate = 1.05;
+      utter.pitch = 1.0;
+      window.speechSynthesis.speak(utter);
+    } catch {}
+  };
 
   // Fetch pending proposals for quick badge
   const fetchProposals = async () => {
@@ -104,6 +120,7 @@ export const TheKnotOverlay: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setResponse(data.response);
+        speakAloud(data.response);
       } else {
         fallbackQueryResponse();
       }
@@ -115,14 +132,17 @@ export const TheKnotOverlay: React.FC = () => {
   };
 
   const fallbackQueryResponse = () => {
+    let msg = "";
     const qLower = query.toLowerCase();
     if (qLower.includes("next") || qLower.includes("deadline") || qLower.includes("due")) {
-      setResponse("Your next immediate deliverable is **Problem Set 1** for CS 410, due in 3 days. I recommend blocking 2 hours of focus time tonight.");
+      msg = "Your next immediate deliverable is Problem Set 1 for CS 410, due in 3 days. I recommend blocking 2 hours of focus time tonight.";
     } else if (qLower.includes("exam") || qLower.includes("midterm")) {
-      setResponse("You have the **CS 410 Midterm Exam** on October 27 (25% weight). All study materials and lecture slides have been mapped into your living timeline.");
+      msg = "You have the CS 410 Midterm Exam on October 27 with 25% course weight. All study materials and lecture slides have been mapped into your living timeline.";
     } else {
-      setResponse(`Chronos Knot Companion analyzing active screen. Everything is running smoothly under AgentShield-X dual-rail protection with 0 pending security alerts.`);
+      msg = "Chronos Knot Companion active. Everything is running smoothly under AgentShield-X dual-rail protection with 0 pending security alerts.";
     }
+    setResponse(msg);
+    speakAloud(msg);
   };
 
   const handleApproveProposal = async (propId: string) => {
@@ -203,12 +223,7 @@ export const TheKnotOverlay: React.FC = () => {
           {/* Header */}
           <div className="p-3.5 bg-gradient-to-r from-purple-950/80 via-[#180a30] to-purple-900/60 border-b border-purple-500/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-purple-500/50">
-                  <Sparkles className="w-3.5 h-3.5 text-white animate-pulse" />
-                </div>
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-purple-950 animate-ping" />
-              </div>
+              <ChronosLogo size="xs" animated={true} />
               <div>
                 <div className="text-xs font-bold text-white flex items-center gap-1.5">
                   The Knot Companion
@@ -222,12 +237,22 @@ export const TheKnotOverlay: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg text-purple-400/80 hover:text-white hover:bg-purple-900/40 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setVoiceSpeechEnabled((prev) => !prev)}
+                className="p-1 rounded-lg text-purple-400 hover:text-white hover:bg-purple-900/40 transition-colors"
+                title={voiceSpeechEnabled ? "Mute Knot voice synthesis" : "Enable Knot voice synthesis"}
+              >
+                {voiceSpeechEnabled ? <Volume2 className="w-3.5 h-3.5 text-cyan-400" /> : <VolumeX className="w-3.5 h-3.5 text-zinc-500" />}
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-lg text-purple-400/80 hover:text-white hover:bg-purple-900/40 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Mode Switcher */}
@@ -365,9 +390,7 @@ export const TheKnotOverlay: React.FC = () => {
         className="group relative flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-950/90 via-[#180a30] to-purple-900/90 hover:from-purple-900 hover:to-violet-800 border border-purple-500/50 hover:border-cyan-400/80 text-white shadow-xl shadow-purple-950/80 hover:shadow-cyan-500/20 transition-all duration-300 backdrop-blur-md"
       >
         <div className="relative">
-          <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-500 to-cyan-400 flex items-center justify-center shadow-md">
-            <Sparkles className="w-3 h-3 text-white group-hover:rotate-12 transition-transform" />
-          </div>
+          <ChronosLogo size="xs" animated={true} />
           {proposals.length > 0 && (
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-purple-950 animate-pulse" />
           )}

@@ -55,6 +55,7 @@ import {
   Compass,
   Folder
 } from "lucide-react";
+import { ChronosLogo } from "../components/ChronosLogo";
 import { CyberRayBeam } from "../components/CyberRayBeam";
 import { NewWingmanModal } from "../components/NewWingmanModal";
 import { ShieldWingBot } from "../types/shieldwing";
@@ -1013,12 +1014,15 @@ export const Landing: React.FC = () => {
                 </div>
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center space-x-2.5">
-                <span>Chronos Desktop AI Organizer</span>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-purple-900/60 text-purple-300 border border-purple-500/30">
-                  WINGMAN NATIVE
-                </span>
-              </h3>
+              <div className="flex items-center space-x-3 mb-2">
+                <ChronosLogo size="md" showText={false} animated={true} />
+                <h3 className="text-2xl sm:text-3xl font-bold text-white flex items-center space-x-2.5">
+                  <span>Chronos Desktop AI Organizer</span>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-purple-900/60 text-purple-300 border border-purple-500/30">
+                    NŪS NATIVE EDITION
+                  </span>
+                </h3>
+              </div>
               
               <p className="text-sm text-[#a9a9aa] leading-relaxed mb-6">
                 Your own academic Jarvis on desktop. Ingests dense syllabi, maps out living semester deadlines, answers screen queries, and proposes actions you approve first.
@@ -1188,15 +1192,33 @@ export const Landing: React.FC = () => {
 
             {/* Bottom Actions for Card 1 */}
             <div className="pt-4 border-t border-[#1f1638] flex flex-wrap items-center justify-between gap-3">
-              <button
-                onClick={() => navigate("/wingman?tab=nus")}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs font-bold shadow-md shadow-purple-900/30 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2"
-              >
-                <GraduationCap className="w-4 h-4" />
-                <span>OPEN CHRONOS DESKTOP WORKSPACE &rarr;</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => navigate("/chronos")}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs font-bold shadow-md shadow-purple-900/30 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2"
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <span>OPEN CHRONOS WORKSPACE &rarr;</span>
+                </button>
+                <a
+                  href={`${GITHUB_RELEASE_BASE}/Chronos-Desktop-Setup-1.0.0.exe`}
+                  download="Chronos-Desktop-Setup-1.0.0.exe"
+                  className="px-4 py-2.5 rounded-xl bg-white text-black text-xs font-bold shadow-md hover:scale-[1.02] transition-all flex items-center space-x-1.5"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#a855f7]" />
+                  <span>DOWNLOAD CHRONOS (.EXE)</span>
+                </a>
+                <a
+                  href={`${GITHUB_RELEASE_BASE}/Chronos-Portable.exe`}
+                  download="Chronos-Portable.exe"
+                  className="px-3.5 py-2.5 rounded-xl border border-purple-500/40 text-purple-200 text-xs font-mono hover:bg-purple-950/40 transition-all"
+                  title="Single-file portable executable"
+                >
+                  <span>PORTABLE .EXE</span>
+                </a>
+              </div>
               <a
-                href="http://localhost:8000/v1/nus/export-ics"
+                href="/v1/nus/export-ics"
                 target="_blank"
                 rel="noreferrer"
                 download="chronos_semester_deadlines.ics"
@@ -2261,6 +2283,49 @@ export const Landing: React.FC = () => {
           <p className="text-[#a9a9aa] text-base leading-relaxed">
             Native desktop workspace and developer CLI. Zero cloud dependencies. Pure cryptographic custody over your keys and code.
           </p>
+        </div>
+
+        {/* Featured Card: Chronos Desktop Standalone Installer */}
+        <div className="mb-10 p-6 sm:p-8 rounded-3xl border-2 border-[#a855f7]/60 bg-gradient-to-r from-[#170c30] via-[#120a24] to-[#170c30] shadow-2xl shadow-purple-900/40 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-4">
+            <ChronosLogo size="lg" animated={true} />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-[#c084fc] border border-purple-500/40">
+                  SEPARATE STANDALONE EXECUTABLE
+                </span>
+                <span className="text-xs text-zinc-400">• Nūs Native Engine</span>
+              </div>
+              <h3 className="text-2xl font-bold text-white mt-1">Chronos Desktop AI Agent (Windows / macOS / Linux)</h3>
+              <p className="text-xs sm:text-sm text-[#a9a9aa] mt-1 max-w-2xl leading-relaxed">
+                Dedicated local-first semester & coursework intelligence agent with The Knot overlay companion. Ingests syllabi, maps living deadlines, answers screen queries, and executes voice commands locally.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <a
+              href={`${GITHUB_RELEASE_BASE}/Chronos-Desktop-Setup-1.0.0.exe`}
+              download="Chronos-Desktop-Setup-1.0.0.exe"
+              className="px-5 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2 border border-purple-200"
+            >
+              <Download className="w-4 h-4 text-[#a855f7]" />
+              <span>DOWNLOAD CHRONOS (.EXE)</span>
+            </a>
+            <a
+              href={`${GITHUB_RELEASE_BASE}/Chronos-Portable.exe`}
+              download="Chronos-Portable.exe"
+              className="px-4 py-3 rounded-full bg-[#0a0518] border border-purple-500/60 text-purple-200 font-mono text-xs hover:border-purple-300 transition-all flex items-center gap-1.5"
+            >
+              <span>PORTABLE (.EXE)</span>
+            </a>
+            <a
+              href={`${GITHUB_RELEASE_BASE}/Chronos-Desktop-universal.dmg`}
+              download="Chronos-Desktop-universal.dmg"
+              className="px-4 py-3 rounded-full bg-[#0a0518] border border-[#1f1638] text-zinc-400 hover:text-white font-mono text-xs hover:border-purple-500/40 transition-all"
+            >
+              <span>macOS (.DMG)</span>
+            </a>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

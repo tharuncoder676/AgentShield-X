@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="cGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" />
+      <stop offset="60%" stop-color="#9333ea" />
+      <stop offset="100%" stop-color="#581c87" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <radialGradient id="cBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e1038" />
+      <stop offset="100%" stop-color="#090514" />
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" rx="32" fill="url(#cBg)" stroke="#3b1d6e" stroke-width="2"/>
+  <circle cx="64" cy="64" r="50" stroke="#7e22ce" stroke-width="1.5" stroke-dasharray="4 6" opacity="0.6"/>
+  
+  <!-- Knot lemniscate -->
+  <path d="M 64,64 C 74,46 98,44 104,57 C 112,71 100,88 84,88 C 70,88 64,72 64,64 Z" fill="none" stroke="url(#cGrad)" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M 64,64 C 54,82 30,84 24,71 C 16,57 28,40 44,40 C 58,40 64,56 64,64 Z" fill="none" stroke="url(#cyanGrad)" stroke-width="6.5" stroke-linecap="round"/>
+  
+  <!-- Hourglass lines -->
+  <path d="M 48,36 L 80,36 L 68,60 L 80,92 L 48,92 L 60,60 Z" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.65"/>
+  
+  <!-- Core Star -->
+  <circle cx="64" cy="64" r="7" fill="url(#cGrad)"/>
+  <circle cx="64" cy="64" r="3.5" fill="#ffffff"/>
+</svg>

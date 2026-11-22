@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ChronosLogo } from "./ChronosLogo";
 import {
   Sparkles,
   BookOpen,
@@ -332,13 +333,14 @@ export const NusDesktopView: React.FC = () => {
       {/* Hero Header */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-[#120a24]/90 via-[#180a30]/80 to-[#120a24]/90 border border-purple-900/40 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-purple-300">
-              <GraduationCap className="w-6 h-6 text-cyan-300" />
-            </div>
+          <div className="flex items-center gap-3">
+            <ChronosLogo size="lg" showText={false} animated={true} />
             <div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-purple-100 to-cyan-300 bg-clip-text text-transparent">
-                Chronos Desktop • Local-First Semester & Task Organizer
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-purple-100 to-cyan-300 bg-clip-text text-transparent flex items-center gap-2">
+                <span>Chronos Desktop</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#a855f7]/25 text-[#c084fc] border border-[#a855f7]/40 uppercase tracking-widest font-semibold">
+                  Nūs Native Edition
+                </span>
               </h2>
               <div className="flex items-center gap-2 text-xs text-purple-300/80 mt-0.5">
                 <span>Autonomous syllabus intelligence with human-in-the-loop approval cards</span>
@@ -351,7 +353,26 @@ export const NusDesktopView: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Direct Chronos Windows .exe Download Buttons */}
+          <a
+            href="https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Desktop-Setup-1.0.0.exe"
+            download="Chronos-Desktop-Setup-1.0.0.exe"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#a855f7] via-[#9333ea] to-[#7e22ce] text-white text-xs font-bold shadow-lg shadow-purple-900/50 hover:scale-[1.02] transition-all border border-purple-400/40"
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-200" />
+            <span>Download Chronos (.exe)</span>
+          </a>
+
+          <a
+            href="https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Portable.exe"
+            download="Chronos-Portable.exe"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0a0518] hover:bg-purple-950/60 border border-purple-600/50 hover:border-purple-400 text-purple-200 text-xs font-mono transition-all"
+            title="Download portable single-file executable requiring no installation"
+          >
+            <span>Portable .exe</span>
+          </a>
+
           {/* BYOI Model Selector */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0a0518] border border-purple-800/60 text-xs font-mono">
             <Cpu className="w-3.5 h-3.5 text-purple-400" />
@@ -370,10 +391,10 @@ export const NusDesktopView: React.FC = () => {
           {/* Export to ICS Calendar */}
           <button
             onClick={handleExportIcs}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-900/40 hover:bg-purple-800/50 text-purple-200 border border-purple-700/40 text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-900/40 hover:bg-purple-800/50 text-purple-200 border border-purple-700/40 text-xs font-semibold transition-colors"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-300" />
-            Export .ics Calendar
+            <Calendar className="w-3.5 h-3.5 text-cyan-300" />
+            <span>Export .ics</span>
           </button>
         </div>
       </div>

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Purple Quantum Glow Gradient -->
+    <linearGradient id="chronosPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e9d5ff" />
+      <stop offset="25%" stop-color="#c084fc" />
+      <stop offset="70%" stop-color="#9333ea" />
+      <stop offset="100%" stop-color="#6b21a8" />
+    </linearGradient>
+
+    <!-- Electric Cyan-Indigo Temporal Stream -->
+    <linearGradient id="chronosCyanStream" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+
+    <!-- Ambient Center Core Glow -->
+    <radialGradient id="chronosCoreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f5d0fe" stop-opacity="1" />
+      <stop offset="35%" stop-color="#c084fc" stop-opacity="0.8" />
+      <stop offset="70%" stop-color="#7e22ce" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#0b0717" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Neon Drop Filter -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Ambient Backdrop Glow -->
+  <circle cx="256" cy="256" r="210" fill="url(#chronosCoreGlow)" />
+
+  <!-- Outer Astrolabe Chronometer Ring -->
+  <circle cx="256" cy="256" r="230" stroke="url(#chronosPurpleGrad)" stroke-width="2.5" stroke-dasharray="12 8" opacity="0.45" />
+  <circle cx="256" cy="256" r="216" stroke="url(#chronosCyanStream)" stroke-width="1.5" opacity="0.7" />
+
+  <!-- 12 Chronometer Cardinal Ticks -->
+  <g stroke="url(#chronosPurpleGrad)" stroke-width="3" stroke-linecap="round" opacity="0.8">
+    <line x1="256" y1="20" x2="256" y2="40" />
+    <line x1="256" y1="472" x2="256" y2="492" />
+    <line x1="20" y1="256" x2="40" y2="256" />
+    <line x1="472" y1="256" x2="492" y2="256" />
+    <line x1="89" y1="89" x2="105" y2="105" stroke-width="2" />
+    <line x1="423" y1="89" x2="407" y2="105" stroke-width="2" />
+    <line x1="89" y1="423" x2="105" y2="407" stroke-width="2" />
+    <line x1="423" y1="423" x2="407" y2="407" stroke-width="2" />
+  </g>
+
+  <!-- Concentric Orbital Accents -->
+  <circle cx="256" cy="256" r="160" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 16" opacity="0.35" />
+
+  <!-- The Knot / Infinity Lemniscate Geometry (Time Continuity Loop) -->
+  <g filter="url(#neonGlow)">
+    <!-- Right Loop of Knot -->
+    <path
+      d="M 256,256 C 290,190 380,180 405,225 C 435,275 390,340 330,340 C 280,340 256,285 256,256 Z"
+      fill="none"
+      stroke="url(#chronosPurpleGrad)"
+      stroke-width="18"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <!-- Left Loop of Knot -->
+    <path
+      d="M 256,256 C 222,322 132,332 107,287 C 77,237 122,172 182,172 C 232,172 256,227 256,256 Z"
+      fill="none"
+      stroke="url(#chronosCyanStream)"
+      stroke-width="18"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <!-- Central Hourglass Convergence / Temporal Shard Overlays -->
+  <g filter="url(#softGlow)" opacity="0.9">
+    <path
+      d="M 196,150 L 316,150 L 272,240 L 316,362 L 196,362 L 240,240 Z"
+      fill="none"
+      stroke="url(#chronosPurpleGrad)"
+      stroke-width="4.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      opacity="0.8"
+    />
+  </g>
+
+  <!-- Singularity Core Orb (The Knot Heart) -->
+  <circle cx="256" cy="256" r="28" fill="url(#chronosPurpleGrad)" filter="url(#neonGlow)" />
+  <circle cx="256" cy="256" r="14" fill="#ffffff" />
+
+  <!-- 4-Point Temporal Flare -->
+  <g fill="#ffffff" opacity="0.9" filter="url(#neonGlow)">
+    <path d="M 256,224 Q 256,256 288,256 Q 256,256 256,288 Q 256,256 224,256 Q 256,256 256,224 Z" />
+  </g>
+
+  <!-- Orbiting Quantum Chronos Nodes -->
+  <circle cx="370" cy="190" r="7" fill="#38bdf8" filter="url(#neonGlow)" />
+  <circle cx="142" cy="322" r="7" fill="#e879f9" filter="url(#neonGlow)" />
+  <circle cx="256" cy="70" r="5" fill="#c084fc" />
+  <circle cx="256" cy="442" r="5" fill="#818cf8" />
+</svg>
