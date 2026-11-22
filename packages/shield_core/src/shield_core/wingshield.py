@@ -1498,6 +1498,68 @@ class WingshieldCopilotEngine:
             speak(f"Scheduled task: {task_prompt}", wait=False)
             return msg, False
 
+        # Academic & Syllabus Task Intelligence (Chronos / Desktop Companion)
+        if any(k in low for k in ("deadlines", "course deadlines", "syllabus", "my exams", "my assignments", "semester timeline", "course schedule", "parse syllabus", "exam schedule", "show deadlines", "check deadlines")):
+            try:
+                store_path = Path(__file__).resolve().parents[4] / "services" / "data" / "nus_desktop_store.json"
+                if store_path.exists():
+                    import json
+                    with open(store_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    deadlines = data.get("deadlines", [])
+                    courses = data.get("courses", [])
+                    if deadlines:
+                        lines = [f"Academic & Semester Deadlines ({len(deadlines)} items across {len(courses)} courses):"]
+                        for dl in deadlines[:6]:
+                            lines.append(f"  * [{dl.get('course_code', 'COURSE')}] {dl.get('title', 'Task')} - Due: {dl.get('date_display', 'TBD')} ({dl.get('weight_percent', 0)}%)")
+                        msg = "\n".join(lines)
+                        summary_speak = f"You have {len(deadlines)} registered course deadlines. Next is {deadlines[0].get('title')} due on {deadlines[0].get('date_display')}."
+                        speak(summary_speak, wait=False)
+                        return msg, False
+            except Exception:
+                pass
+            msg = "No course deadlines currently indexed. You can parse a syllabus in Wingman."
+            speak(msg, wait=False)
+            return msg, False
+
+        # Natural File & Folder Creation
+        if any(low.startswith(p) for p in ("create folder ", "make folder ", "make directory ", "create directory ", "mkdir ")):
+            folder_name = re.sub(r"^(create folder|make folder|make directory|create directory|mkdir)\s+", "", cmd, flags=re.IGNORECASE).strip()
+            folder_path = Path.cwd() / folder_name
+            try:
+                folder_path.mkdir(parents=True, exist_ok=True)
+                msg = f"Directory '{folder_name}' created successfully at {folder_path}."
+                speak(f"Created folder {folder_name}", wait=False)
+                return msg, False
+            except Exception as e:
+                msg = f"Failed to create directory '{folder_name}': {e}"
+                speak(msg, wait=False)
+                return msg, False
+
+        if any(low.startswith(p) for p in ("create file ", "make file ", "touch ")):
+            file_name = re.sub(r"^(create file|make file|touch)\s+", "", cmd, flags=re.IGNORECASE).strip()
+            file_path = Path.cwd() / file_name
+            try:
+                file_path.touch(exist_ok=True)
+                msg = f"File '{file_name}' created successfully at {file_path}."
+                speak(f"Created file {file_name}", wait=False)
+                return msg, False
+            except Exception as e:
+                msg = f"Failed to create file '{file_name}': {e}"
+                speak(msg, wait=False)
+                return msg, False
+
+        # Natural Developer Tasks
+        if any(k in low for k in ("run tests", "run unit tests", "run pytest", "test suite")):
+            speak("Executing test suite with pytest.", wait=False)
+            out = ComputerAutomation.execute_cli_command("pytest tests/unit/test_nus_agent.py tests/unit/test_hard_negatives.py")
+            return f"Pytest Execution Result:\n{out}", False
+
+        if any(k in low for k in ("git status", "check git status", "repo status")):
+            out = ComputerAutomation.execute_cli_command("git status -s")
+            speak("Displaying git repository status.", wait=False)
+            return f"$ git status -s\n{out if out else '(Clean working tree)'}", False
+
         # 6. Calendar Event Scheduling
         if any(k in low for k in ("set calendar", "schedule meeting", "create event", "add calendar", "set meeting")):
             event_title = cmd
