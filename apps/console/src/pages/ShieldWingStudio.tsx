@@ -143,7 +143,7 @@ export const ShieldWingStudio: React.FC = () => {
       setActiveTab("channels");
     } else if (path.includes("task") || tabParam === "tasks") {
       setActiveTab("tasks");
-    } else if (path.includes("nus") || path.includes("syllabus") || tabParam === "nus") {
+    } else if (path.includes("nus") || path.includes("chronos") || path.includes("syllabus") || tabParam === "nus" || tabParam === "chronos") {
       setActiveTab("nus");
     }
   }, [location.pathname, location.search]);
@@ -1134,7 +1134,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
               }`}
             />
             <GraduationCap size={14} className="text-cyan-400" />
-            <span>Nūs Desktop</span>
+            <span>Chronos Desktop</span>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-600/30 text-cyan-200 border border-cyan-500/40 font-mono">
               AI Agent
             </span>
@@ -1230,7 +1230,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
                   ? "bg-cyan-600 text-white border-cyan-400 shadow-md shadow-cyan-600/40"
                   : "border-purple-500/20 bg-purple-950/20 hover:bg-purple-900/40 text-purple-300"
               }`}
-              title="Nūs Desktop • Local-First Semester & Task Organizer Agent"
+              title="Chronos Desktop • Local-First Semester & Task Organizer Agent"
             >
               <GraduationCap size={14} />
             </button>
@@ -2137,7 +2137,7 @@ All deterministic outputs verified against AgentShield-X safety policies with su
             </div>
           )}
 
-          {/* TAB 5: NŪS DESKTOP - LOCAL-FIRST SEMESTER & TASK ORGANIZER */}
+          {/* TAB 5: CHRONOS DESKTOP - LOCAL-FIRST SEMESTER & TASK ORGANIZER */}
           {activeTab === "nus" && (
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 animate-fadeIn pb-24">
               <NusDesktopView />

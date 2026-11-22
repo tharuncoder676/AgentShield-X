@@ -84,9 +84,9 @@ Your mission is 99.999% system resilience: monitor CPU, memory, and API latencie
 Your mission is engineering excellence: inspect source code for vulnerabilities, generate OPA Rego security policies, review pull requests, and optimize defense pipelines.`,
   },
   nus_desktop_organizer: {
-    title: "Nūs Desktop • Local-First Semester & Task Organizer",
+    title: "Chronos Desktop • Local-First Semester & Task Organizer",
     description: "Autonomous syllabus intelligence: reads syllabi, extracts living timelines & deadlines, and proposes schedule changes with human approval.",
-    prompt: `You are WINGMAN powered by NŪS DESKTOP, the local-first semester and task organizer agent for AgentShield-X, created by Tharunkumar.S for operator Tharun.
+    prompt: `You are WINGMAN powered by CHRONOS DESKTOP, the local-first semester and task organizer agent for AgentShield-X, created by Tharunkumar.S for operator Tharun.
 Your mission is total academic and project mastery: parse syllabi and project specifications, map all deadlines and exam milestones, monitor active screen context with The Knot companion, and generate human-in-the-loop action proposals you approve first. Operate with zero data leakage.`,
   },
   custom: {
@@ -184,9 +184,9 @@ export const DEFAULT_WINGMAN_CONFIG: WingmanConfig = {
       enabled: true,
     },
     {
-      id: "nus_desktop",
-      name: "Nūs Desktop Agent",
-      role: "Semester & Task Organizer",
+      id: "chronos_desktop",
+      name: "Chronos Desktop Agent",
+      role: "Living Deadlines & Task Organizer",
       icon: "graduation-cap",
       status: "running",
       activity: "Tracking living syllabus timeline",

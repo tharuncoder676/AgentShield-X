@@ -204,6 +204,22 @@ export const App: React.FC = () => {
               }
             />
             <Route
+              path="/chronos"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chronos-desktop"
+              element={
+                <ProtectedRoute>
+                  <ShieldWingStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/nus"
               element={
                 <ProtectedRoute>
@@ -236,6 +252,8 @@ export const App: React.FC = () => {
               <Route path="tools" element={<ShieldWingStudio />} />
               <Route path="integrations" element={<ShieldWingStudio />} />
               <Route path="channels" element={<ShieldWingStudio />} />
+              <Route path="chronos" element={<ShieldWingStudio />} />
+              <Route path="chronos-desktop" element={<ShieldWingStudio />} />
               <Route path="nus" element={<ShieldWingStudio />} />
               <Route path="nus-desktop" element={<ShieldWingStudio />} />
               <Route path="overview" element={<Overview />} />

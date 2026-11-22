@@ -22,7 +22,7 @@
    - 5.7 [MCP Schema Scanner & Dynamic Tool Rug-Pull Guard (`shield_mcp`)](#57-mcp-schema-scanner--dynamic-tool-rug-pull-guard)
    - 5.8 [Shadow Execution & Speculative Tool Sandboxing (`shield_core.shadow_agent`)](#58-shadow-execution--speculative-tool-sandboxing)
    - 5.9 [Tamper-Evident SHA-256 WAL Audit Ledger (`services.ingest`)](#59-tamper-evident-sha-256-wal-audit-ledger)
-   - 5.10 [Nūs Desktop AI Agent Subsystem (`control_api.routes.nus_agent`)](#510-nūs-desktop-ai-agent-subsystem)
+   - 5.10 [Chronos Desktop AI Agent Subsystem (`control_api.routes.nus_agent`)](#510-chronos-desktop-ai-agent-subsystem)
 6. [Web Console & UI Applications (`apps/console`)](#6-web-console--ui-applications)
    - 6.1 [Cyberpunk Purple Theme Design System](#61-cyberpunk-purple-theme-design-system)
    - 6.2 [ShieldWing Studio](#62-shieldwing-studio)
@@ -320,8 +320,8 @@ The core runtime decision engine (`services/decision/src/decision/service.py`) p
 - **Cryptographic Hash Chaining:** Every audit entry records `previous_hash`, `timestamp`, `event_payload`, `decision`, and calculates a deterministic `current_hash = SHA256(prev_hash + payload + decision)`.
 - **SQLite WAL High-Throughput Persistence:** Employs Write-Ahead Logging (WAL) ensuring thread-safe, lock-free concurrent writes with sub-millisecond commitment.
 
-### 5.10 Nūs Desktop AI Agent Subsystem (`control_api.routes.nus_agent`)
-- **Replication of `potlakai/nus-desktop`:** Full autonomous desktop organizer agent integrated into Wingman and ShieldWing Studio.
+### 5.10 Chronos Desktop AI Agent Subsystem (`control_api.routes.nus_agent`)
+- **Chronos Desktop Flagship Agent:** Named after the Titan of Time and Deadlines (joining Atlas, Echo, Cipher, and Nova in the Wingman fleet). Replicates the local-first academic & task organizer architecture from `potlakai/nus-desktop` into AgentShield-X and Wingman.
 - **Local-First & Zero Data Leakage:** Ingestion, parsing, and scheduling are executed locally on the workstation with BYOI (Claude 3.5 Sonnet, Gemini 2.0 Flash, Local Ollama Wingshield, NVIDIA Nemotron).
 - **Automated Syllabus & Document Intelligence:** Parses course syllabi, assignments, and project briefs to extract living chronological timelines, exam dates, grading weight percentages, and estimated focus hours.
 - **Human-in-the-Loop "Approve First" Pattern:** Generates structured action proposals (focus blocks, calendar sync, conflict triage). The AI never blindly mutates calendars or tasks without explicit user approval.

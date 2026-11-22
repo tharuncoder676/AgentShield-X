@@ -97,7 +97,7 @@ export const TheKnotOverlay: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: query.trim(),
-          screen_context: "Active Wingman Command Center / Nūs Desktop View"
+          screen_context: "Active Wingman Command Center / Chronos Desktop View"
         })
       });
 
@@ -121,7 +121,7 @@ export const TheKnotOverlay: React.FC = () => {
     } else if (qLower.includes("exam") || qLower.includes("midterm")) {
       setResponse("You have the **CS 410 Midterm Exam** on October 27 (25% weight). All study materials and lecture slides have been mapped into your living timeline.");
     } else {
-      setResponse(`Nūs Knot Companion analyzing active screen. Everything is running smoothly under AgentShield-X dual-rail protection with 0 pending security alerts.`);
+      setResponse(`Chronos Knot Companion analyzing active screen. Everything is running smoothly under AgentShield-X dual-rail protection with 0 pending security alerts.`);
     }
   };
 
@@ -217,7 +217,7 @@ export const TheKnotOverlay: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-[10px] text-purple-300/70">
-                  Nūs Desktop Screen & Semester Intelligence
+                  Chronos Desktop Screen & Semester Intelligence
                 </div>
               </div>
             </div>
@@ -261,7 +261,7 @@ export const TheKnotOverlay: React.FC = () => {
                   <div className="p-3 rounded-xl bg-purple-950/60 border border-purple-500/30 text-xs text-purple-100 leading-relaxed shadow-inner">
                     <div className="flex items-center gap-1.5 text-[10px] font-mono text-cyan-300 font-bold mb-1">
                       <Zap className="w-3 h-3" />
-                      Nūs Intelligence Advice:
+                      Chronos Intelligence Advice:
                     </div>
                     {response}
                   </div>

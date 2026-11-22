@@ -338,7 +338,7 @@ export const NusDesktopView: React.FC = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-purple-100 to-cyan-300 bg-clip-text text-transparent">
-                Nūs Desktop • Local-First Semester & Task Organizer
+                Chronos Desktop • Local-First Semester & Task Organizer
               </h2>
               <div className="flex items-center gap-2 text-xs text-purple-300/80 mt-0.5">
                 <span>Autonomous syllabus intelligence with human-in-the-loop approval cards</span>
@@ -520,7 +520,7 @@ export const NusDesktopView: React.FC = () => {
                   </span>
                 </h3>
                 <p className="text-xs text-purple-300/70 mt-0.5">
-                  Following Nūs Desktop safety philosophy: The AI agent proposes schedule & calendar changes, but you approve first
+                  Following Chronos Desktop safety philosophy: The AI agent proposes schedule & calendar changes, but you approve first
                 </p>
               </div>
             </div>
@@ -711,3 +711,6 @@ export const NusDesktopView: React.FC = () => {
     </div>
   );
 };
+
+export const ChronosDesktopView = NusDesktopView;
+

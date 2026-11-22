@@ -589,7 +589,7 @@ export const Landing: React.FC = () => {
             <a href="#ways" className="hover:text-white transition-colors flex items-center space-x-1.5 text-purple-300 font-medium">
               <span>The Ways In</span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                NŪS
+                CHRONOS
               </span>
             </a>
             <a href="#how-it-helps" className="hover:text-white transition-colors">Adaptive Guidance</a>
@@ -669,7 +669,7 @@ export const Landing: React.FC = () => {
               >
                 <span>The Ways In</span>
                 <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  NŪS
+                  CHRONOS
                 </span>
               </a>
               <a
@@ -891,7 +891,7 @@ export const Landing: React.FC = () => {
                 className="px-6 py-3.5 rounded-full border border-purple-500/50 bg-[#160a2c] hover:bg-[#220f44] text-purple-200 hover:text-white font-sans font-bold text-xs sm:text-sm uppercase tracking-wider hover:border-[#a855f7] transition-all flex items-center space-x-2 shadow-lg shadow-purple-900/30"
               >
                 <GraduationCap className="w-4 h-4 text-[#c084fc]" />
-                <span>TRY NŪS DESKTOP &rarr;</span>
+                <span>TRY CHRONOS DESKTOP &rarr;</span>
               </button>
             </div>
 
@@ -974,7 +974,7 @@ export const Landing: React.FC = () => {
             One Native App. Two Powerful Ways In.
           </h2>
           <p className="text-[#a9a9aa] text-base sm:text-lg leading-relaxed">
-            Whether you need a <span className="text-white font-medium">local-first desktop companion</span> to organize courses and deadlines with Nūs, or an <span className="text-purple-300 font-medium">autonomous swarm with &lt;0.18ms runtime armor</span>, AgentShield-X gives you both under one roof.
+            Whether you need a <span className="text-white font-medium">local-first desktop companion</span> to organize courses and deadlines with Chronos, or an <span className="text-purple-300 font-medium">autonomous swarm with &lt;0.18ms runtime armor</span>, AgentShield-X gives you both under one roof.
           </p>
 
           {/* Quick Tab Selector for Mobile / View Focus */}
@@ -988,7 +988,7 @@ export const Landing: React.FC = () => {
               }`}
             >
               <GraduationCap className="w-4 h-4" />
-              <span>Way 1: Nūs Desktop Organizer</span>
+              <span>Way 1: Chronos Desktop Organizer</span>
             </button>
             <button
               onClick={() => setWaysForkTab("guardrail")}
@@ -1008,7 +1008,7 @@ export const Landing: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
           
           {/* =========================================================================
-              CARD 1: NŪS DESKTOP AI ORGANIZER (Replicating potlakai/nus-desktop)
+              CARD 1: CHRONOS DESKTOP AI ORGANIZER (Living Semester & Deadlines)
               ========================================================================= */}
           <div className={`rounded-3xl border transition-all duration-300 backdrop-blur-xl p-7 sm:p-8 flex flex-col justify-between shadow-2xl ${
             waysForkTab === "nus"
@@ -1033,9 +1033,9 @@ export const Landing: React.FC = () => {
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center space-x-2.5">
-                <span>Nūs Desktop AI Organizer</span>
+                <span>Chronos Desktop AI Organizer</span>
                 <span className="text-xs font-mono px-2 py-0.5 rounded bg-purple-900/60 text-purple-300 border border-purple-500/30">
-                  PORTED TO AGENTSHIELD
+                  WINGMAN NATIVE
                 </span>
               </h3>
               
@@ -1097,7 +1097,7 @@ export const Landing: React.FC = () => {
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-800 text-[11px] text-zinc-400">
                   <span className="flex items-center space-x-2 text-white">
                     <BookOpen className="w-3.5 h-3.5 text-[#a855f7]" />
-                    <span className="font-bold">Live Nūs Syllabus Ingestion Preview</span>
+                    <span className="font-bold">Live Chronos Syllabus Ingestion Preview</span>
                   </span>
                   <span className="text-emerald-400">Deterministic AST Guard</span>
                 </div>
@@ -1212,13 +1212,13 @@ export const Landing: React.FC = () => {
                 className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white text-xs font-bold shadow-md shadow-purple-900/30 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2"
               >
                 <GraduationCap className="w-4 h-4" />
-                <span>OPEN NŪS DESKTOP WORKSPACE &rarr;</span>
+                <span>OPEN CHRONOS DESKTOP WORKSPACE &rarr;</span>
               </button>
               <a
                 href="http://localhost:8000/v1/nus/export-ics"
                 target="_blank"
                 rel="noreferrer"
-                download="nus_semester_deadlines.ics"
+                download="chronos_semester_deadlines.ics"
                 className="text-xs font-mono text-zinc-400 hover:text-[#c084fc] flex items-center space-x-1 transition-colors"
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -1394,7 +1394,7 @@ export const Landing: React.FC = () => {
             {showDidItInstall && (
               <div className="px-4 sm:px-6 pb-6 pt-2 border-t border-[#1f1638] text-xs text-[#a9a9aa] space-y-4">
                 <p>
-                  Because AgentShield-X and Nūs Desktop are self-contained developer and student tools, your operating system may display a security prompt the very first time you launch:
+                  Because AgentShield-X and Chronos Desktop are self-contained developer and student tools, your operating system may display a security prompt the very first time you launch:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-3.5 rounded-xl bg-[#120a24]/60 border border-purple-900/40">
