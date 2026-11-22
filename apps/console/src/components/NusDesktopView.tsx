@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChronosLogo } from "./ChronosLogo";
+import { DownloadSetupCodeModal } from "./DownloadSetupCodeModal";
 import {
   Sparkles,
   BookOpen,
@@ -76,6 +77,7 @@ export const NusDesktopView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModel, setSelectedModel] = useState<string>("claude-3-5-sonnet");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -358,6 +360,7 @@ export const NusDesktopView: React.FC = () => {
           <a
             href="https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Desktop-Setup-1.0.0.exe"
             download="Chronos-Desktop-Setup-1.0.0.exe"
+            onClick={() => setShowSetupModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#a855f7] via-[#9333ea] to-[#7e22ce] text-white text-xs font-bold shadow-lg shadow-purple-900/50 hover:scale-[1.02] transition-all border border-purple-400/40"
           >
             <Download className="w-3.5 h-3.5 text-cyan-200" />
@@ -367,6 +370,7 @@ export const NusDesktopView: React.FC = () => {
           <a
             href="https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Portable.exe"
             download="Chronos-Portable.exe"
+            onClick={() => setShowSetupModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0a0518] hover:bg-purple-950/60 border border-purple-600/50 hover:border-purple-400 text-purple-200 text-xs font-mono transition-all"
             title="Download portable single-file executable requiring no installation"
           >
@@ -729,6 +733,12 @@ export const NusDesktopView: React.FC = () => {
           })}
         </div>
       </div>
+
+      <DownloadSetupCodeModal
+        isOpen={showSetupModal}
+        onClose={() => setShowSetupModal(false)}
+        appName="Chronos Desktop"
+      />
     </div>
   );
 };

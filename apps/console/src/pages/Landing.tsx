@@ -56,6 +56,7 @@ import {
   Folder
 } from "lucide-react";
 import { ChronosLogo } from "../components/ChronosLogo";
+import { DownloadSetupCodeModal } from "../components/DownloadSetupCodeModal";
 import { CyberRayBeam } from "../components/CyberRayBeam";
 import { NewWingmanModal } from "../components/NewWingmanModal";
 import { ShieldWingBot } from "../types/shieldwing";
@@ -78,6 +79,7 @@ export const Landing: React.FC = () => {
   const [videoFormat, setVideoFormat] = useState<"horizontal" | "vertical">("horizontal");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [detectedOS, setDetectedOS] = useState<"mac" | "windows" | "linux">("mac");
+  const [showChronosSetupModal, setShowChronosSetupModal] = useState(false);
   const navigate = useNavigate();
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [keyModalTab, setKeyModalTab] = useState<"trial" | "free" | "purchase" | "signin">("trial");
@@ -1203,6 +1205,7 @@ export const Landing: React.FC = () => {
                 <a
                   href={`${GITHUB_RELEASE_BASE}/Chronos-Desktop-Setup-1.0.0.exe`}
                   download="Chronos-Desktop-Setup-1.0.0.exe"
+                  onClick={() => setShowChronosSetupModal(true)}
                   className="px-4 py-2.5 rounded-xl bg-white text-black text-xs font-bold shadow-md hover:scale-[1.02] transition-all flex items-center space-x-1.5"
                 >
                   <Download className="w-3.5 h-3.5 text-[#a855f7]" />
@@ -1211,6 +1214,7 @@ export const Landing: React.FC = () => {
                 <a
                   href={`${GITHUB_RELEASE_BASE}/Chronos-Portable.exe`}
                   download="Chronos-Portable.exe"
+                  onClick={() => setShowChronosSetupModal(true)}
                   className="px-3.5 py-2.5 rounded-xl border border-purple-500/40 text-purple-200 text-xs font-mono hover:bg-purple-950/40 transition-all"
                   title="Single-file portable executable"
                 >
@@ -2306,6 +2310,7 @@ export const Landing: React.FC = () => {
             <a
               href={`${GITHUB_RELEASE_BASE}/Chronos-Desktop-Setup-1.0.0.exe`}
               download="Chronos-Desktop-Setup-1.0.0.exe"
+              onClick={() => setShowChronosSetupModal(true)}
               className="px-5 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2 border border-purple-200"
             >
               <Download className="w-4 h-4 text-[#a855f7]" />
@@ -2314,6 +2319,7 @@ export const Landing: React.FC = () => {
             <a
               href={`${GITHUB_RELEASE_BASE}/Chronos-Portable.exe`}
               download="Chronos-Portable.exe"
+              onClick={() => setShowChronosSetupModal(true)}
               className="px-4 py-3 rounded-full bg-[#0a0518] border border-purple-500/60 text-purple-200 font-mono text-xs hover:border-purple-300 transition-all flex items-center gap-1.5"
             >
               <span>PORTABLE (.EXE)</span>
@@ -2321,6 +2327,7 @@ export const Landing: React.FC = () => {
             <a
               href={`${GITHUB_RELEASE_BASE}/Chronos-Desktop-universal.dmg`}
               download="Chronos-Desktop-universal.dmg"
+              onClick={() => setShowChronosSetupModal(true)}
               className="px-4 py-3 rounded-full bg-[#0a0518] border border-[#1f1638] text-zinc-400 hover:text-white font-mono text-xs hover:border-purple-500/40 transition-all"
             >
               <span>macOS (.DMG)</span>
@@ -3538,6 +3545,13 @@ export const Landing: React.FC = () => {
           setIsKeyModalOpen(false);
           navigate("/overview");
         }}
+      />
+
+      {/* Chronos Setup Code & Attribution Modal */}
+      <DownloadSetupCodeModal
+        isOpen={showChronosSetupModal}
+        onClose={() => setShowChronosSetupModal(false)}
+        appName="Chronos Desktop"
       />
     </div>
   );
