@@ -1,22 +1,29 @@
 {
-  "name": "agentshield-x-monorepo",
-  "version": "2.4.0",
+  "name": "chronos-desktop",
+  "version": "1.0.0",
+  "description": "Chronos Desktop: the academic AI organizer and Knot companion that hears you and acts on your schedule.",
+  "main": "src/main-companion.js",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
-  "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "storybook": "npm --workspace=packages/ui run storybook",
-    "build:ui": "npm --workspace=packages/ui run build",
-    "desktop": "npm --workspace=@agentshield/desktop run dev",
-    "desktop:dist:win": "npm --workspace=@agentshield/desktop run dist:win",
-    "desktop:dist:mac": "npm --workspace=@agentshield/desktop run dist:mac",
-    "desktop:dist:linux": "npm --workspace=@agentshield/desktop run dist:linux"
+  "engines": {
+    "node": ">=18"
   },
-  "devDependencies": {
-    "typescript": "^5.4.5"
-  }
+  "author": "Pranav Desu",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/potlakai/nus-desktop.git"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
+    "@google/genai": "^2.18.0",
+    "@supabase/supabase-js": "^2.112.3",
+    "electron-updater": "^6.8.9",
+    "mammoth": "^1.12.1",
+    "onnxruntime-node": "1.29.0",
+    "openai": "^7.5.0",
+    "pdf-parse": "^1.1.1",
+    "sherpa-onnx-node": "^1.13.8",
+    "sql.js": "^1.14.1"
+  },
+  "publik": true
 }
