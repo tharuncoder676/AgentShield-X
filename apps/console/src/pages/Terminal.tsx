@@ -298,10 +298,10 @@ Universal SDK Gateway: ${gwEndpoint}`,
         const findings = report.findings || [];
         const pdfFileName = `AgentShieldX_Security_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-        // Trigger browser automatic download to Downloads folder
+        // Trigger browser automatic download of high-quality Cyberpunk PDF report to Downloads folder
         try {
           const dlLink = document.createElement("a");
-          dlLink.href = "/AgentShieldX_Master_Slide_Deck.md";
+          dlLink.href = "/AgentShieldX_Security_Report.pdf";
           dlLink.download = pdfFileName;
           document.body.appendChild(dlLink);
           dlLink.click();
