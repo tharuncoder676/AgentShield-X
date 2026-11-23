@@ -401,6 +401,27 @@ def cmd_scan(args) -> int:
     print(f"  [+] Decoy Tripwires:         {', '.join(br.get('decoy_tools', [])) or 'None'}")
     print("=" * 70)
 
+    # Generate Cyberpunk Purple PDF Security Audit Report & Save to Downloads
+    try:
+        from shield_core.pdf_report import generate_scan_pdf
+        pdf_path = generate_scan_pdf(report)
+        print(f"\n{Style.PURPLE}{Style.BOLD}======================================================================{Style.RESET}")
+        print(f"  {Style.PURPLE}🛡️  AGENTSHIELD-X SECURITY AUDIT REPORT GENERATED{Style.RESET}")
+        print(f"{Style.PURPLE}======================================================================{Style.RESET}")
+        print(f"  {Style.GREEN}[OK] Executive PDF Report generated in AgentShield-X theme!{Style.RESET}")
+        print(f"  {Style.CYAN}[📁] Saved to Downloads:{Style.RESET} {Style.BOLD}{pdf_path}{Style.RESET}")
+        print(f"  {Style.YELLOW}👉 Please check your Downloads folder to open and view your PDF report!{Style.RESET}")
+        print(f"{Style.PURPLE}======================================================================{Style.RESET}\n")
+
+        # Voice Agent Announcement
+        try:
+            from shield_core.wingshield import speak
+            speak("Scan completed! Your AgentShield-X security audit report has been generated and saved to your Downloads folder. Please check your folder.", wait=False)
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"{Style.DIM}(PDF generation skipped: {e}){Style.RESET}\n")
+
     # Cloud Telemetry Synchronization
     cfg = CLIConfig.load()
     control_url = cfg.get("control_url", DEFAULT_CONTROL_URL)

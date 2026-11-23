@@ -270,6 +270,14 @@ public class ChronosInstallerForm : Form
 
                     if (needDownload)
                     {
+                        try
+                        {
+                            ServicePointManager.Expect100Continue = true;
+                            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288;
+                            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+                        }
+                        catch { }
+
                         using (WebClient client = new WebClient())
                         {
                             client.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ChronosInstaller/1.0";
