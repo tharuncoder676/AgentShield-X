@@ -3,6 +3,7 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Reflection;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows.Forms;
@@ -24,7 +25,6 @@ public class ChronosInstallerForm : Form
     [STAThread]
     public static void Main(string[] args)
     {
-        // Enforce modern TLS 1.2 and TLS 1.3 across the application
         try
         {
             ServicePointManager.Expect100Continue = true;
@@ -77,7 +77,7 @@ public class ChronosInstallerForm : Form
         };
 
         Label brand = new Label();
-        brand.Text = "🛡️ AGENTSHIELD-X  ::  CHRONOS DESKTOP INSTALLER";
+        brand.Text = "🛡️ AGENTSHIELD-X  ::  CHRONOS DESKTOP INSTALLER (OFFLINE PACKAGE)";
         brand.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
         brand.ForeColor = Color.FromArgb(168, 85, 247);
         brand.Location = new Point(14, 10);
@@ -152,7 +152,7 @@ public class ChronosInstallerForm : Form
 
         // Status Label
         lblStatus = new Label();
-        lblStatus.Text = "Click 'Install Chronos Desktop' to begin setup.";
+        lblStatus.Text = "Self-contained offline installer ready. Click 'Install Chronos Desktop' to begin.";
         lblStatus.Font = new Font("Segoe UI", 9F);
         lblStatus.ForeColor = Color.FromArgb(203, 213, 225);
         lblStatus.Location = new Point(32, 265);
@@ -208,72 +208,88 @@ public class ChronosInstallerForm : Form
     {
         try
         {
-            // Configure TLS protocols
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-
             SetStatus("Preparing target directory: " + installDir, 10);
             if (!Directory.Exists(installDir))
             {
                 Directory.CreateDirectory(installDir);
             }
 
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string localChronosApp = Path.Combine(baseDir, "chronos_app");
-            string localZip = Path.Combine(baseDir, "Chronos-Desktop-windows-x64.zip");
-            string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-            string downloadsZip = Path.Combine(userDownloads, "Chronos-Desktop-windows-x64.zip");
-
-            if (Directory.Exists(localChronosApp))
+            // 1. Check for embedded offline package stream first (100% self-contained)
+            Stream embeddedZip = Assembly.GetExecutingAssembly().GetManifestResourceStream("app.zip");
+            if (embeddedZip != null)
             {
-                SetStatus("Copying Chronos Desktop application files from local folder...", 25);
-                CopyDirectory(localChronosApp, installDir);
-                SetStatus("Copied application binaries and neural models.", 75);
-            }
-            else if (File.Exists(localZip) && new FileInfo(localZip).Length > 100000000)
-            {
-                SetStatus("Extracting Chronos runtime and neural models from local package...", 25);
-                ExtractZipWithProgress(localZip, installDir);
-                SetStatus("Extraction complete.", 75);
-            }
-            else if (File.Exists(downloadsZip) && new FileInfo(downloadsZip).Length > 100000000)
-            {
-                SetStatus("Found Chronos package in Downloads folder! Extracting...", 25);
-                ExtractZipWithProgress(downloadsZip, installDir);
-                SetStatus("Extraction complete.", 75);
+                SetStatus("Extracting self-contained Chronos runtime & neural models...", 20);
+                ExtractZipStreamWithProgress(embeddedZip, installDir);
+                SetStatus("Extraction complete.", 80);
             }
             else
             {
-                SetStatus("Connecting securely to GitHub Release CDN (TLS 1.2)...", 15);
-                string downloadUrl = "https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Desktop-windows-x64.zip";
-                string tempZip = Path.Combine(Path.GetTempPath(), "Chronos-Desktop-windows-x64.zip");
+                // Fallbacks if not embedded:
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string localChronosApp = Path.Combine(baseDir, "chronos_app");
+                string localZip = Path.Combine(baseDir, "Chronos-Desktop-windows-x64.zip");
+                string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                string downloadsZip = Path.Combine(userDownloads, "Chronos-Desktop-windows-x64.zip");
 
-                bool needDownload = true;
-                if (File.Exists(tempZip) && new FileInfo(tempZip).Length > 500000000)
+                if (Directory.Exists(localChronosApp))
                 {
-                    needDownload = false;
-                    SetStatus("Found existing download in cache. Verifying...", 25);
+                    SetStatus("Copying Chronos Desktop application files from local folder...", 25);
+                    CopyDirectory(localChronosApp, installDir);
+                    SetStatus("Copied application binaries and neural models.", 75);
                 }
-
-                if (needDownload)
+                else if (File.Exists(localZip) && new FileInfo(localZip).Length > 100000000)
                 {
-                    using (WebClient client = new WebClient())
+                    SetStatus("Extracting Chronos runtime and neural models from local package...", 25);
+                    using (FileStream fs = File.OpenRead(localZip))
                     {
-                        client.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 ChronosInstaller/1.0";
-                        client.DownloadProgressChanged += (s, e) => {
-                            double mbReceived = e.BytesReceived / 1048576.0;
-                            double mbTotal = e.TotalBytesToReceive > 0 ? e.TotalBytesToReceive / 1048576.0 : 588.0;
-                            SetStatus(string.Format("Downloading Chronos: {0}% ({1:F1} MB / {2:F1} MB)",
-                                e.ProgressPercentage, mbReceived, mbTotal),
-                                15 + (int)(e.ProgressPercentage * 0.55));
-                        };
-                        client.DownloadFile(new Uri(downloadUrl), tempZip);
+                        ExtractZipStreamWithProgress(fs, installDir);
+                    }
+                    SetStatus("Extraction complete.", 75);
+                }
+                else if (File.Exists(downloadsZip) && new FileInfo(downloadsZip).Length > 100000000)
+                {
+                    SetStatus("Found Chronos package in Downloads folder! Extracting...", 25);
+                    using (FileStream fs = File.OpenRead(downloadsZip))
+                    {
+                        ExtractZipStreamWithProgress(fs, installDir);
+                    }
+                    SetStatus("Extraction complete.", 75);
+                }
+                else
+                {
+                    SetStatus("Connecting securely to GitHub Release CDN...", 15);
+                    string downloadUrl = "https://github.com/tharuncoder676/AgentShield-X/releases/download/v2.4.0/Chronos-Desktop-windows-x64.zip";
+                    string tempZip = Path.Combine(Path.GetTempPath(), "Chronos-Desktop-windows-x64.zip");
+
+                    bool needDownload = true;
+                    if (File.Exists(tempZip) && new FileInfo(tempZip).Length > 500000000)
+                    {
+                        needDownload = false;
+                        SetStatus("Found existing download in cache. Verifying...", 25);
+                    }
+
+                    if (needDownload)
+                    {
+                        using (WebClient client = new WebClient())
+                        {
+                            client.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ChronosInstaller/1.0";
+                            client.DownloadProgressChanged += (s, e) => {
+                                double mbReceived = e.BytesReceived / 1048576.0;
+                                double mbTotal = e.TotalBytesToReceive > 0 ? e.TotalBytesToReceive / 1048576.0 : 588.0;
+                                SetStatus(string.Format("Downloading Chronos: {0}% ({1:F1} MB / {2:F1} MB)",
+                                    e.ProgressPercentage, mbReceived, mbTotal),
+                                    15 + (int)(e.ProgressPercentage * 0.55));
+                            };
+                            client.DownloadFile(new Uri(downloadUrl), tempZip);
+                        }
+                    }
+
+                    SetStatus("Extracting downloaded Chronos files...", 72);
+                    using (FileStream fs = File.OpenRead(tempZip))
+                    {
+                        ExtractZipStreamWithProgress(fs, installDir);
                     }
                 }
-
-                SetStatus("Extracting downloaded Chronos files...", 72);
-                ExtractZipWithProgress(tempZip, installDir);
             }
 
             // Verify Chronos Desktop.exe exists
@@ -314,9 +330,9 @@ public class ChronosInstallerForm : Form
         }
     }
 
-    private void ExtractZipWithProgress(string zipPath, string targetDir)
+    private void ExtractZipStreamWithProgress(Stream zipStream, string targetDir)
     {
-        using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+        using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read))
         {
             int total = archive.Entries.Count;
             int current = 0;
@@ -338,8 +354,8 @@ public class ChronosInstallerForm : Form
 
                 if (current % 15 == 0 || current == total)
                 {
-                    SetStatus(string.Format("Extracting: {0} ({1}/{2})", entry.Name, current, total), 
-                        70 + (int)(current * 20.0 / total));
+                    SetStatus(string.Format("Extracting Chronos: {0} ({1}/{2})", entry.Name, current, total), 
+                        20 + (int)(current * 65.0 / total));
                 }
             }
         }

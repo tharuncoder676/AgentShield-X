@@ -101,4 +101,5 @@ apps/console/public/downloads/*.tar.gz
 *.spec
 gemini-code-*
 *.ppt
+*.pptx
 
